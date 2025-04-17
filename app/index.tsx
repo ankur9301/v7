@@ -1,0 +1,103 @@
+
+
+
+// app/index.tsx
+import React from "react";
+import { Text, View, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
+import { Link, useRouter } from "expo-router";
+import { SafeAreaView } from 'react-native-safe-area-context';
+import CustomButton from "../components/buttons";
+import { Image } from "expo-image";
+import { Dimensions } from "react-native";
+
+const { width, height } = Dimensions.get("window");
+
+const PlaceholderImage = require('@/assets/images/LandingPageWalpaper.jpg');
+
+export default function Index() {
+
+  const router = useRouter();
+
+  return (
+    <View style={styles.container}>
+      {/* Background Image covering full screen */}
+      <Image source={PlaceholderImage} style={styles.image} />
+
+      {/* Overlay Container for Centered Button */}
+      <View style={styles.overlay}>
+        <CustomButton
+          text="Get Started"
+          onPress={() => router.push("/auth/login")}
+          style={styles.button}
+          textStyle={{ color: "#FFF" }}
+        />
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1, 
+  },
+  image: {
+    ...StyleSheet.absoluteFillObject, // Covers the entire screen
+    resizeMode: 'cover',  // Ensures full coverage without stretching
+  },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 77,
+    justifyContent: 'flex-end', // Centers button vertically
+    alignItems: 'center',  // Centers button horizontally
+  },
+  button: {
+    backgroundColor: "#0078D4",
+    width: 150,
+    paddingVertical: 12,
+    borderRadius: 99,
+    elevation: 5, // Adds shadow effect on Android
+   
+  },
+});
+
+
+
+
+
+
+
+// // import { Text, View, StyleSheet } from 'react-native';
+// //  import { Link } from 'expo-router'; 
+
+// // export default function Index() {
+// //   return (
+// //     <View style={styles.container}>
+// //       <Text style={styles.text}>Home screen</Text>
+// //       <Link href="/workingOut" style={styles.button}>
+// //         WOrking Out
+// //       </Link>
+
+
+// //     </View>
+// //   );
+// // }
+
+// // const styles = StyleSheet.create({
+// //   container: {
+// //     flex: 1,
+// //     backgroundColor: '#25292e',
+// //     alignItems: 'center',
+// //     justifyContent: 'center',
+// //   },
+// //   text: {
+// //     color: '#fff',
+// //   },
+// //   button: {
+// //     fontSize: 20,
+// //     textDecorationLine: 'underline',
+// //     color: '#fff',
+// //   },
+// // });

@@ -1,12 +1,10 @@
-import { Tabs } from 'expo-router';
+// app/(tabs)/_layout.tsx
 import React from 'react';
-import { Platform } from 'react-native';
-
-import { HapticTab } from '@/components/HapticTab';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import TabBarBackground from '@/components/ui/TabBarBackground';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { Tabs } from 'expo-router';
+import { FontAwesome } from '@expo/vector-icons';
+import { useColorScheme } from 'react-native';
+import { icons } from '../../constants/icons';
+import { Image } from 'react-native';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -14,32 +12,126 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         headerShown: false,
-        tabBarButton: HapticTab,
-        tabBarBackground: TabBarBackground,
-        tabBarStyle: Platform.select({
-          ios: {
-            // Use a transparent background on iOS to show the blur effect
-            position: 'absolute',
-          },
-          default: {},
-        }),
-      }}>
+        tabBarActiveTintColor: '#2563eb', // Tailwind blue-600
+        tabBarInactiveTintColor: '#6b7280', // Tailwind gray-500
+      }}
+    >
       <Tabs.Screen
-        name="index"
+        name="home"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          tabBarIcon: ({ color, size }) => (
+            <Image 
+              source={icons.home}
+              style={{ width: size, height: size }}
+              resizeMode="contain"
+            />
+          ),
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="workout"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: 'Workout',
+          tabBarIcon: ({ color, size }) => (
+            <Image 
+              source={icons.dumbell}
+              style={{ width: size, height: size }}
+              resizeMode="contain"
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="history"
+        options={{
+          title: 'History',
+          tabBarIcon: ({ color, size }) => (
+            <Image 
+              source={icons.history}
+              style={{ width: size, height: size }}
+              resizeMode="contain"
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="nutrition"
+        options={{
+          title: 'Nutrition',
+          tabBarIcon: ({ color, size }) => (
+            <Image 
+              source={icons.nutrition}
+              style={{ width: size, height: size }}
+              resizeMode="contain"
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color, size }) => (
+            <Image 
+              source={icons.profile}
+              style={{ width: size, height: size }}
+              resizeMode="contain"
+            />
+          ),
         }}
       />
     </Tabs>
   );
 }
+
+
+
+
+// import { Tabs } from 'expo-router';
+// import { icons } from '../../constants/icons';
+
+// export default function TabLayout() {
+//   return (
+//     <Tabs>
+//       <Tabs.Screen
+//         name="home"
+//         options={{
+//           title: 'Home',
+//           headerShown: false, // Hide header if not needed
+//           tabBarIcon: () => <YourIconComponent name="home-icon" />, // Optional tab icons
+//         }}
+//       />
+//       <Tabs.Screen
+//         name="profile"
+//         options={{
+//           title: 'Profile',
+//           headerShown: false,
+//           tabBarIcon: () => <YourIconComponent name="profile-icon" />,
+//         }}
+//       />
+//       <Tabs.Screen
+//         name="workout"
+//         options={{
+//           title: 'Workout',
+//           headerShown: false,
+//           tabBarIcon: () => <YourIconComponent name="workout-icon" />,
+//         }}
+//       />
+//     </Tabs>
+//   );
+// }
+
+
+// import { Tabs } from 'expo-router';
+
+// export default function TabLayout() {
+//   return (
+//     <Tabs>
+//       <Tabs.Screen name="home" options={{ headerShown: false }} />
+//       <Tabs.Screen name="profile" options={{ headerShown: false }} />
+//       <Tabs.Screen name="workout" options={{ headerShown: false }} />
+//     </Tabs>
+//   );
+// }
