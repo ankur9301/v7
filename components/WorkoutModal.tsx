@@ -19,6 +19,7 @@ import { getWorkoutImage } from "../utils/imageHelper";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
 
 const { width } = Dimensions.get("window");
 
@@ -221,7 +222,7 @@ const WorkoutModal: React.FC<WorkoutModalProps> = ({ visible, workout, onClose }
   const renderLeftActions = () => {
     return (
       <View style={styles.leftSwipeAction}>
-        <Ionicons name="checkmark" size={24} color="#fff" />
+        <Ionicons name="checkmark" size={24} color="#000" />
         <Text style={styles.leftSwipeText}>Log</Text>
       </View>
     );
@@ -239,193 +240,196 @@ const WorkoutModal: React.FC<WorkoutModalProps> = ({ visible, workout, onClose }
   return (
     <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
-        <View style={styles.modalContainer}>
-          {/* Header */}
-          <View style={styles.header}>
-            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-              <Ionicons name="close" size={24} color="#333" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>{workout?.name}</Text>
-            <TouchableOpacity style={styles.moreButton}>
-              <Ionicons name="ellipsis-horizontal" size={24} color="#333" />
-            </TouchableOpacity>
-          </View>
-
-          {/* Workout Media */}
-          <View style={styles.mediaContainer}>
-            {workout && getWorkoutVideo(workout.name) ? (
-              <Video
-                ref={videoRef}
-                source={getWorkoutVideo(workout.name)}
-                style={styles.workoutVideo}
-                resizeMode={ResizeMode.COVER}
-                shouldPlay
-                isLooping
-              />
-            ) : (
-              <Image 
-                source={workout ? getWorkoutImage(workout.name) : require('../assets/images/placeholder.jpg')}
-                style={styles.workoutImage}
-                resizeMode="cover"
-              />
-            )}
-            
-            <LinearGradient
-              colors={['transparent', 'rgba(0,0,0,0.7)']}
-              style={styles.mediaOverlay}
-            >
-              <View style={styles.workoutInfo}>
-                <View style={styles.workoutCategory}>
-                  <Text style={styles.workoutCategoryText}>{workout?.category}</Text>
-                </View>
-                <View style={styles.workoutLevel}>
-                  <Text style={styles.workoutLevelText}>{workout?.level}</Text>
-                </View>
-              </View>
-            </LinearGradient>
-          </View>
-
-          {/* Rest Timer */}
-          <View style={styles.timerContainer}>
-            <View style={styles.timerDisplay}>
-              <Text style={styles.timerText}>{formatTime(restTimer)}</Text>
-              <Text style={styles.timerLabel}>Rest Timer</Text>
-            </View>
-            
-            <View style={styles.timerControls}>
-              {isTimerRunning ? (
-                <TouchableOpacity style={styles.timerButton} onPress={pauseTimer}>
-                  <Ionicons name="pause" size={20} color="#fff" />
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity style={styles.timerButton} onPress={startTimer}>
-                  <Ionicons name="play" size={20} color="#fff" />
-                </TouchableOpacity>
-              )}
-              
-              <TouchableOpacity style={styles.timerButton} onPress={resetTimer}>
-                <Ionicons name="refresh" size={20} color="#fff" />
+        <BlurView intensity={40} tint="dark" style={styles.blurContainer}>
+          <View style={styles.modalContainer}>
+            {/* Header */}
+            <View style={styles.header}>
+              <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+                <Ionicons name="close" size={24} color="#FFFFFF" />
+              </TouchableOpacity>
+              <Text style={styles.headerTitle}>{workout?.name}</Text>
+              <TouchableOpacity style={styles.moreButton}>
+                <Ionicons name="ellipsis-horizontal" size={24} color="#FFFFFF" />
               </TouchableOpacity>
             </View>
-          </View>
 
-          {/* Action Buttons */}
-          <View style={styles.actionButtons}>
-            <TouchableOpacity 
-              style={styles.actionButton}
-              onPress={() => setShowNotes(!showNotes)}
-            >
-              <Ionicons name="create-outline" size={20} color="#4361ee" />
-              <Text style={styles.actionButtonText}>Notes</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.actionButton}>
-              <Ionicons name="time-outline" size={20} color="#4361ee" />
-              <Text style={styles.actionButtonText}>History</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.actionButton}>
-              <Ionicons name="swap-horizontal-outline" size={20} color="#4361ee" />
-              <Text style={styles.actionButtonText}>Replace</Text>
-            </TouchableOpacity>
-          </View>
-          
-          {/* Notes Section */}
-          {showNotes && (
-            <View style={styles.notesContainer}>
-              <TextInput
-                style={styles.notesInput}
-                placeholder="Add notes about this exercise..."
-                multiline
-                value={notes}
-                onChangeText={updateNotes}
-              />
-            </View>
-          )}
-
-          {/* Sets Section */}
-          <View style={styles.setsHeader}>
-            <Text style={styles.setsTitle}>Sets</Text>
-            <Text style={styles.setsSubtitle}>
-              {sets.filter(set => set.logged).length} of {sets.length} completed
-            </Text>
-          </View>
-          
-          <ScrollView style={styles.setsContainer}>
-            {sets.map((set, index) => (
-              <Swipeable
-                key={set.id}
-                ref={(ref) => (swipeableRefs.current[index] = ref)}
-                renderLeftActions={renderLeftActions}
-                renderRightActions={renderRightActions}
-                onSwipeableLeftOpen={() => handleSwipeLog(index)}
-                onSwipeableRightOpen={() => handleSwipeDelete(index)}
+            {/* Workout Media */}
+            <View style={styles.mediaContainer}>
+              {workout && getWorkoutVideo(workout.name) ? (
+                <Video
+                  ref={videoRef}
+                  source={getWorkoutVideo(workout.name)}
+                  style={styles.workoutVideo}
+                  resizeMode={ResizeMode.COVER}
+                  shouldPlay
+                  isLooping
+                />
+              ) : (
+                <Image 
+                  source={workout ? getWorkoutImage(workout.name) : require('../assets/images/placeholder.jpg')}
+                  style={styles.workoutImage}
+                  resizeMode="cover"
+                />
+              )}
+              
+              <LinearGradient
+                colors={['transparent', 'rgba(0,0,0,0.7)']}
+                style={styles.mediaOverlay}
               >
-                <Animated.View
-                  style={[
-                    styles.setRow,
-                    {
-                      borderWidth: outlineAnimations.current[index]?.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [0, 2],
-                      }),
-                      borderColor: set.logged ? "#4caf50" : "transparent",
-                      backgroundColor: set.logged ? "rgba(76, 175, 80, 0.05)" : "#F5F5F5",
-                    },
-                  ]}
-                >
-                  <View style={styles.setIndicator}>
-                    <TouchableOpacity
-                      style={[styles.circleIndicator, set.logged && styles.circleIndicatorLogged]}
-                      onPress={() => toggleLog(index)}
-                    >
-                      {set.logged && <Ionicons name="checkmark" size={12} color="#fff" />}
-                    </TouchableOpacity>
-                    <Text style={styles.setNumber}>Set {index + 1}</Text>
+                <View style={styles.workoutInfo}>
+                  <View style={styles.workoutCategory}>
+                    <Text style={styles.workoutCategoryText}>{workout?.category}</Text>
                   </View>
-                  
-                  <View style={styles.inputContainer}>
-                    <Text style={styles.inputLabel}>Reps</Text>
-                    <TextInput
-                      style={styles.input}
-                      keyboardType="number-pad"
-                      value={set.reps}
-                      onChangeText={(text) => updateSet(index, "reps", text)}
-                    />
+                  <View style={styles.workoutLevel}>
+                    <Text style={styles.workoutLevelText}>{workout?.level}</Text>
                   </View>
-                  
-                  <View style={styles.inputContainer}>
-                    <Text style={styles.inputLabel}>Weight (lb)</Text>
-                    <TextInput
-                      style={styles.input}
-                      keyboardType="number-pad"
-                      value={set.weight}
-                      onChangeText={(text) => updateSet(index, "weight", text)}
-                    />
-                  </View>
-                  
-                  {set.logged && set.timestamp && (
-                    <View style={styles.timeStamp}>
-                      <Text style={styles.timeStampText}>
-                        {new Date(set.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </Text>
-                    </View>
-                  )}
-                </Animated.View>
-              </Swipeable>
-            ))}
-            
-            <TouchableOpacity style={styles.addSetButton} onPress={addSet}>
-              <Ionicons name="add-circle-outline" size={24} color="#4361ee" />
-              <Text style={styles.addSetButtonText}>Add Set</Text>
-            </TouchableOpacity>
-            
-            <View style={styles.swipeHint}>
-              <Ionicons name="swap-horizontal" size={16} color="#94a3b8" />
-              <Text style={styles.swipeHintText}>Swipe left to log, right to delete</Text>
+                </View>
+              </LinearGradient>
             </View>
-          </ScrollView>
-        </View>
+
+            {/* Rest Timer */}
+            <View style={styles.timerContainer}>
+              <View style={styles.timerDisplay}>
+                <Text style={styles.timerText}>{formatTime(restTimer)}</Text>
+                <Text style={styles.timerLabel}>Rest Timer</Text>
+              </View>
+              
+              <View style={styles.timerControls}>
+                {isTimerRunning ? (
+                  <TouchableOpacity style={styles.timerButton} onPress={pauseTimer}>
+                    <Ionicons name="pause" size={20} color="#000" />
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity style={styles.timerButton} onPress={startTimer}>
+                    <Ionicons name="play" size={20} color="#000" />
+                  </TouchableOpacity>
+                )}
+                
+                <TouchableOpacity style={styles.timerButton} onPress={resetTimer}>
+                  <Ionicons name="refresh" size={20} color="#000" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Action Buttons */}
+            <View style={styles.actionButtons}>
+              <TouchableOpacity 
+                style={styles.actionButton}
+                onPress={() => setShowNotes(!showNotes)}
+              >
+                <Ionicons name="create-outline" size={20} color="#FF9500" />
+                <Text style={styles.actionButtonText}>Notes</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.actionButton}>
+                <Ionicons name="time-outline" size={20} color="#FF9500" />
+                <Text style={styles.actionButtonText}>History</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.actionButton}>
+                <Ionicons name="swap-horizontal-outline" size={20} color="#FF9500" />
+                <Text style={styles.actionButtonText}>Replace</Text>
+              </TouchableOpacity>
+            </View>
+            
+            {/* Notes Section */}
+            {showNotes && (
+              <View style={styles.notesContainer}>
+                <TextInput
+                  style={[styles.notesInput, { color: '#FFFFFF' }]}
+                  placeholder="Add notes about this exercise..."
+                  placeholderTextColor="#999999"
+                  multiline
+                  value={notes}
+                  onChangeText={updateNotes}
+                />
+              </View>
+            )}
+
+            {/* Sets Section */}
+            <View style={styles.setsHeader}>
+              <Text style={styles.setsTitle}>Sets</Text>
+              <Text style={styles.setsSubtitle}>
+                {sets.filter(set => set.logged).length} of {sets.length} completed
+              </Text>
+            </View>
+            
+            <ScrollView style={styles.setsContainer}>
+              {sets.map((set, index) => (
+                <Swipeable
+                  key={set.id}
+                  ref={(ref) => (swipeableRefs.current[index] = ref)}
+                  renderLeftActions={renderLeftActions}
+                  renderRightActions={renderRightActions}
+                  onSwipeableLeftOpen={() => handleSwipeLog(index)}
+                  onSwipeableRightOpen={() => handleSwipeDelete(index)}
+                >
+                  <Animated.View
+                    style={[
+                      styles.setRow,
+                      {
+                        borderWidth: outlineAnimations.current[index]?.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0, 2],
+                        }),
+                        borderColor: set.logged ? "#FF9500" : "transparent",
+                        backgroundColor: set.logged ? "rgba(255, 149, 0, 0.1)" : "#1A1A1A",
+                      },
+                    ]}
+                  >
+                    <View style={styles.setIndicator}>
+                      <TouchableOpacity
+                        style={[styles.circleIndicator, set.logged && styles.circleIndicatorLogged]}
+                        onPress={() => toggleLog(index)}
+                      >
+                        {set.logged && <Ionicons name="checkmark" size={12} color="#000" />}
+                      </TouchableOpacity>
+                      <Text style={styles.setNumber}>Set {index + 1}</Text>
+                    </View>
+                    
+                    <View style={styles.inputContainer}>
+                      <Text style={styles.inputLabel}>Reps</Text>
+                      <TextInput
+                        style={[styles.input, { color: '#FFFFFF' }]}
+                        keyboardType="number-pad"
+                        value={set.reps}
+                        onChangeText={(text) => updateSet(index, "reps", text)}
+                      />
+                    </View>
+                    
+                    <View style={styles.inputContainer}>
+                      <Text style={styles.inputLabel}>Weight (lb)</Text>
+                      <TextInput
+                        style={[styles.input, { color: '#FFFFFF' }]}
+                        keyboardType="number-pad"
+                        value={set.weight}
+                        onChangeText={(text) => updateSet(index, "weight", text)}
+                      />
+                    </View>
+                    
+                    {set.logged && set.timestamp && (
+                      <View style={styles.timeStamp}>
+                        <Text style={styles.timeStampText}>
+                          {new Date(set.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </Text>
+                      </View>
+                    )}
+                  </Animated.View>
+                </Swipeable>
+              ))}
+              
+              <TouchableOpacity style={styles.addSetButton} onPress={addSet}>
+                <Ionicons name="add-circle-outline" size={24} color="#FF9500" />
+                <Text style={styles.addSetButtonText}>Add Set</Text>
+              </TouchableOpacity>
+              
+              <View style={styles.swipeHint}>
+                <Ionicons name="swap-horizontal" size={16} color="#999999" />
+                <Text style={styles.swipeHintText}>Swipe left to log, right to delete</Text>
+              </View>
+            </ScrollView>
+          </View>
+        </BlurView>
       </View>
     </Modal>
   );
@@ -434,12 +438,18 @@ const WorkoutModal: React.FC<WorkoutModalProps> = ({ visible, workout, onClose }
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
     justifyContent: "flex-end",
   },
-  modalContainer: {
+  blurContainer: {
     height: "94%",
-    backgroundColor: "#f8f9fa",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    overflow: 'hidden',
+  },
+  modalContainer: {
+    height: "100%",
+    backgroundColor: "#000000",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
   },
@@ -454,13 +464,13 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#333",
+    color: "#FFFFFF",
   },
   closeButton: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -468,7 +478,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -497,7 +507,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   workoutCategory: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: 'rgba(255, 149, 0, 0.2)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
@@ -509,7 +519,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   workoutLevel: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: 'rgba(255, 149, 0, 0.2)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
@@ -523,13 +533,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#1A1A1A',
     padding: 16,
     borderRadius: 12,
     margin: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 2,
   },
@@ -539,11 +549,11 @@ const styles = StyleSheet.create({
   timerText: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#333',
+    color: '#FFFFFF',
   },
   timerLabel: {
     fontSize: 12,
-    color: '#6b7280',
+    color: '#999999',
     marginTop: 4,
   },
   timerControls: {
@@ -553,7 +563,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#4361ee',
+    backgroundColor: '#FF9500',
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 8,
@@ -567,14 +577,14 @@ const styles = StyleSheet.create({
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(67, 97, 238, 0.08)',
+    backgroundColor: 'rgba(255, 149, 0, 0.1)',
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 20,
   },
   actionButtonText: {
     fontSize: 14,
-    color: "#4361ee",
+    color: "#FF9500",
     fontWeight: '600',
     marginLeft: 6,
   },
@@ -583,13 +593,13 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   notesInput: {
-    backgroundColor: '#fff',
+    backgroundColor: '#1A1A1A',
     borderRadius: 12,
     padding: 12,
     height: 100,
     textAlignVertical: 'top',
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: '#333333',
   },
   setsHeader: {
     flexDirection: 'row',
@@ -601,11 +611,11 @@ const styles = StyleSheet.create({
   setsTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#333',
+    color: '#FFFFFF',
   },
   setsSubtitle: {
     fontSize: 14,
-    color: '#6b7280',
+    color: '#999999',
   },
   setsContainer: {
     flex: 1,
@@ -633,16 +643,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: "#4caf50",
+    borderColor: "#FF9500",
     backgroundColor: "transparent",
     marginBottom: 4,
   },
   circleIndicatorLogged: {
-    backgroundColor: "#4caf50",
+    backgroundColor: "#FF9500",
   },
   setNumber: {
     fontSize: 12,
-    color: '#6b7280',
+    color: '#999999',
   },
   inputContainer: {
     flex: 1,
@@ -650,16 +660,16 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 12,
-    color: '#6b7280',
+    color: '#999999',
     marginBottom: 4,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#e0e0e0",
+    borderColor: "#333333",
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 8,
-    backgroundColor: '#fff',
+    backgroundColor: '#1A1A1A',
   },
   timeStamp: {
     position: 'absolute',
@@ -668,13 +678,13 @@ const styles = StyleSheet.create({
   },
   timeStampText: {
     fontSize: 10,
-    color: '#6b7280',
+    color: '#999999',
   },
   addSetButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: 'center',
-    backgroundColor: 'rgba(67, 97, 238, 0.08)',
+    backgroundColor: 'rgba(255, 149, 0, 0.1)',
     paddingVertical: 12,
     borderRadius: 12,
     marginTop: 8,
@@ -682,7 +692,7 @@ const styles = StyleSheet.create({
   },
   addSetButtonText: {
     marginLeft: 8,
-    color: "#4361ee",
+    color: "#FF9500",
     fontSize: 16,
     fontWeight: '600',
   },
@@ -694,27 +704,27 @@ const styles = StyleSheet.create({
   },
   swipeHintText: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: '#999999',
     marginLeft: 6,
   },
   leftSwipeAction: {
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#4caf50",
+    backgroundColor: "#FF9500",
     borderRadius: 12,
     height: 80,
     width: 80,
     flex: 1,
   },
   leftSwipeText: {
-    color: "#fff",
+    color: "#000",
     fontWeight: "600",
     marginTop: 4,
   },
   rightSwipeAction: {
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#ff5252",
+    backgroundColor: "#FF3B30",
     borderRadius: 12,
     height: 80,
     width: 80,
@@ -728,9 +738,6 @@ const styles = StyleSheet.create({
 });
 
 export default WorkoutModal;
-
-
-
 
 // import React, { useState, useEffect, useRef } from "react";
 // import {

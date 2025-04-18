@@ -1,3 +1,4 @@
+// // components/FilterButtons.tsx
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -54,7 +55,7 @@ const FilterButtons: React.FC<FilterButtonsProps> = ({
         <Ionicons
           name={icon}
           size={16}
-          color={isActive ? '#ffffff' : '#4b5563'}
+          color={isActive ? '#000000' : '#CCCCCC'}
           style={styles.filterIcon}
         />
         <Text
@@ -69,7 +70,7 @@ const FilterButtons: React.FC<FilterButtonsProps> = ({
         <Ionicons
           name="chevron-down"
           size={16}
-          color={isActive ? '#ffffff' : '#4b5563'}
+          color={isActive ? '#000000' : '#CCCCCC'}
         />
       </TouchableOpacity>
     );
@@ -83,7 +84,7 @@ const FilterButtons: React.FC<FilterButtonsProps> = ({
           onPress={onClearAllPress}
           activeOpacity={0.7}
         >
-          <Ionicons name="close" size={18} color="#ef4444" />
+          <Ionicons name="close" size={18} color="#FF9500" />
         </TouchableOpacity>
       )}
       {renderFilterButton(timeLabel, onTimePress, isTimeActive, "time-outline", enabledFilters.includes('time'))}
@@ -104,7 +105,7 @@ const styles = StyleSheet.create({
   filterButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f3f4f6',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 20,
     paddingVertical: 8,
     paddingHorizontal: 12,
@@ -112,26 +113,26 @@ const styles = StyleSheet.create({
     height: 40,
   },
   activeFilterButton: {
-    backgroundColor: '#4361ee',
+    backgroundColor: '#FF9500',
   },
   filterIcon: {
     marginRight: 4,
   },
   filterText: {
     fontSize: 14,
-    color: '#4b5563',
+    color: '#CCCCCC',
     marginRight: 4,
     maxWidth: 100,
   },
   activeFilterText: {
-    color: '#ffffff',
+    color: '#000000',
     fontWeight: '500',
   },
   clearButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#fee2e2',
+    backgroundColor: 'rgba(255, 149, 0, 0.2)',
     borderRadius: 20,
     width: 36,
     height: 36,
@@ -140,6 +141,150 @@ const styles = StyleSheet.create({
 });
 
 export default FilterButtons;
+
+
+// import React from 'react';
+// import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+// import { Ionicons } from '@expo/vector-icons';
+
+// interface FilterButtonsProps {
+//   onTimePress: () => void;
+//   onMusclesPress: () => void;
+//   onEquipmentPress: () => void;
+//   onLevelPress: () => void;
+//   onClearAllPress: () => void;
+//   timeLabel: string;
+//   muscleLabel: string;
+//   equipmentLabel: string;
+//   levelLabel: string;
+//   isFilterActive: boolean;
+//   enabledFilters: Array<'time' | 'muscles' | 'equipment' | 'level'>;
+// }
+
+// const FilterButtons: React.FC<FilterButtonsProps> = ({
+//   onTimePress,
+//   onMusclesPress,
+//   onEquipmentPress,
+//   onLevelPress,
+//   onClearAllPress,
+//   timeLabel,
+//   muscleLabel,
+//   equipmentLabel,
+//   levelLabel,
+//   isFilterActive,
+//   enabledFilters,
+// }) => {
+//   const isTimeActive = timeLabel !== 'Time';
+//   const isMuscleActive = muscleLabel !== 'Muscles';
+//   const isEquipmentActive = equipmentLabel !== 'Equipment';
+//   const isLevelActive = levelLabel !== 'Level';
+
+//   const renderFilterButton = (
+//     label: string,
+//     onPress: () => void,
+//     isActive: boolean,
+//     icon: "time-outline" | "body-outline" | "barbell-outline" | "stats-chart-outline",
+//     enabled: boolean
+//   ) => {
+//     if (!enabled) return null;
+//     return (
+//       <TouchableOpacity
+//         style={[
+//           styles.filterButton,
+//           isActive && styles.activeFilterButton
+//         ]}
+//         onPress={onPress}
+//         activeOpacity={0.7}
+//       >
+//         <Ionicons
+//           name={icon}
+//           size={16}
+//           color={isActive ? '#ffffff' : '#4b5563'}
+//           style={styles.filterIcon}
+//         />
+//         <Text
+//           style={[
+//             styles.filterText,
+//             isActive && styles.activeFilterText
+//           ]}
+//           numberOfLines={1}
+//         >
+//           {label}
+//         </Text>
+//         <Ionicons
+//           name="chevron-down"
+//           size={16}
+//           color={isActive ? '#ffffff' : '#4b5563'}
+//         />
+//       </TouchableOpacity>
+//     );
+//   };
+
+//   return (
+//     <View style={styles.container}>
+//       {isFilterActive && (
+//         <TouchableOpacity
+//           style={styles.clearButton}
+//           onPress={onClearAllPress}
+//           activeOpacity={0.7}
+//         >
+//           <Ionicons name="close" size={18} color="#ef4444" />
+//         </TouchableOpacity>
+//       )}
+//       {renderFilterButton(timeLabel, onTimePress, isTimeActive, "time-outline", enabledFilters.includes('time'))}
+//       {renderFilterButton(muscleLabel, onMusclesPress, isMuscleActive, "body-outline", enabledFilters.includes('muscles'))}
+//       {renderFilterButton(equipmentLabel, onEquipmentPress, isEquipmentActive, "barbell-outline", enabledFilters.includes('equipment'))}
+//       {renderFilterButton(levelLabel, onLevelPress, isLevelActive, "stats-chart-outline", enabledFilters.includes('level'))}
+//     </View>
+//   );
+// };
+
+// const styles = StyleSheet.create({
+//   container: {
+//     flexDirection: 'row',
+//     alignItems: 'center',
+//     paddingVertical: 8,
+//     paddingHorizontal: 4,
+//   },
+//   filterButton: {
+//     flexDirection: 'row',
+//     alignItems: 'center',
+//     backgroundColor: '#f3f4f6',
+//     borderRadius: 20,
+//     paddingVertical: 8,
+//     paddingHorizontal: 12,
+//     marginHorizontal: 4,
+//     height: 40,
+//   },
+//   activeFilterButton: {
+//     backgroundColor: '#4361ee',
+//   },
+//   filterIcon: {
+//     marginRight: 4,
+//   },
+//   filterText: {
+//     fontSize: 14,
+//     color: '#4b5563',
+//     marginRight: 4,
+//     maxWidth: 100,
+//   },
+//   activeFilterText: {
+//     color: '#ffffff',
+//     fontWeight: '500',
+//   },
+//   clearButton: {
+//     flexDirection: 'row',
+//     alignItems: 'center',
+//     justifyContent: 'center',
+//     backgroundColor: '#fee2e2',
+//     borderRadius: 20,
+//     width: 36,
+//     height: 36,
+//     marginHorizontal: 4,
+//   },
+// });
+
+// export default FilterButtons;
 
 
 // import React from 'react';
