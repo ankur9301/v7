@@ -14,7 +14,8 @@
         "NSSpeechRecognitionUsageDescription": "Allow $(PRODUCT_NAME) to use speech recognition.",
         "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to use the microphone."
       },
-      "bundleIdentifier": "com.ankurgyawali.v7"
+      "bundleIdentifier": "com.ankurgyawali.v7",
+      "runtimeVersion": "1.0.0"
     },
     "android": {
       "adaptiveIcon": {
@@ -23,8 +24,12 @@
       },
       "package": "com.ankurgyawali.v7",
       "permissions": [
+        "android.permission.RECORD_AUDIO",
         "android.permission.RECORD_AUDIO"
-      ]
+      ],
+      "runtimeVersion": {
+        "policy": "appVersion"
+      }
     },
     "web": {
       "bundler": "metro",
@@ -69,6 +74,9 @@
         "projectId": "52b7fa0b-af8f-441d-ae16-a84d321e0f52"
       }
     },
-    "owner": "ankurgyawali"
+    "owner": "ankurgyawali",
+    "updates": {
+      "url": "https://u.expo.dev/52b7fa0b-af8f-441d-ae16-a84d321e0f52"
+    }
   }
 }
