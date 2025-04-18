@@ -1,29 +1,481 @@
-import { View, Text, StyleSheet } from 'react-native'
-import React from 'react'
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  ScrollView,
+  Dimensions,
+  FlatList,  
+  StatusBar,
+  Platform
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 
-const home = () => {
+const { width } = Dimensions.get('window');
+const CARD_WIDTH = width * 0.7;
+
+// Sample data for popular workouts with placeholder images
+const popularWorkouts = [
+  {
+    id: '1',
+    title: 'Shoulder Flex Stability',
+    level: 'Beginner',
+    duration: '55 min',
+    image: require('../../assets/images/placeholder.jpg'),
+  },
+  {
+    id: '2',
+    title: 'Full Body Burn',
+    level: 'Intermediate',
+    duration: '45 min',
+    image: require('../../assets/images/placeholder.jpg'),
+  },
+  {
+    id: '3',
+    title: 'Core Crusher',
+    level: 'Advanced',
+    duration: '30 min',
+    image: require('../../assets/images/placeholder.jpg'),
+  },
+  {
+    id: '4',
+    title: 'Leg Day Challenge',
+    level: 'Intermediate',
+    duration: '60 min',
+    image: require('../../assets/images/placeholder.jpg'),
+  },
+];
+
+// Category data
+const categories = [
+  { id: '1', name: 'All' },
+  { id: '2', name: 'Chest' },
+  { id: '3', name: 'Back' },
+  { id: '4', name: 'Arms' },
+  { id: '5', name: 'Shoulders' },
+  { id: '6', name: 'Legs' },
+  { id: '7', name: 'Core' },
+  { id: '8', name: 'Biceps' },
+  { id: '9', name: 'Triceps' },
+  { id: '10', name: 'Hamstrings' },
+];
+
+// Day data for progress tracking
+const days = [
+  { day: 24, active: false },
+  { day: 25, active: false },
+  { day: 26, active: true },
+  { day: 27, active: false },
+];
+
+const HomeScreen = () => {
+  const [selectedCategory, setSelectedCategory] = useState('All');
+
+  // Render category item
+  const renderCategoryItem = ({ item }: { item: { id: string; name: string } }) => (
+    <TouchableOpacity
+      style={[
+        styles.categoryChip,
+        selectedCategory === item.name && styles.selectedCategoryChip,
+      ]}
+      onPress={() => setSelectedCategory(item.name)}
+    >
+      <Text
+        style={[
+          styles.categoryText,
+          selectedCategory === item.name && styles.selectedCategoryText,
+        ]}
+      >
+        {item.name}
+      </Text>
+    </TouchableOpacity>
+  );
+
+  // Render workout card
+  const renderWorkoutCard = ({ item }: { item: any }) => (
+    <TouchableOpacity style={styles.workoutCard}>
+      <Image source={item.image} style={styles.workoutImage} />
+      <BlurView intensity={80} tint="dark" style={styles.workoutInfoContainer}>
+        <View style={styles.workoutInfo}>
+          <Text style={styles.workoutTitle}>{item.title}</Text>
+          <View style={styles.workoutDetails}>
+            <View style={styles.levelBadge}>
+              <Text style={styles.levelText}>{item.level}</Text>
+            </View>
+            <View style={styles.durationContainer}>
+              <Ionicons name="time-outline" size={14} color="#FF9500" />
+              <Text style={styles.durationText}>{item.duration}</Text>
+            </View>
+          </View>
+        </View>
+      </BlurView>
+    </TouchableOpacity>
+  );
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Welcome Home</Text>
-    </View>
-  )
-}
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar barStyle="light-content" />
+      
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* User Header */}
+        <View style={styles.header}>
+          <View style={styles.userInfo}>
+            <Image 
+              source={require('../../assets/images/placeholder.jpg')} 
+              style={styles.avatar} 
+            />
+            <View style={styles.userTextContainer}>
+              <Text style={styles.userName}>Ronald Adrian</Text>
+              <Text style={styles.userStatus}>Get Ready 🔥</Text>
+            </View>
+          </View>
+          <TouchableOpacity style={styles.menuButton}>
+            <Ionicons name="menu" size={28} color="#fff" />
+          </TouchableOpacity>
+        </View>
 
+        {/* Progress Card */}
+        <View style={styles.progressCard}>
+          <LinearGradient
+            colors={['rgba(255, 149, 0, 0.1)', 'rgba(0, 0, 0, 0)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.progressGradient}
+          >
+            <Text style={styles.progressTitle}>Your Progress</Text>
+            
+            {/* Day Selector */}
+            <View style={styles.daySelector}>
+              {days.map((day, index) => (
+                <TouchableOpacity 
+                  key={index} 
+                  style={[
+                    styles.dayButton,
+                    day.active && styles.activeDayButton
+                  ]}
+                >
+                  <Text style={[
+                    styles.dayText,
+                    day.active && styles.activeDayText
+                  ]}>
+                    {day.day}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            
+            {/* Stats */}
+            <View style={styles.statsContainer}>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>16</Text>
+                <Text style={styles.statLabel}>Workouts</Text>
+              </View>
+              <View style={[styles.statItem, styles.middleStat]}>
+                <Text style={styles.statValue}>10412</Text>
+                <Text style={styles.statLabel}>KCAL</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>03:21</Text>
+                <Text style={styles.statLabel}>Minutes</Text>
+              </View>
+            </View>
+          </LinearGradient>
+        </View>
 
-export default home
+        {/* Categories */}
+        <View style={styles.categoriesSection}>
+          <Text style={styles.sectionTitle}>Categories</Text>
+          <FlatList
+            data={categories}
+            renderItem={renderCategoryItem}
+            keyExtractor={(item) => item.id}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoriesList}
+          />
+        </View>
+
+        {/* Popular Workouts */}
+        <View style={styles.popularSection}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Popular</Text>
+            <TouchableOpacity>
+              <Text style={styles.seeAllText}>See All</Text>
+            </TouchableOpacity>
+          </View>
+          
+          <FlatList
+            data={popularWorkouts}
+            renderItem={renderWorkoutCard}
+            keyExtractor={(item) => item.id}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.workoutsList}
+            snapToInterval={CARD_WIDTH + 16}
+            decelerationRate="fast"
+            snapToAlignment="center"
+          />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    flexDirection: 'column',
+    backgroundColor: '#000',
   },
-  text:{
-    color:"black",
-    fontSize:42,
-    fontWeight:"bold",
-    textAlign:"center",
-  }
-})
+  scrollContent: {
+    paddingBottom: 30,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  avatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 2,
+    borderColor: '#FF9500',
+  },
+  userTextContainer: {
+    marginLeft: 12,
+  },
+  userName: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  userStatus: {
+    color: '#999',
+    fontSize: 14,
+    marginTop: 2,
+  },
+  menuButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  progressCard: {
+    marginHorizontal: 20,
+    marginTop: 16,
+    borderRadius: 24,
+    overflow: 'hidden',
+    backgroundColor: '#111',
+  },
+  progressGradient: {
+    padding: 20,
+    borderRadius: 24,
+  },
+  progressTitle: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 20,
+  },
+  daySelector: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 24,
+  },
+  dayButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  activeDayButton: {
+    backgroundColor: '#FF9500',
+  },
+  dayText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  activeDayText: {
+    color: '#000',
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  middleStat: {
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  statValue: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  statLabel: {
+    color: '#999',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  categoriesSection: {
+    marginTop: 30,
+    paddingHorizontal: 20,
+  },
+  sectionTitle: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 16,
+  },
+  categoriesList: {
+    paddingRight: 20,
+  },
+  categoryChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    marginRight: 10,
+  },
+  selectedCategoryChip: {
+    backgroundColor: '#FF9500',
+  },
+  categoryText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  selectedCategoryText: {
+    color: '#000',
+  },
+  popularSection: {
+    marginTop: 30,
+    paddingLeft: 20,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingRight: 20,
+    marginBottom: 16,
+  },
+  seeAllText: {
+    color: '#FF9500',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  workoutsList: {
+    paddingRight: 20,
+  },
+  workoutCard: {
+    width: CARD_WIDTH,
+    height: 200,
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginRight: 16,
+    position: 'relative',
+  },
+  workoutImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  workoutInfoContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    overflow: 'hidden',
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+  },
+  workoutInfo: {
+    padding: 16,
+  },
+  workoutTitle: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  workoutDetails: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  levelBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    backgroundColor: 'rgba(255, 149, 0, 0.3)',
+    borderRadius: 12,
+  },
+  levelText: {
+    color: '#FF9500',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  durationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  durationText: {
+    color: '#fff',
+    fontSize: 12,
+    marginLeft: 4,
+  },
+});
+
+export default HomeScreen;
+
+// import { View, Text, StyleSheet } from 'react-native'
+// import React from 'react'
+
+// const home = () => {
+//   return (
+//     <View style={styles.container}>
+//       <Text style={styles.text}>Welcome Home</Text>
+//     </View>
+//   )
+// }
+
+
+// export default home
+
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//     flexDirection: 'column',
+//   },
+//   text:{
+//     color:"black",
+//     fontSize:42,
+//     fontWeight:"bold",
+//     textAlign:"center",
+//   }
+// })
 
 
 
