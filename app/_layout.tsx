@@ -1,3 +1,4 @@
+// app/_layout.tsx
 import React from "react";
 import { Stack } from "expo-router";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -5,15 +6,18 @@ import { StyleSheet } from "react-native";
 import "./globals.css";
 import { WorkoutProvider } from "../context/WorkoutContext"; // Adjust the path if necessary
 import { AuthProvider } from "../context/AuthContext";
+import { ThemeProvider } from "../context/ThemeContext";
 
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={styles.container}>
-      <AuthProvider> 
-        <WorkoutProvider>
-          <Stack screenOptions={{ headerShown: false }} />
-        </WorkoutProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider> 
+          <WorkoutProvider>
+            <Stack screenOptions={{ headerShown: false }} />
+          </WorkoutProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </GestureHandlerRootView>
   );
 }
@@ -23,6 +27,33 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 });
+
+
+// import React from "react";
+// import { Stack } from "expo-router";
+// import { GestureHandlerRootView } from "react-native-gesture-handler";
+// import { StyleSheet } from "react-native";
+// import "./globals.css";
+// import { WorkoutProvider } from "../context/WorkoutContext"; // Adjust the path if necessary
+// import { AuthProvider } from "../context/AuthContext";
+
+// export default function RootLayout() {
+//   return (
+//     <GestureHandlerRootView style={styles.container}>
+//       <AuthProvider> 
+//         <WorkoutProvider>
+//           <Stack screenOptions={{ headerShown: false }} />
+//         </WorkoutProvider>
+//       </AuthProvider>
+//     </GestureHandlerRootView>
+//   );
+// }
+
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//   },
+// });
 
 
 

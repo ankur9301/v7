@@ -1,207 +1,411 @@
-// components/WorkoutInfo.tsx
-import React, { useState, useRef } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Modal,
-  TouchableOpacity,
-  ScrollView,
-} from "react-native";
-import { Video, ResizeMode } from "expo-av";
-import { Workout } from "../../types/types";
-import { getWorkoutVideo } from "../../utils/videoHelper";
-import { Ionicons } from "@expo/vector-icons";
+// // // components/WorkoutInfo.tsx
+// import React, { useState, useRef } from "react";
+// import {
+//   View,
+//   Text,
+//   StyleSheet,
+//   Modal,
+//   TouchableOpacity,
+//   ScrollView,
+// } from "react-native";
+// import { Video, ResizeMode } from "expo-av";
+// import { Workout } from "@/types/types";
+// import { getWorkoutVideo } from "@/utils/videoHelper";
+// import { Ionicons } from "@expo/vector-icons";
 
-interface WorkoutInfoProps {
-  visible: boolean;
-  workout: Workout | null;
-  onClose: () => void;
-}
+// interface WorkoutInfoProps {
+//   visible: boolean;
+//   workout: Workout | null;
+//   onClose: () => void;
+//   isDarkMode?: boolean;
+// }
 
-const WorkoutInfo: React.FC<WorkoutInfoProps> = ({ visible, workout, onClose }) => {
-  const [activeTab, setActiveTab] = useState("About"); // Tracks the selected tabclear
+// const WorkoutInfo: React.FC<WorkoutInfoProps> = ({ 
+//   visible, 
+//   workout, 
+//   onClose,
+//   isDarkMode = false
+// }) => {
+//   const [activeTab, setActiveTab] = useState("About"); // Tracks the selected tab
   
-  const videoRef = useRef<Video | null>(null);
+//   const videoRef = useRef<Video | null>(null);
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case "About":
-        return (
-          <View style={styles.aboutSection}>
-            {workout && getWorkoutVideo(workout.name) && (
-              <Video
-                ref={videoRef}
-                source={getWorkoutVideo(workout.name)}
-                style={styles.workoutVideo}
-                resizeMode={ResizeMode.COVER}
-                shouldPlay
-                isLooping
-              />
-            )}
-            <Text style={styles.sectionHeader}>Instructions</Text>
-            <Text style={styles.sectionText}>
-              Perform this exercise with proper form. Focus on controlled movements and ensure you're engaging the targeted muscles. Always start with a light weight to avoid injury.
-            </Text>
-          </View>
-        );
-      case "History":
-        return (
-          <View style={styles.historySection}>
-            <Text style={styles.sectionHeader}>Workout History</Text>
-            <Text style={styles.sectionText}>
-              - Last performed: 01/15/2025 {"\n"}
-              - Best performance: 3 sets, 12 reps @ 50 lbs {"\n"}
-              - Logged 8 times in the past month
-            </Text>
-          </View>
-        );
-      case "Charts":
-        return (
-          <View style={styles.chartsSection}>
-            <Text style={styles.sectionHeader}>Progress Charts</Text>
-            <Text style={styles.sectionText}>
-              Your strength for this exercise has increased by 15% over the past 3 months.
-            </Text>
-            {/* You can add chart components here using libraries like Victory or react-native-chart-kit */}
-          </View>
-        );
-      case "PRs":
-        return (
-          <View style={styles.prsSection}>
-            <Text style={styles.sectionHeader}>Personal Records</Text>
-            <Text style={styles.sectionText}>
-              - Max Weight: 60 lbs {"\n"}
-              - Max Reps: 15 {"\n"}
-              - Max Sets: 4
-            </Text>
-          </View>
-        );
-      default:
-        return null;
-    }
-  };
+//   const renderContent = () => {
+//     switch (activeTab) {
+//       case "About":
+//         return (
+//           <View style={styles.aboutSection}>
+//             {workout && getWorkoutVideo(workout.name) && (
+//               <Video
+//                 ref={videoRef}
+//                 source={getWorkoutVideo(workout.name)}
+//                 style={styles.workoutVideo}
+//                 resizeMode={ResizeMode.COVER}
+//                 shouldPlay
+//                 isLooping
+//               />
+//             )}
+//             <Text style={[styles.sectionHeader, { color: isDarkMode ? '#fff' : '#333' }]}>Instructions</Text>
+//             <Text style={[styles.sectionText, { color: isDarkMode ? '#ccc' : '#555' }]}>
+//               Perform this exercise with proper form. Focus on controlled movements and ensure you're engaging the targeted muscles. Always start with a light weight to avoid injury.
+//             </Text>
+//           </View>
+//         );
+//       case "History":
+//         return (
+//           <View style={styles.historySection}>
+//             <Text style={[styles.sectionHeader, { color: isDarkMode ? '#fff' : '#333' }]}>Workout History</Text>
+//             <Text style={[styles.sectionText, { color: isDarkMode ? '#ccc' : '#555' }]}>
+//               - Last performed: 01/15/2025 {"\n"}
+//               - Best performance: 3 sets, 12 reps @ 50 lbs {"\n"}
+//               - Logged 8 times in the past month
+//             </Text>
+//           </View>
+//         );
+//       case "Charts":
+//         return (
+//           <View style={styles.chartsSection}>
+//             <Text style={[styles.sectionHeader, { color: isDarkMode ? '#fff' : '#333' }]}>Progress Charts</Text>
+//             <Text style={[styles.sectionText, { color: isDarkMode ? '#ccc' : '#555' }]}>
+//               Your strength for this exercise has increased by 15% over the past 3 months.
+//             </Text>
+//             {/* You can add chart components here using libraries like Victory or react-native-chart-kit */}
+//           </View>
+//         );
+//       case "PRs":
+//         return (
+//           <View style={styles.prsSection}>
+//             <Text style={[styles.sectionHeader, { color: isDarkMode ? '#fff' : '#333' }]}>Personal Records</Text>
+//             <Text style={[styles.sectionText, { color: isDarkMode ? '#ccc' : '#555' }]}>
+//               - Max Weight: 60 lbs {"\n"}
+//               - Max Reps: 15 {"\n"}
+//               - Max Sets: 4
+//             </Text>
+//           </View>
+//         );
+//       default:
+//         return null;
+//     }
+//   };
 
-  return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={onClose}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContainer}>
-          {/* Close Button */}
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Ionicons name="close" size={24} color="#333" />
-          </TouchableOpacity>
+//   return (
+//     <Modal
+//       visible={visible}
+//       animationType="slide"
+//       transparent={true}
+//       onRequestClose={onClose}
+//     >
+//       <View style={styles.modalOverlay}>
+//         <View style={[styles.modalContainer, { backgroundColor: isDarkMode ? '#111' : '#fff' }]}>
+//           {/* Close Button */}
+//           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+//             <Ionicons name="close" size={24} color={isDarkMode ? '#fff' : '#333'} />
+//           </TouchableOpacity>
 
-          {/* Action Buttons */}
-          <View style={styles.actionButtons}>
-            {["About", "History", "Charts", "PRs"].map((tab) => (
-              <TouchableOpacity
-                key={tab}
-                style={[
-                  styles.actionButton,
-                  activeTab === tab && styles.activeActionButton,
-                ]}
-                onPress={() => setActiveTab(tab)}
-              >
-                <Text
-                  style={[
-                    styles.actionButtonText,
-                    activeTab === tab && styles.activeActionButtonText,
-                  ]}
-                >
-                  {tab}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+//           {/* Action Buttons */}
+//           <View style={styles.actionButtons}>
+//             {["About", "History", "Charts", "PRs"].map((tab) => (
+//               <TouchableOpacity
+//                 key={tab}
+//                 style={[
+//                   styles.actionButton,
+//                   { backgroundColor: isDarkMode ? '#222' : '#f0f0f0' },
+//                   activeTab === tab && { 
+//                     backgroundColor: isDarkMode ? '#FF9500' : '#4caf50'
+//                   },
+//                 ]}
+//                 onPress={() => setActiveTab(tab)}
+//               >
+//                 <Text
+//                   style={[
+//                     styles.actionButtonText,
+//                     { color: isDarkMode ? '#ccc' : '#333' },
+//                     activeTab === tab && { color: '#fff' },
+//                   ]}
+//                 >
+//                   {tab}
+//                 </Text>
+//               </TouchableOpacity>
+//             ))}
+//           </View>
 
-          {/* Dynamic Content */}
-          <ScrollView style={styles.contentContainer}>{renderContent()}</ScrollView>
-        </View>
-      </View>
-    </Modal>
-  );
-};
+//           {/* Dynamic Content */}
+//           <ScrollView style={styles.contentContainer}>{renderContent()}</ScrollView>
+//         </View>
+//       </View>
+//     </Modal>
+//   );
+// };
 
-const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
-  },
-  modalContainer: {
-    height: "95%",
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: 40,
-    paddingHorizontal: 20,
-  },
-  closeButton: {
-    position: "absolute",
-    top: 15,
-    right: 20,
-  },
-  actionButtons: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginBottom: 20,
-  },
-  actionButton: {
-    backgroundColor: "#f0f0f0",
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 15,
-  },
-  activeActionButton: {
-    backgroundColor: "#4caf50",
-  },
-  actionButtonText: {
-    fontSize: 14,
-    color: "#333",
-  },
-  activeActionButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-  },
-  contentContainer: {
-    flex: 1,
-  },
-  workoutVideo: {
-    width: "100%",
-    height: 250,
-    borderRadius: 10,
-    marginBottom: 10,
-  },
-  sectionHeader: {
-    fontSize: 18,
-    fontWeight: "700",
-    marginBottom: 10,
-  },
-  sectionText: {
-    fontSize: 14,
-    color: "#555",
-    lineHeight: 20,
-  },
-  aboutSection: {
-    marginBottom: 20,
-  },
-  historySection: {
-    marginBottom: 20,
-  },
-  chartsSection: {
-    marginBottom: 20,
-  },
-  prsSection: {
-    marginBottom: 20,
-  },
-});
+// const styles = StyleSheet.create({
+//   modalOverlay: {
+//     flex: 1,
+//     backgroundColor: "rgba(0, 0, 0, 0.5)",
+//     justifyContent: "flex-end",
+//   },
+//   modalContainer: {
+//     height: "95%",
+//     borderTopLeftRadius: 20,
+//     borderTopRightRadius: 20,
+//     paddingTop: 40,
+//     paddingHorizontal: 20,
+//   },
+//   closeButton: {
+//     position: "absolute",
+//     top: 15,
+//     right: 20,
+//   },
+//   actionButtons: {
+//     flexDirection: "row",
+//     justifyContent: "space-around",
+//     marginBottom: 20,
+//   },
+//   actionButton: {
+//     paddingVertical: 8,
+//     paddingHorizontal: 15,
+//     borderRadius: 15,
+//   },
+//   actionButtonText: {
+//     fontSize: 14,
+//   },
+//   contentContainer: {
+//     flex: 1,
+//   },
+//   workoutVideo: {
+//     width: "100%",
+//     height: 250,
+//     borderRadius: 10,
+//     marginBottom: 10,
+//   },
+//   sectionHeader: {
+//     fontSize: 18,
+//     fontWeight: "700",
+//     marginBottom: 10,
+//   },
+//   sectionText: {
+//     fontSize: 14,
+//     lineHeight: 20,
+//   },
+//   aboutSection: {
+//     marginBottom: 20,
+//   },
+//   historySection: {
+//     marginBottom: 20,
+//   },
+//   chartsSection: {
+//     marginBottom: 20,
+//   },
+//   prsSection: {
+//     marginBottom: 20,
+//   },
+// });
 
-export default WorkoutInfo;
+// export default WorkoutInfo;
+
+
+// import React, { useState, useRef } from "react";
+// import {
+//   View,
+//   Text,
+//   StyleSheet,
+//   Modal,
+//   TouchableOpacity,
+//   ScrollView,
+// } from "react-native";
+// import { Video, ResizeMode } from "expo-av";
+// import { Workout } from "../../types/types";
+// import { getWorkoutVideo } from "../../utils/videoHelper";
+// import { Ionicons } from "@expo/vector-icons";
+
+// interface WorkoutInfoProps {
+//   visible: boolean;
+//   workout: Workout | null;
+//   onClose: () => void;
+// }
+
+// const WorkoutInfo: React.FC<WorkoutInfoProps> = ({ visible, workout, onClose }) => {
+//   const [activeTab, setActiveTab] = useState("About"); // Tracks the selected tabclear
+  
+//   const videoRef = useRef<Video | null>(null);
+
+//   const renderContent = () => {
+//     switch (activeTab) {
+//       case "About":
+//         return (
+//           <View style={styles.aboutSection}>
+//             {workout && getWorkoutVideo(workout.name) && (
+//               <Video
+//                 ref={videoRef}
+//                 source={getWorkoutVideo(workout.name)}
+//                 style={styles.workoutVideo}
+//                 resizeMode={ResizeMode.COVER}
+//                 shouldPlay
+//                 isLooping
+//               />
+//             )}
+//             <Text style={styles.sectionHeader}>Instructions</Text>
+//             <Text style={styles.sectionText}>
+//               Perform this exercise with proper form. Focus on controlled movements and ensure you're engaging the targeted muscles. Always start with a light weight to avoid injury.
+//             </Text>
+//           </View>
+//         );
+//       case "History":
+//         return (
+//           <View style={styles.historySection}>
+//             <Text style={styles.sectionHeader}>Workout History</Text>
+//             <Text style={styles.sectionText}>
+//               - Last performed: 01/15/2025 {"\n"}
+//               - Best performance: 3 sets, 12 reps @ 50 lbs {"\n"}
+//               - Logged 8 times in the past month
+//             </Text>
+//           </View>
+//         );
+//       case "Charts":
+//         return (
+//           <View style={styles.chartsSection}>
+//             <Text style={styles.sectionHeader}>Progress Charts</Text>
+//             <Text style={styles.sectionText}>
+//               Your strength for this exercise has increased by 15% over the past 3 months.
+//             </Text>
+//             {/* You can add chart components here using libraries like Victory or react-native-chart-kit */}
+//           </View>
+//         );
+//       case "PRs":
+//         return (
+//           <View style={styles.prsSection}>
+//             <Text style={styles.sectionHeader}>Personal Records</Text>
+//             <Text style={styles.sectionText}>
+//               - Max Weight: 60 lbs {"\n"}
+//               - Max Reps: 15 {"\n"}
+//               - Max Sets: 4
+//             </Text>
+//           </View>
+//         );
+//       default:
+//         return null;
+//     }
+//   };
+
+//   return (
+//     <Modal
+//       visible={visible}
+//       animationType="slide"
+//       transparent={true}
+//       onRequestClose={onClose}
+//     >
+//       <View style={styles.modalOverlay}>
+//         <View style={styles.modalContainer}>
+//           {/* Close Button */}
+//           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+//             <Ionicons name="close" size={24} color="#333" />
+//           </TouchableOpacity>
+
+//           {/* Action Buttons */}
+//           <View style={styles.actionButtons}>
+//             {["About", "History", "Charts", "PRs"].map((tab) => (
+//               <TouchableOpacity
+//                 key={tab}
+//                 style={[
+//                   styles.actionButton,
+//                   activeTab === tab && styles.activeActionButton,
+//                 ]}
+//                 onPress={() => setActiveTab(tab)}
+//               >
+//                 <Text
+//                   style={[
+//                     styles.actionButtonText,
+//                     activeTab === tab && styles.activeActionButtonText,
+//                   ]}
+//                 >
+//                   {tab}
+//                 </Text>
+//               </TouchableOpacity>
+//             ))}
+//           </View>
+
+//           {/* Dynamic Content */}
+//           <ScrollView style={styles.contentContainer}>{renderContent()}</ScrollView>
+//         </View>
+//       </View>
+//     </Modal>
+//   );
+// };
+
+// const styles = StyleSheet.create({
+//   modalOverlay: {
+//     flex: 1,
+//     backgroundColor: "rgba(0, 0, 0, 0.5)",
+//     justifyContent: "flex-end",
+//   },
+//   modalContainer: {
+//     height: "95%",
+//     backgroundColor: "#fff",
+//     borderTopLeftRadius: 20,
+//     borderTopRightRadius: 20,
+//     paddingTop: 40,
+//     paddingHorizontal: 20,
+//   },
+//   closeButton: {
+//     position: "absolute",
+//     top: 15,
+//     right: 20,
+//   },
+//   actionButtons: {
+//     flexDirection: "row",
+//     justifyContent: "space-around",
+//     marginBottom: 20,
+//   },
+//   actionButton: {
+//     backgroundColor: "#f0f0f0",
+//     paddingVertical: 8,
+//     paddingHorizontal: 15,
+//     borderRadius: 15,
+//   },
+//   activeActionButton: {
+//     backgroundColor: "#4caf50",
+//   },
+//   actionButtonText: {
+//     fontSize: 14,
+//     color: "#333",
+//   },
+//   activeActionButtonText: {
+//     color: "#fff",
+//     fontWeight: "bold",
+//   },
+//   contentContainer: {
+//     flex: 1,
+//   },
+//   workoutVideo: {
+//     width: "100%",
+//     height: 250,
+//     borderRadius: 10,
+//     marginBottom: 10,
+//   },
+//   sectionHeader: {
+//     fontSize: 18,
+//     fontWeight: "700",
+//     marginBottom: 10,
+//   },
+//   sectionText: {
+//     fontSize: 14,
+//     color: "#555",
+//     lineHeight: 20,
+//   },
+//   aboutSection: {
+//     marginBottom: 20,
+//   },
+//   historySection: {
+//     marginBottom: 20,
+//   },
+//   chartsSection: {
+//     marginBottom: 20,
+//   },
+//   prsSection: {
+//     marginBottom: 20,
+//   },
+// });
+
+// export default WorkoutInfo;
 
 
 // // app/(tabs)/workout.tsx

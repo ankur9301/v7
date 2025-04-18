@@ -1,20 +1,26 @@
-// app/(tabs)/_layout.tsx
+// // app/(tabs)/_layout.tsx
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import { useColorScheme } from 'react-native';
 import { icons } from '../../constants/icons';
 import { Image } from 'react-native';
+import { useTheme, lightTheme, darkTheme } from '../../context/ThemeContext';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  const { isDarkMode, theme } = useTheme();
+  const colors = isDarkMode ? darkTheme : lightTheme;
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#2563eb', // Tailwind blue-600
-        tabBarInactiveTintColor: '#6b7280', // Tailwind gray-500
+        tabBarActiveTintColor: colors.tabBarActive,
+        tabBarInactiveTintColor: colors.tabBarInactive,
+        tabBarStyle: {
+          backgroundColor: colors.tabBar,
+          borderTopColor: colors.border,
+        },
       }}
     >
       <Tabs.Screen
@@ -24,7 +30,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <Image 
               source={icons.home}
-              style={{ width: size, height: size }}
+              style={{ width: size, height: size, tintColor: color }}
               resizeMode="contain"
             />
           ),
@@ -37,7 +43,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <Image 
               source={icons.dumbell}
-              style={{ width: size, height: size }}
+              style={{ width: size, height: size, tintColor: color }}
               resizeMode="contain"
             />
           ),
@@ -50,7 +56,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <Image 
               source={icons.history}
-              style={{ width: size, height: size }}
+              style={{ width: size, height: size, tintColor: color }}
               resizeMode="contain"
             />
           ),
@@ -63,7 +69,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <Image 
               source={icons.nutrition}
-              style={{ width: size, height: size }}
+              style={{ width: size, height: size, tintColor: color }}
               resizeMode="contain"
             />
           ),
@@ -76,7 +82,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <Image 
               source={icons.profile}
-              style={{ width: size, height: size }}
+              style={{ width: size, height: size, tintColor: color }}
               resizeMode="contain"
             />
           ),
@@ -85,6 +91,95 @@ export default function TabLayout() {
     </Tabs>
   );
 }
+
+
+
+// import React from 'react';
+// import { Tabs } from 'expo-router';
+// import { FontAwesome } from '@expo/vector-icons';
+// import { useColorScheme } from 'react-native';
+// import { icons } from '../../constants/icons';
+// import { Image } from 'react-native';
+
+// export default function TabLayout() {
+//   const colorScheme = useColorScheme();
+
+//   return (
+//     <Tabs
+//       screenOptions={{
+//         headerShown: false,
+//         tabBarActiveTintColor: '#2563eb', // Tailwind blue-600
+//         tabBarInactiveTintColor: '#6b7280', // Tailwind gray-500
+//       }}
+//     >
+//       <Tabs.Screen
+//         name="home"
+//         options={{
+//           title: 'Home',
+//           tabBarIcon: ({ color, size }) => (
+//             <Image 
+//               source={icons.home}
+//               style={{ width: size, height: size }}
+//               resizeMode="contain"
+//             />
+//           ),
+//         }}
+//       />
+//       <Tabs.Screen
+//         name="workout"
+//         options={{
+//           title: 'Workout',
+//           tabBarIcon: ({ color, size }) => (
+//             <Image 
+//               source={icons.dumbell}
+//               style={{ width: size, height: size }}
+//               resizeMode="contain"
+//             />
+//           ),
+//         }}
+//       />
+//       <Tabs.Screen
+//         name="history"
+//         options={{
+//           title: 'History',
+//           tabBarIcon: ({ color, size }) => (
+//             <Image 
+//               source={icons.history}
+//               style={{ width: size, height: size }}
+//               resizeMode="contain"
+//             />
+//           ),
+//         }}
+//       />
+//       <Tabs.Screen
+//         name="nutrition"
+//         options={{
+//           title: 'Nutrition',
+//           tabBarIcon: ({ color, size }) => (
+//             <Image 
+//               source={icons.nutrition}
+//               style={{ width: size, height: size }}
+//               resizeMode="contain"
+//             />
+//           ),
+//         }}
+//       />
+//       <Tabs.Screen
+//         name="profile"
+//         options={{
+//           title: 'Profile',
+//           tabBarIcon: ({ color, size }) => (
+//             <Image 
+//               source={icons.profile}
+//               style={{ width: size, height: size }}
+//               resizeMode="contain"
+//             />
+//           ),
+//         }}
+//       />
+//     </Tabs>
+//   );
+// }
 
 
 

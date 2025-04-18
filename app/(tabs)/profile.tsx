@@ -13,11 +13,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useTheme, lightTheme, darkTheme } from '../../context/ThemeContext';
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { theme, isDarkMode, toggleTheme } = useTheme();
+  const colors = isDarkMode ? darkTheme : lightTheme;
+  
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [darkModeEnabled, setDarkModeEnabled] = useState(false);
   
   const handleLogout = () => {
     Alert.alert(
@@ -37,11 +40,11 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar style="dark" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar style={colors.statusBar as any} />
       
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Profile</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Profile</Text>
       </View>
       
       <ScrollView 
@@ -49,160 +52,160 @@ export default function ProfileScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.profileSection}>
+        <View style={[styles.profileSection, { backgroundColor: colors.card }]}>
           <Image 
             source={require('../../assets/images/profile.jpg')} 
             style={styles.profileImage}
           />
-          <Text style={styles.profileName}>John Doe</Text>
-          <Text style={styles.profileEmail}>john.doe@example.com</Text>
+          <Text style={[styles.profileName, { color: colors.text }]}>John Doe</Text>
+          <Text style={[styles.profileEmail, { color: colors.secondaryText }]}>john.doe@example.com</Text>
           
-          <TouchableOpacity style={styles.editProfileButton}>
-            <Text style={styles.editProfileText}>Edit Profile</Text>
+          <TouchableOpacity style={[styles.editProfileButton, { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : '#f0f0f0' }]}>
+            <Text style={[styles.editProfileText, { color: colors.text }]}>Edit Profile</Text>
           </TouchableOpacity>
         </View>
         
-        <View style={styles.statsSection}>
+        <View style={[styles.statsSection, { backgroundColor: colors.card }]}>
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>24</Text>
-            <Text style={styles.statLabel}>Workouts</Text>
+            <Text style={[styles.statValue, { color: colors.text }]}>24</Text>
+            <Text style={[styles.statLabel, { color: colors.secondaryText }]}>Workouts</Text>
           </View>
-          <View style={styles.statDivider} />
+          <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>12,500</Text>
-            <Text style={styles.statLabel}>Calories</Text>
+            <Text style={[styles.statValue, { color: colors.text }]}>12,500</Text>
+            <Text style={[styles.statLabel, { color: colors.secondaryText }]}>KCAL</Text>
           </View>
-          <View style={styles.statDivider} />
+          <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>30</Text>
-            <Text style={styles.statLabel}>Days Streak</Text>
+            <Text style={[styles.statValue, { color: colors.text }]}>30</Text>
+            <Text style={[styles.statLabel, { color: colors.secondaryText }]}>Days Streak</Text>
           </View>
         </View>
         
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account</Text>
+        <View style={[styles.section, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Account</Text>
           
           <TouchableOpacity style={styles.menuItem}>
             <View style={styles.menuItemLeft}>
-              <View style={[styles.menuItemIcon, { backgroundColor: 'rgba(67, 97, 238, 0.1)' }]}>
-                <Ionicons name="person" size={20} color="#4361ee" />
+              <View style={[styles.menuItemIcon, { backgroundColor: isDarkMode ? 'rgba(67, 97, 238, 0.2)' : 'rgba(67, 97, 238, 0.1)' }]}>
+                <Ionicons name="person" size={20} color={isDarkMode ? "#6E8AFA" : "#4361ee"} />
               </View>
-              <Text style={styles.menuItemText}>Personal Information</Text>
+              <Text style={[styles.menuItemText, { color: colors.text }]}>Personal Information</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#94a3b8" />
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.menuItem}>
-            <View style={styles.menuItemLeft}>
-              <View style={[styles.menuItemIcon, { backgroundColor: 'rgba(60, 207, 78, 0.1)' }]}>
-                <Ionicons name="shield-checkmark" size={20} color="#3CCF4E" />
-              </View>
-              <Text style={styles.menuItemText}>Privacy & Security</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#94a3b8" />
+            <Ionicons name="chevron-forward" size={20} color={colors.secondaryText} />
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.menuItem}>
             <View style={styles.menuItemLeft}>
-              <View style={[styles.menuItemIcon, { backgroundColor: 'rgba(245, 83, 83, 0.1)' }]}>
-                <Ionicons name="card" size={20} color="#F55353" />
+              <View style={[styles.menuItemIcon, { backgroundColor: isDarkMode ? 'rgba(60, 207, 78, 0.2)' : 'rgba(60, 207, 78, 0.1)' }]}>
+                <Ionicons name="shield-checkmark" size={20} color={isDarkMode ? "#5AE875" : "#3CCF4E"} />
               </View>
-              <Text style={styles.menuItemText}>Payment Methods</Text>
+              <Text style={[styles.menuItemText, { color: colors.text }]}>Privacy & Security</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#94a3b8" />
+            <Ionicons name="chevron-forward" size={20} color={colors.secondaryText} />
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.menuItem}>
+            <View style={styles.menuItemLeft}>
+              <View style={[styles.menuItemIcon, { backgroundColor: isDarkMode ? 'rgba(245, 83, 83, 0.2)' : 'rgba(245, 83, 83, 0.1)' }]}>
+                <Ionicons name="card" size={20} color={isDarkMode ? "#FF7A7A" : "#F55353"} />
+              </View>
+              <Text style={[styles.menuItemText, { color: colors.text }]}>Payment Methods</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.secondaryText} />
           </TouchableOpacity>
         </View>
         
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Preferences</Text>
+        <View style={[styles.section, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Preferences</Text>
           
           <View style={styles.menuItem}>
             <View style={styles.menuItemLeft}>
-              <View style={[styles.menuItemIcon, { backgroundColor: 'rgba(67, 97, 238, 0.1)' }]}>
-                <Ionicons name="notifications" size={20} color="#4361ee" />
+              <View style={[styles.menuItemIcon, { backgroundColor: isDarkMode ? 'rgba(67, 97, 238, 0.2)' : 'rgba(67, 97, 238, 0.1)' }]}>
+                <Ionicons name="notifications" size={20} color={isDarkMode ? "#6E8AFA" : "#4361ee"} />
               </View>
-              <Text style={styles.menuItemText}>Notifications</Text>
+              <Text style={[styles.menuItemText, { color: colors.text }]}>Notifications</Text>
             </View>
             <Switch
               value={notificationsEnabled}
               onValueChange={setNotificationsEnabled}
-              trackColor={{ false: "#e0e0e0", true: "#4361ee" }}
+              trackColor={{ false: "#e0e0e0", true: isDarkMode ? "#FF9500" : "#4361ee" }}
               thumbColor="#ffffff"
             />
           </View>
           
           <View style={styles.menuItem}>
             <View style={styles.menuItemLeft}>
-              <View style={[styles.menuItemIcon, { backgroundColor: 'rgba(60, 207, 78, 0.1)' }]}>
-                <Ionicons name="moon" size={20} color="#3CCF4E" />
+              <View style={[styles.menuItemIcon, { backgroundColor: isDarkMode ? 'rgba(255, 149, 0, 0.2)' : 'rgba(60, 207, 78, 0.1)' }]}>
+                <Ionicons name="moon" size={20} color={isDarkMode ? "#FF9500" : "#3CCF4E"} />
               </View>
-              <Text style={styles.menuItemText}>Dark Mode</Text>
+              <Text style={[styles.menuItemText, { color: colors.text }]}>Dark Mode</Text>
             </View>
             <Switch
-              value={darkModeEnabled}
-              onValueChange={setDarkModeEnabled}
-              trackColor={{ false: "#e0e0e0", true: "#4361ee" }}
+              value={isDarkMode}
+              onValueChange={toggleTheme}
+              trackColor={{ false: "#e0e0e0", true: "#FF9500" }}
               thumbColor="#ffffff"
             />
           </View>
           
           <TouchableOpacity style={styles.menuItem}>
             <View style={styles.menuItemLeft}>
-              <View style={[styles.menuItemIcon, { backgroundColor: 'rgba(245, 83, 83, 0.1)' }]}>
-                <Ionicons name="language" size={20} color="#F55353" />
+              <View style={[styles.menuItemIcon, { backgroundColor: isDarkMode ? 'rgba(245, 83, 83, 0.2)' : 'rgba(245, 83, 83, 0.1)' }]}>
+                <Ionicons name="language" size={20} color={isDarkMode ? "#FF7A7A" : "#F55353"} />
               </View>
-              <Text style={styles.menuItemText}>Language</Text>
+              <Text style={[styles.menuItemText, { color: colors.text }]}>Language</Text>
             </View>
             <View style={styles.menuItemRight}>
-              <Text style={styles.menuItemRightText}>English</Text>
-              <Ionicons name="chevron-forward" size={20} color="#94a3b8" />
+              <Text style={[styles.menuItemRightText, { color: colors.secondaryText }]}>English</Text>
+              <Ionicons name="chevron-forward" size={20} color={colors.secondaryText} />
             </View>
           </TouchableOpacity>
         </View>
         
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Support</Text>
+        <View style={[styles.section, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Support</Text>
           
           <TouchableOpacity style={styles.menuItem}>
             <View style={styles.menuItemLeft}>
-              <View style={[styles.menuItemIcon, { backgroundColor: 'rgba(67, 97, 238, 0.1)' }]}>
-                <Ionicons name="help-circle" size={20} color="#4361ee" />
+              <View style={[styles.menuItemIcon, { backgroundColor: isDarkMode ? 'rgba(67, 97, 238, 0.2)' : 'rgba(67, 97, 238, 0.1)' }]}>
+                <Ionicons name="help-circle" size={20} color={isDarkMode ? "#6E8AFA" : "#4361ee"} />
               </View>
-              <Text style={styles.menuItemText}>Help Center</Text>
+              <Text style={[styles.menuItemText, { color: colors.text }]}>Help Center</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#94a3b8" />
+            <Ionicons name="chevron-forward" size={20} color={colors.secondaryText} />
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.menuItem}>
             <View style={styles.menuItemLeft}>
-              <View style={[styles.menuItemIcon, { backgroundColor: 'rgba(60, 207, 78, 0.1)' }]}>
-                <Ionicons name="chatbubble-ellipses" size={20} color="#3CCF4E" />
+              <View style={[styles.menuItemIcon, { backgroundColor: isDarkMode ? 'rgba(60, 207, 78, 0.2)' : 'rgba(60, 207, 78, 0.1)' }]}>
+                <Ionicons name="chatbubble-ellipses" size={20} color={isDarkMode ? "#5AE875" : "#3CCF4E"} />
               </View>
-              <Text style={styles.menuItemText}>Contact Us</Text>
+              <Text style={[styles.menuItemText, { color: colors.text }]}>Contact Us</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#94a3b8" />
+            <Ionicons name="chevron-forward" size={20} color={colors.secondaryText} />
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.menuItem}>
             <View style={styles.menuItemLeft}>
-              <View style={[styles.menuItemIcon, { backgroundColor: 'rgba(245, 83, 83, 0.1)' }]}>
-                <Ionicons name="star" size={20} color="#F55353" />
+              <View style={[styles.menuItemIcon, { backgroundColor: isDarkMode ? 'rgba(255, 149, 0, 0.2)' : 'rgba(245, 83, 83, 0.1)' }]}>
+                <Ionicons name="star" size={20} color={isDarkMode ? "#FF9500" : "#F55353"} />
               </View>
-              <Text style={styles.menuItemText}>Rate the App</Text>
+              <Text style={[styles.menuItemText, { color: colors.text }]}>Rate the App</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#94a3b8" />
+            <Ionicons name="chevron-forward" size={20} color={colors.secondaryText} />
           </TouchableOpacity>
         </View>
         
         <TouchableOpacity 
-          style={styles.logoutButton}
+          style={[styles.logoutButton, { backgroundColor: isDarkMode ? 'rgba(245, 83, 83, 0.2)' : 'rgba(245, 83, 83, 0.1)' }]}
           onPress={handleLogout}
         >
-          <Ionicons name="log-out" size={20} color="#F55353" />
-          <Text style={styles.logoutText}>Logout</Text>
+          <Ionicons name="log-out" size={20} color={isDarkMode ? "#FF7A7A" : "#F55353"} />
+          <Text style={[styles.logoutText, { color: isDarkMode ? "#FF7A7A" : "#F55353" }]}>Logout</Text>
         </TouchableOpacity>
         
-        <Text style={styles.versionText}>Version 1.0.0</Text>
+        <Text style={[styles.versionText, { color: colors.secondaryText }]}>Version 1.0.0</Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -211,7 +214,6 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
   },
   header: {
     paddingHorizontal: 20,
@@ -220,7 +222,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontFamily: 'Montserrat-Bold',
     fontSize: 24,
-    color: '#333',
   },
   scrollView: {
     flex: 1,
@@ -232,6 +233,8 @@ const styles = StyleSheet.create({
   profileSection: {
     alignItems: 'center',
     marginBottom: 24,
+    padding: 20,
+    borderRadius: 16,
   },
   profileImage: {
     width: 100,
@@ -242,37 +245,27 @@ const styles = StyleSheet.create({
   profileName: {
     fontFamily: 'Montserrat-Bold',
     fontSize: 20,
-    color: '#333',
     marginBottom: 4,
   },
   profileEmail: {
     fontFamily: 'Montserrat-Medium',
     fontSize: 14,
-    color: '#94a3b8',
     marginBottom: 16,
   },
   editProfileButton: {
     paddingVertical: 8,
     paddingHorizontal: 16,
-    backgroundColor: '#f0f0f0',
     borderRadius: 20,
   },
   editProfileText: {
     fontFamily: 'Montserrat-SemiBold',
     fontSize: 14,
-    color: '#333',
   },
   statsSection: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
     borderRadius: 16,
     padding: 16,
     marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
   },
   statItem: {
     flex: 1,
@@ -281,34 +274,24 @@ const styles = StyleSheet.create({
   statValue: {
     fontFamily: 'Montserrat-Bold',
     fontSize: 18,
-    color: '#333',
     marginBottom: 4,
   },
   statLabel: {
     fontFamily: 'Montserrat-Medium',
     fontSize: 14,
-    color: '#94a3b8',
   },
   statDivider: {
     width: 1,
     height: '80%',
-    backgroundColor: '#e0e0e0',
   },
   section: {
-    backgroundColor: '#fff',
     borderRadius: 16,
     padding: 16,
     marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
   },
   sectionTitle: {
     fontFamily: 'Montserrat-Bold',
     fontSize: 18,
-    color: '#333',
     marginBottom: 16,
   },
   menuItem: {
@@ -317,7 +300,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: 'rgba(240, 240, 240, 0.3)',
   },
   menuItemLeft: {
     flexDirection: 'row',
@@ -334,7 +317,6 @@ const styles = StyleSheet.create({
   menuItemText: {
     fontFamily: 'Montserrat-SemiBold',
     fontSize: 16,
-    color: '#333',
   },
   menuItemRight: {
     flexDirection: 'row',
@@ -343,14 +325,12 @@ const styles = StyleSheet.create({
   menuItemRightText: {
     fontFamily: 'Montserrat-Medium',
     fontSize: 14,
-    color: '#94a3b8',
     marginRight: 8,
   },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(245, 83, 83, 0.1)',
     borderRadius: 12,
     paddingVertical: 16,
     marginBottom: 16,
@@ -358,16 +338,385 @@ const styles = StyleSheet.create({
   logoutText: {
     fontFamily: 'Montserrat-SemiBold',
     fontSize: 16,
-    color: '#F55353',
     marginLeft: 8,
   },
   versionText: {
     fontFamily: 'Montserrat-Medium',
     fontSize: 14,
-    color: '#94a3b8',
     textAlign: 'center',
   },
 });
+
+// import React, { useState } from 'react';
+// import { 
+//   View, 
+//   Text, 
+//   StyleSheet, 
+//   ScrollView, 
+//   TouchableOpacity, 
+//   Image,
+//   Switch,
+//   Alert
+// } from 'react-native';
+// import { SafeAreaView } from 'react-native-safe-area-context';
+// import { StatusBar } from 'expo-status-bar';
+// import { Ionicons } from '@expo/vector-icons';
+// import { useRouter } from 'expo-router';
+
+// export default function ProfileScreen() {
+//   const router = useRouter();
+//   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+//   const [darkModeEnabled, setDarkModeEnabled] = useState(false);
+  
+//   const handleLogout = () => {
+//     Alert.alert(
+//       "Logout",
+//       "Are you sure you want to logout?",
+//       [
+//         {
+//           text: "Cancel",
+//           style: "cancel"
+//         },
+//         { 
+//           text: "Logout", 
+//           onPress: () => router.replace('/') 
+//         }
+//       ]
+//     );
+//   };
+
+//   return (
+//     <SafeAreaView style={styles.container}>
+//       <StatusBar style="dark" />
+      
+//       <View style={styles.header}>
+//         <Text style={styles.headerTitle}>Profile</Text>
+//       </View>
+      
+//       <ScrollView 
+//         style={styles.scrollView}
+//         contentContainerStyle={styles.scrollContent}
+//         showsVerticalScrollIndicator={false}
+//       >
+//         <View style={styles.profileSection}>
+//           <Image 
+//             source={require('../../assets/images/profile.jpg')} 
+//             style={styles.profileImage}
+//           />
+//           <Text style={styles.profileName}>John Doe</Text>
+//           <Text style={styles.profileEmail}>john.doe@example.com</Text>
+          
+//           <TouchableOpacity style={styles.editProfileButton}>
+//             <Text style={styles.editProfileText}>Edit Profile</Text>
+//           </TouchableOpacity>
+//         </View>
+        
+//         <View style={styles.statsSection}>
+//           <View style={styles.statItem}>
+//             <Text style={styles.statValue}>24</Text>
+//             <Text style={styles.statLabel}>Workouts</Text>
+//           </View>
+//           <View style={styles.statDivider} />
+//           <View style={styles.statItem}>
+//             <Text style={styles.statValue}>12,500</Text>
+//             <Text style={styles.statLabel}>Calories</Text>
+//           </View>
+//           <View style={styles.statDivider} />
+//           <View style={styles.statItem}>
+//             <Text style={styles.statValue}>30</Text>
+//             <Text style={styles.statLabel}>Days Streak</Text>
+//           </View>
+//         </View>
+        
+//         <View style={styles.section}>
+//           <Text style={styles.sectionTitle}>Account</Text>
+          
+//           <TouchableOpacity style={styles.menuItem}>
+//             <View style={styles.menuItemLeft}>
+//               <View style={[styles.menuItemIcon, { backgroundColor: 'rgba(67, 97, 238, 0.1)' }]}>
+//                 <Ionicons name="person" size={20} color="#4361ee" />
+//               </View>
+//               <Text style={styles.menuItemText}>Personal Information</Text>
+//             </View>
+//             <Ionicons name="chevron-forward" size={20} color="#94a3b8" />
+//           </TouchableOpacity>
+          
+//           <TouchableOpacity style={styles.menuItem}>
+//             <View style={styles.menuItemLeft}>
+//               <View style={[styles.menuItemIcon, { backgroundColor: 'rgba(60, 207, 78, 0.1)' }]}>
+//                 <Ionicons name="shield-checkmark" size={20} color="#3CCF4E" />
+//               </View>
+//               <Text style={styles.menuItemText}>Privacy & Security</Text>
+//             </View>
+//             <Ionicons name="chevron-forward" size={20} color="#94a3b8" />
+//           </TouchableOpacity>
+          
+//           <TouchableOpacity style={styles.menuItem}>
+//             <View style={styles.menuItemLeft}>
+//               <View style={[styles.menuItemIcon, { backgroundColor: 'rgba(245, 83, 83, 0.1)' }]}>
+//                 <Ionicons name="card" size={20} color="#F55353" />
+//               </View>
+//               <Text style={styles.menuItemText}>Payment Methods</Text>
+//             </View>
+//             <Ionicons name="chevron-forward" size={20} color="#94a3b8" />
+//           </TouchableOpacity>
+//         </View>
+        
+//         <View style={styles.section}>
+//           <Text style={styles.sectionTitle}>Preferences</Text>
+          
+//           <View style={styles.menuItem}>
+//             <View style={styles.menuItemLeft}>
+//               <View style={[styles.menuItemIcon, { backgroundColor: 'rgba(67, 97, 238, 0.1)' }]}>
+//                 <Ionicons name="notifications" size={20} color="#4361ee" />
+//               </View>
+//               <Text style={styles.menuItemText}>Notifications</Text>
+//             </View>
+//             <Switch
+//               value={notificationsEnabled}
+//               onValueChange={setNotificationsEnabled}
+//               trackColor={{ false: "#e0e0e0", true: "#4361ee" }}
+//               thumbColor="#ffffff"
+//             />
+//           </View>
+          
+//           <View style={styles.menuItem}>
+//             <View style={styles.menuItemLeft}>
+//               <View style={[styles.menuItemIcon, { backgroundColor: 'rgba(60, 207, 78, 0.1)' }]}>
+//                 <Ionicons name="moon" size={20} color="#3CCF4E" />
+//               </View>
+//               <Text style={styles.menuItemText}>Dark Mode</Text>
+//             </View>
+//             <Switch
+//               value={darkModeEnabled}
+//               onValueChange={setDarkModeEnabled}
+//               trackColor={{ false: "#e0e0e0", true: "#4361ee" }}
+//               thumbColor="#ffffff"
+//             />
+//           </View>
+          
+//           <TouchableOpacity style={styles.menuItem}>
+//             <View style={styles.menuItemLeft}>
+//               <View style={[styles.menuItemIcon, { backgroundColor: 'rgba(245, 83, 83, 0.1)' }]}>
+//                 <Ionicons name="language" size={20} color="#F55353" />
+//               </View>
+//               <Text style={styles.menuItemText}>Language</Text>
+//             </View>
+//             <View style={styles.menuItemRight}>
+//               <Text style={styles.menuItemRightText}>English</Text>
+//               <Ionicons name="chevron-forward" size={20} color="#94a3b8" />
+//             </View>
+//           </TouchableOpacity>
+//         </View>
+        
+//         <View style={styles.section}>
+//           <Text style={styles.sectionTitle}>Support</Text>
+          
+//           <TouchableOpacity style={styles.menuItem}>
+//             <View style={styles.menuItemLeft}>
+//               <View style={[styles.menuItemIcon, { backgroundColor: 'rgba(67, 97, 238, 0.1)' }]}>
+//                 <Ionicons name="help-circle" size={20} color="#4361ee" />
+//               </View>
+//               <Text style={styles.menuItemText}>Help Center</Text>
+//             </View>
+//             <Ionicons name="chevron-forward" size={20} color="#94a3b8" />
+//           </TouchableOpacity>
+          
+//           <TouchableOpacity style={styles.menuItem}>
+//             <View style={styles.menuItemLeft}>
+//               <View style={[styles.menuItemIcon, { backgroundColor: 'rgba(60, 207, 78, 0.1)' }]}>
+//                 <Ionicons name="chatbubble-ellipses" size={20} color="#3CCF4E" />
+//               </View>
+//               <Text style={styles.menuItemText}>Contact Us</Text>
+//             </View>
+//             <Ionicons name="chevron-forward" size={20} color="#94a3b8" />
+//           </TouchableOpacity>
+          
+//           <TouchableOpacity style={styles.menuItem}>
+//             <View style={styles.menuItemLeft}>
+//               <View style={[styles.menuItemIcon, { backgroundColor: 'rgba(245, 83, 83, 0.1)' }]}>
+//                 <Ionicons name="star" size={20} color="#F55353" />
+//               </View>
+//               <Text style={styles.menuItemText}>Rate the App</Text>
+//             </View>
+//             <Ionicons name="chevron-forward" size={20} color="#94a3b8" />
+//           </TouchableOpacity>
+//         </View>
+        
+//         <TouchableOpacity 
+//           style={styles.logoutButton}
+//           onPress={handleLogout}
+//         >
+//           <Ionicons name="log-out" size={20} color="#F55353" />
+//           <Text style={styles.logoutText}>Logout</Text>
+//         </TouchableOpacity>
+        
+//         <Text style={styles.versionText}>Version 1.0.0</Text>
+//       </ScrollView>
+//     </SafeAreaView>
+//   );
+// }
+
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//     backgroundColor: '#f8f9fa',
+//   },
+//   header: {
+//     paddingHorizontal: 20,
+//     paddingVertical: 16,
+//   },
+//   headerTitle: {
+//     fontFamily: 'Montserrat-Bold',
+//     fontSize: 24,
+//     color: '#333',
+//   },
+//   scrollView: {
+//     flex: 1,
+//   },
+//   scrollContent: {
+//     paddingHorizontal: 16,
+//     paddingBottom: 30,
+//   },
+//   profileSection: {
+//     alignItems: 'center',
+//     marginBottom: 24,
+//   },
+//   profileImage: {
+//     width: 100,
+//     height: 100,
+//     borderRadius: 50,
+//     marginBottom: 16,
+//   },
+//   profileName: {
+//     fontFamily: 'Montserrat-Bold',
+//     fontSize: 20,
+//     color: '#333',
+//     marginBottom: 4,
+//   },
+//   profileEmail: {
+//     fontFamily: 'Montserrat-Medium',
+//     fontSize: 14,
+//     color: '#94a3b8',
+//     marginBottom: 16,
+//   },
+//   editProfileButton: {
+//     paddingVertical: 8,
+//     paddingHorizontal: 16,
+//     backgroundColor: '#f0f0f0',
+//     borderRadius: 20,
+//   },
+//   editProfileText: {
+//     fontFamily: 'Montserrat-SemiBold',
+//     fontSize: 14,
+//     color: '#333',
+//   },
+//   statsSection: {
+//     flexDirection: 'row',
+//     backgroundColor: '#fff',
+//     borderRadius: 16,
+//     padding: 16,
+//     marginBottom: 24,
+//     shadowColor: '#000',
+//     shadowOffset: { width: 0, height: 2 },
+//     shadowOpacity: 0.05,
+//     shadowRadius: 8,
+//     elevation: 2,
+//   },
+//   statItem: {
+//     flex: 1,
+//     alignItems: 'center',
+//   },
+//   statValue: {
+//     fontFamily: 'Montserrat-Bold',
+//     fontSize: 18,
+//     color: '#333',
+//     marginBottom: 4,
+//   },
+//   statLabel: {
+//     fontFamily: 'Montserrat-Medium',
+//     fontSize: 14,
+//     color: '#94a3b8',
+//   },
+//   statDivider: {
+//     width: 1,
+//     height: '80%',
+//     backgroundColor: '#e0e0e0',
+//   },
+//   section: {
+//     backgroundColor: '#fff',
+//     borderRadius: 16,
+//     padding: 16,
+//     marginBottom: 24,
+//     shadowColor: '#000',
+//     shadowOffset: { width: 0, height: 2 },
+//     shadowOpacity: 0.05,
+//     shadowRadius: 8,
+//     elevation: 2,
+//   },
+//   sectionTitle: {
+//     fontFamily: 'Montserrat-Bold',
+//     fontSize: 18,
+//     color: '#333',
+//     marginBottom: 16,
+//   },
+//   menuItem: {
+//     flexDirection: 'row',
+//     alignItems: 'center',
+//     justifyContent: 'space-between',
+//     paddingVertical: 12,
+//     borderBottomWidth: 1,
+//     borderBottomColor: '#f0f0f0',
+//   },
+//   menuItemLeft: {
+//     flexDirection: 'row',
+//     alignItems: 'center',
+//   },
+//   menuItemIcon: {
+//     width: 40,
+//     height: 40,
+//     borderRadius: 20,
+//     justifyContent: 'center',
+//     alignItems: 'center',
+//     marginRight: 12,
+//   },
+//   menuItemText: {
+//     fontFamily: 'Montserrat-SemiBold',
+//     fontSize: 16,
+//     color: '#333',
+//   },
+//   menuItemRight: {
+//     flexDirection: 'row',
+//     alignItems: 'center',
+//   },
+//   menuItemRightText: {
+//     fontFamily: 'Montserrat-Medium',
+//     fontSize: 14,
+//     color: '#94a3b8',
+//     marginRight: 8,
+//   },
+//   logoutButton: {
+//     flexDirection: 'row',
+//     alignItems: 'center',
+//     justifyContent: 'center',
+//     backgroundColor: 'rgba(245, 83, 83, 0.1)',
+//     borderRadius: 12,
+//     paddingVertical: 16,
+//     marginBottom: 16,
+//   },
+//   logoutText: {
+//     fontFamily: 'Montserrat-SemiBold',
+//     fontSize: 16,
+//     color: '#F55353',
+//     marginLeft: 8,
+//   },
+//   versionText: {
+//     fontFamily: 'Montserrat-Medium',
+//     fontSize: 14,
+//     color: '#94a3b8',
+//     textAlign: 'center',
+//   },
+// });
 
 // import React, { useContext, useState } from 'react';
 // import { View, Text, TouchableOpacity, FlatList, StyleSheet, Alert } from 'react-native';
