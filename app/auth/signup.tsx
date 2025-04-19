@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { SafeAreaView, View, Text, TextInput, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import CustomButton from "@/components/buttons";
-import { supabase } from '../../utils/supabaseClient';
+import { supabase } from '@/src/supabaseClient';
 
 const appleIcon = require("../../assets/icons/apple-logo.png");
 const googleIcon = require("../../assets/icons/google-logo.png");
@@ -26,31 +26,82 @@ const SignUp: React.FC = () => {
   //   }
   // };
 
-  const handleSignup = async () => {
-    console.log("📢 Attempting signup with email:", email);
+//   const handleSignup = async () => {
+//     console.log("📢 Attempting signup with email:", email);
   
-    if (!email || !password) {
-      alert("⚠️ Please enter both email and password.");
+//     if (!email || !password) {
+//       alert("⚠️ Please enter both email and password.");
+//       return;
+//     }
+  
+//     try {
+//       const { data, error } = await supabase.auth.signUp({ email, password });
+//       const userId = data.user?.id;
+// const userEmail = data.user?.email;
+
+// if (userId && userEmail) {
+//   const { error: insertError } = await supabase
+//     .from('users')
+//     .insert({ id: userId, email: userEmail });
+
+//   if (insertError) {
+//     console.error("❌ Failed to insert user to 'users' table:", insertError);
+//   } else {
+//     alert("🎉 Signup Successful! Please log in.");
+//     router.replace("/auth/login");
+//   }
+// }
+
+  
+//       if (error) {
+//         console.error("❌ Signup Error:", error.message);
+//         alert("⚠️ Signup failed: " + error.message);
+//       } else {
+//         console.log("✅ Signup Successful:", data);
+//         alert("🎉 Signup Successful! Please log in.");
+//         router.replace("/auth/login"); // ✅ Redirect to login instead of home
+//       }
+//     } catch (err) {
+//       console.error("🚨 Unexpected Error:", err);
+//       alert("⚠️ An unexpected error occurred.");
+//     }
+//   };
+  
+const handleSignup = async () => {
+  if (!email || !password) {
+    alert("⚠️ Please enter both email and password.");
+    return;
+  }
+
+  try {
+    const { data, error } = await supabase.auth.signUp({ email, password });
+
+    if (error) {
+      alert("Signup failed: " + error.message);
       return;
     }
-  
-    try {
-      const { data, error } = await supabase.auth.signUp({ email, password });
-  
-      if (error) {
-        console.error("❌ Signup Error:", error.message);
-        alert("⚠️ Signup failed: " + error.message);
+
+    const userId = data.user?.id;
+    const userEmail = data.user?.email;
+
+    if (userId && userEmail) {
+      const { error: insertError } = await supabase
+        .from('users')
+        .insert({ id: userId, email: userEmail });
+
+      if (insertError) {
+        console.error("❌ Failed to insert user to 'users' table:", insertError);
       } else {
-        console.log("✅ Signup Successful:", data);
         alert("🎉 Signup Successful! Please log in.");
-        router.replace("/auth/login"); // ✅ Redirect to login instead of home
+        router.replace("/auth/login");
       }
-    } catch (err) {
-      console.error("🚨 Unexpected Error:", err);
-      alert("⚠️ An unexpected error occurred.");
     }
-  };
-  
+  } catch (err) {
+    alert("An unexpected error occurred.");
+    console.error("🚨", err);
+  }
+};
+
 
   return (
     <SafeAreaView style={styles.container}>

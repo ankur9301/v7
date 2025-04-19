@@ -5,7 +5,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { StyleSheet } from "react-native";
 import "./globals.css";
 import { WorkoutProvider } from "../context/WorkoutContext"; // Adjust the path if necessary
-import { AuthProvider } from "../context/AuthContext";
+import { AuthProvider } from "@/context/AuthProvider";
 import { ThemeProvider } from "../context/ThemeContext";
 
 export default function RootLayout() {

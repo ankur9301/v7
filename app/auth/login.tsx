@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { SafeAreaView, View, Text, TextInput, StyleSheet, Pressable, Animated } from "react-native";
 import { useRouter } from "expo-router";
 import CustomButton from "@/components/buttons";
-import { supabase } from '../../utils/supabaseClient';
+import { supabase } from '@/src/supabaseClient';
 
 
 const appleIcon = require("../../assets/icons/apple-logo.png");

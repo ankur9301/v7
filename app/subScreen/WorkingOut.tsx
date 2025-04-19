@@ -1,54 +1,58 @@
-import React, { useContext, useState, useRef } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  Alert, 
+"use client"
+
+import React, { useContext, useState, useRef } from "react"
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
   Dimensions,
   Animated,
-  ScrollView,
   Platform,
-  Modal
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
-import { WorkoutContext } from '../../context/WorkoutContext'; 
-import { Workout } from '../../types/types';
-import { useRouter } from 'expo-router';
-import Stopwatch from '../../components/Stopwatch';
-import WorkoutCard from '../../components/WorkoutCard';
-import WorkoutModal from '../../components/WorkoutModal';
-import AddExerciseModal from '../../components/AddExerciseModal';
-import { workouts as allWorkouts } from '../../constants/data';
-import { StatusBar } from 'expo-status-bar';
-import * as Haptics from 'expo-haptics';
-import { FlatList } from 'react-native';
-import { useTheme, lightTheme, darkTheme } from '../../context/ThemeContext';
+  Modal,
+  TextInput,
+} from "react-native"
+import { SafeAreaView } from "react-native-safe-area-context"
+import { LinearGradient } from "expo-linear-gradient"
+import { Ionicons } from "@expo/vector-icons"
+import { BlurView } from "expo-blur"
+import { WorkoutContext } from "../../context/WorkoutContext"
+import type { Workout } from "../../types/types"
+import { useRouter } from "expo-router"
+import Stopwatch from "../../components/Stopwatch"
+import WorkoutCard from "../../components/WorkoutCard"
+import WorkoutModal from "../../components/WorkoutModal"
+import AddExerciseModal from "../../components/AddExerciseModal"
+import { workouts as allWorkouts } from "../../constants/data"
+import { StatusBar } from "expo-status-bar"
+import * as Haptics from "expo-haptics"
+import { FlatList } from "react-native"
+import { useTheme, lightTheme, darkTheme } from "../../context/ThemeContext"
 
-const { width, height } = Dimensions.get('window');
+const { width, height } = Dimensions.get("window")
 
 const WorkingOut: React.FC = () => {
-  const { workoutPlan, setWorkoutPlan } = useContext(WorkoutContext);
-  const { isDarkMode } = useTheme();
-  const colors = isDarkMode ? darkTheme : lightTheme;
-  
-  const router = useRouter();
-  const workout_count = workoutPlan.length;
-  
+  const { workoutPlan, setWorkoutPlan } = useContext(WorkoutContext)
+  const { isDarkMode } = useTheme()
+  const colors = isDarkMode ? darkTheme : lightTheme
+
+  const router = useRouter()
+  const workout_count = workoutPlan.length
+
   // Animation values
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(30)).current;
-  
+  const fadeAnim = useRef(new Animated.Value(0)).current
+  const slideAnim = useRef(new Animated.Value(30)).current
+
   // Modal states
-  const [addModalVisible, setAddModalVisible] = useState(false);
-  const [replaceModalVisible, setReplaceModalVisible] = useState(false);
-  const [workoutToReplace, setWorkoutToReplace] = useState<Workout | null>(null);
-  const [modalVisible, setModalVisible] = useState<boolean>(false);
-  const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null);
-  const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [addModalVisible, setAddModalVisible] = useState(false)
+  const [replaceModalVisible, setReplaceModalVisible] = useState(false)
+  const [workoutToReplace, setWorkoutToReplace] = useState<Workout | null>(null)
+  const [modalVisible, setModalVisible] = useState<boolean>(false)
+  const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null)
+  const [showExitConfirm, setShowExitConfirm] = useState(false)
+  const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false)
+  const [templateName, setTemplateName] = useState("")
 
   // Animation on mount
   React.useEffect(() => {
@@ -63,151 +67,180 @@ const WorkingOut: React.FC = () => {
         duration: 600,
         useNativeDriver: true,
       }),
-    ]).start();
-  }, []);
+    ]).start()
+  }, [])
 
   /** Remove Workout */
   const handleRemoveExercise = (workout: Workout) => {
-    Alert.alert(
-      "Remove Exercise",
-      `Are you sure you want to remove ${workout.name}?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        { 
-          text: "Remove", 
-          style: "destructive",
-          onPress: () => {
-            setWorkoutPlan(workoutPlan.filter(w => w.id !== workout.id));
-            
-            // Animation for feedback
-            const updatedPlan = workoutPlan.filter(w => w.id !== workout.id);
-            setWorkoutPlan(updatedPlan);
-            
-            // Show toast or feedback
-            if (Platform.OS === 'ios') {
-              // Haptic feedback for iOS
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-            }
-          } 
-        }
-      ]
-    );
-  };
+    Alert.alert("Remove Exercise", `Are you sure you want to remove ${workout.name}?`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Remove",
+        style: "destructive",
+        onPress: () => {
+          // Animation for feedback
+          const updatedPlan = workoutPlan.filter((w) => w.id !== workout.id)
+          setWorkoutPlan(updatedPlan)
+
+          // Show toast or feedback
+          if (Platform.OS === "ios") {
+            // Haptic feedback for iOS
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy)
+          }
+        },
+      },
+    ])
+  }
 
   /** Replace Workout */
   const handleReplaceExercise = (workout: Workout) => {
-    setWorkoutToReplace(workout);
-    setReplaceModalVisible(true);
-  };
+    setWorkoutToReplace(workout)
+    setReplaceModalVisible(true)
+  }
 
   /** Handle new workout selection for replacement */
   const handleReplaceWorkoutSelection = (selectedWorkouts: Workout[]) => {
-    if (!workoutToReplace || selectedWorkouts.length === 0) return;
+    if (!workoutToReplace || selectedWorkouts.length === 0) return
 
-    const updatedPlan = workoutPlan.map(w =>
-      w.id === workoutToReplace.id ? selectedWorkouts[0] : w
-    );
+    // Ensure we're using the workout ID as the key for replacement
+    const updatedPlan = workoutPlan.map((w) => (w.id === workoutToReplace.id ? selectedWorkouts[0] : w))
 
-    setWorkoutPlan(updatedPlan);
-    setReplaceModalVisible(false);
-    setWorkoutToReplace(null);
-  };
+    setWorkoutPlan(updatedPlan)
+    setReplaceModalVisible(false)
+    setWorkoutToReplace(null)
+  }
 
   /** Handle exit confirmation */
   const handleExitPress = () => {
-    setShowExitConfirm(true);
-  };
+    setShowExitConfirm(true)
+  }
 
   /** Handle exit confirmation */
   const handleConfirmExit = () => {
-    router.back();
-  };
+    router.back()
+  }
+
+  /** Handle save template */
+  const handleSaveTemplate = () => {
+    setShowSaveTemplateModal(true)
+  }
+
+  /** Save workout as template */
+  const saveAsTemplate = () => {
+    if (!templateName.trim()) {
+      Alert.alert("Error", "Please enter a template name")
+      return
+    }
+
+    // Here you would normally save to a database
+    // For now, we'll just show a success message
+    Alert.alert("Success", `Workout template "${templateName}" saved successfully!`, [
+      {
+        text: "OK",
+        onPress: () => {
+          setShowSaveTemplateModal(false)
+          setTemplateName("")
+
+          // Provide haptic feedback
+          if (Platform.OS === "ios") {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+          }
+        },
+      },
+    ])
+  }
 
   if (workoutPlan.length === 0) {
     return (
       <SafeAreaView style={styles.emptyContainer}>
         <LinearGradient
-          colors={isDarkMode ? ['#FF9500', '#FF5500'] : ['#8B5CF6', '#6366F1', '#3B82F6']}
+          colors={isDarkMode ? ["#FF9500", "#FF5500"] : ["#8B5CF6", "#6366F1", "#3B82F6"]}
           style={styles.emptyGradient}
         >
           <Ionicons name="barbell-outline" size={64} color="rgba(255,255,255,0.3)" />
           <Text style={styles.emptyTitle}>No Workout Plan</Text>
-          <Text style={styles.emptyMessage}>
-            Please generate a workout plan first to start your session
-          </Text>
-          <TouchableOpacity 
-            style={styles.emptyButton}
-            onPress={() => router.back()}
-          >
+          <Text style={styles.emptyMessage}>Please generate a workout plan first to start your session</Text>
+          <TouchableOpacity style={styles.emptyButton} onPress={() => router.back()}>
             <Text style={styles.emptyButtonText}>Go Back</Text>
           </TouchableOpacity>
         </LinearGradient>
       </SafeAreaView>
-    );
+    )
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["top"]}>
       <StatusBar style={colors.statusBar as any} />
-      
+
       {/* Header with Gradient */}
       <LinearGradient
-        colors={isDarkMode ? ['#FF9500', '#FF5500'] : ['#8B5CF6', '#6366F1', '#3B82F6']}
+        colors={isDarkMode ? ["#FF9500", "#FF5500"] : ["#8B5CF6", "#6366F1", "#3B82F6"]}
         style={styles.header}
       >
         {/* Exit Button */}
-        <TouchableOpacity 
-          style={styles.exitButton} 
-          onPress={handleExitPress}
-        >
+        <TouchableOpacity style={styles.exitButton} onPress={handleExitPress}>
           <Ionicons name="close" size={24} color="#fff" />
         </TouchableOpacity>
-        
+
         <Text style={styles.headerTitle}>Workout Session</Text>
-        
-        {/* Add Button */}
-        <TouchableOpacity 
-          style={styles.addButton} 
-          onPress={() => setAddModalVisible(true)}
-        >
-          <Ionicons name="add" size={24} color="#fff" />
+
+        {/* Save Template Button */}
+        <TouchableOpacity style={styles.saveButton} onPress={handleSaveTemplate}>
+          <Ionicons name="save-outline" size={24} color="#fff" />
         </TouchableOpacity>
       </LinearGradient>
 
       {/* Stopwatch Section */}
-      <View style={[
-        styles.stopwatchContainer, 
-        { 
-          backgroundColor: colors.card,
-          borderBottomWidth: isDarkMode ? 1 : 0,
-          borderBottomColor: colors.border
-        }
-      ]}>
+      <View
+        style={[
+          styles.stopwatchContainer,
+          {
+            backgroundColor: colors.card,
+            borderBottomWidth: isDarkMode ? 1 : 0,
+            borderBottomColor: colors.border,
+          },
+        ]}
+      >
         <Stopwatch isDarkMode={isDarkMode} />
       </View>
 
       {/* Workout List Section */}
-      <Animated.View 
+      <Animated.View
         style={[
           styles.listContainer,
           {
             opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }]
-          }
+            transform: [{ translateY: slideAnim }],
+          },
         ]}
       >
         <View style={styles.listHeader}>
           <Text style={[styles.listTitle, { color: colors.text }]}>Your Exercises</Text>
-          <View style={[
-            styles.countBadge, 
-            { 
-              backgroundColor: isDarkMode ? 'rgba(255, 149, 0, 0.2)' : '#C7D2FE' 
-            }
-          ]}>
-            <Text style={[
-              styles.countText, 
-              { color: isDarkMode ? '#FF9500' : '#4338CA' }
-            ]}>{workout_count}</Text>
+          <View style={styles.headerActions}>
+            <View
+              style={[
+                styles.countBadge,
+                {
+                  backgroundColor: isDarkMode ? "rgba(255, 149, 0, 0.2)" : "#C7D2FE",
+                },
+              ]}
+            >
+              <Text style={[styles.countText, { color: isDarkMode ? "#FF9500" : "#4338CA" }]}>{workout_count}</Text>
+            </View>
+
+            {/* Add Exercise Button - Moved here */}
+            <TouchableOpacity
+              style={[
+                styles.addExerciseButton,
+                {
+                  backgroundColor: isDarkMode ? "rgba(255, 149, 0, 0.2)" : "#C7D2FE",
+                },
+              ]}
+              onPress={() => setAddModalVisible(true)}
+            >
+              <Ionicons name="add" size={20} color={isDarkMode ? "#FF9500" : "#4338CA"} />
+              <Text style={[styles.addExerciseText, { color: isDarkMode ? "#FF9500" : "#4338CA" }]}>Add</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -219,11 +252,11 @@ const WorkingOut: React.FC = () => {
           ListFooterComponent={<View style={{ height: 100 }} />}
           renderItem={({ item }) => (
             <WorkoutCard
-              data={[item]} // assuming WorkoutCard accepts an array
+              data={[item]} // Ensure each workout has a unique ID
               showMenu={true}
               onPress={() => {
-                setSelectedWorkout(item);
-                setModalVisible(true);
+                setSelectedWorkout(item)
+                setModalVisible(true)
               }}
               onAddNote={() => console.log(`Adding note for ${item.name}`)}
               onReplaceExercise={handleReplaceExercise}
@@ -241,15 +274,29 @@ const WorkingOut: React.FC = () => {
         onClose={() => setModalVisible(false)}
         isDarkMode={isDarkMode}
       />
-      
+
       {/* Add Exercise Modal */}
       <AddExerciseModal
         visible={addModalVisible}
         onClose={() => setAddModalVisible(false)}
         workouts={allWorkouts}
         onSelectWorkout={(selected) => {
-          setWorkoutPlan([...workoutPlan, ...selected]);
-          setAddModalVisible(false);
+          // Ensure each workout has a unique ID by adding a timestamp suffix if needed
+          const selectedWithUniqueIds = selected.map((workout) => {
+            // Check if this workout ID already exists in the plan
+            const exists = workoutPlan.some((w) => w.id === workout.id)
+            if (exists) {
+              // Create a new unique ID by appending timestamp and converting to number
+              return {
+                ...workout,
+                id: Number(`${workout.id}${Date.now()}`),
+              }
+            }
+            return { ...workout, id: Number(workout.id) } // Ensure id is a number
+          })
+
+          setWorkoutPlan([...workoutPlan, ...selectedWithUniqueIds])
+          setAddModalVisible(false)
         }}
         multipleSelection={true}
       />
@@ -262,7 +309,7 @@ const WorkingOut: React.FC = () => {
         onSelectWorkout={handleReplaceWorkoutSelection}
         multipleSelection={false}
       />
-      
+
       {/* Exit Confirmation Modal */}
       <Modal
         animationType="fade"
@@ -272,48 +319,43 @@ const WorkingOut: React.FC = () => {
       >
         <View style={styles.modalOverlay}>
           <BlurView intensity={30} tint="dark" style={styles.blurView}>
-            <View style={[
-              styles.confirmModal, 
-              { 
-                backgroundColor: colors.card,
-                borderWidth: isDarkMode ? 1 : 0,
-                borderColor: colors.border
-              }
-            ]}>
-              <Ionicons 
-                name="alert-circle-outline" 
-                size={48} 
-                color={isDarkMode ? "#FF9500" : "#8B5CF6"} 
-                style={styles.confirmIcon} 
+            <View
+              style={[
+                styles.confirmModal,
+                {
+                  backgroundColor: colors.card,
+                  borderWidth: isDarkMode ? 1 : 0,
+                  borderColor: colors.border,
+                },
+              ]}
+            >
+              <Ionicons
+                name="alert-circle-outline"
+                size={48}
+                color={isDarkMode ? "#FF9500" : "#8B5CF6"}
+                style={styles.confirmIcon}
               />
               <Text style={[styles.confirmTitle, { color: colors.text }]}>End Workout?</Text>
               <Text style={[styles.confirmText, { color: colors.secondaryText }]}>
                 Are you sure you want to end your current workout session? Your progress will be saved.
               </Text>
-              
+
               <View style={styles.confirmButtons}>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[
-                    styles.confirmButton, 
+                    styles.confirmButton,
                     styles.cancelButton,
-                    { backgroundColor: isDarkMode ? 'rgba(79, 70, 229, 0.2)' : '#EEF2FF' }
+                    { backgroundColor: isDarkMode ? "rgba(79, 70, 229, 0.2)" : "#EEF2FF" },
                   ]}
                   onPress={() => setShowExitConfirm(false)}
                 >
-                  <Text style={[
-                    styles.cancelButtonText,
-                    { color: isDarkMode ? '#818CF8' : '#4F46E5' }
-                  ]}>Continue Workout</Text>
+                  <Text style={[styles.cancelButtonText, { color: isDarkMode ? "#818CF8" : "#4F46E5" }]}>
+                    Continue Workout
+                  </Text>
                 </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={[styles.confirmButton, styles.endButton]}
-                  onPress={handleConfirmExit}
-                >
-                  <LinearGradient
-                    colors={['#EF4444', '#DC2626']}
-                    style={styles.endButtonGradient}
-                  >
+
+                <TouchableOpacity style={[styles.confirmButton, styles.endButton]} onPress={handleConfirmExit}>
+                  <LinearGradient colors={["#EF4444", "#DC2626"]} style={styles.endButtonGradient}>
                     <Text style={styles.endButtonText}>End Workout</Text>
                   </LinearGradient>
                 </TouchableOpacity>
@@ -322,9 +364,82 @@ const WorkingOut: React.FC = () => {
           </BlurView>
         </View>
       </Modal>
+
+      {/* Save Template Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={showSaveTemplateModal}
+        onRequestClose={() => setShowSaveTemplateModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <BlurView intensity={30} tint="dark" style={styles.blurView}>
+            <View
+              style={[
+                styles.confirmModal,
+                {
+                  backgroundColor: colors.card,
+                  borderWidth: isDarkMode ? 1 : 0,
+                  borderColor: colors.border,
+                },
+              ]}
+            >
+              <Ionicons
+                name="save-outline"
+                size={48}
+                color={isDarkMode ? "#FF9500" : "#8B5CF6"}
+                style={styles.confirmIcon}
+              />
+              <Text style={[styles.confirmTitle, { color: colors.text }]}>Save as Template</Text>
+              <Text style={[styles.confirmText, { color: colors.secondaryText }]}>
+                Save your current workout as a template for future use.
+              </Text>
+
+              <TextInput
+                style={[
+                  styles.templateNameInput,
+                  {
+                    backgroundColor: isDarkMode ? "rgba(31, 41, 55, 0.5)" : "#F9FAFB",
+                    borderWidth: isDarkMode ? 1 : 0,
+                    borderColor: colors.border,
+                    color: colors.text,
+                  },
+                ]}
+                placeholder="Enter template name"
+                placeholderTextColor={colors.secondaryText}
+                value={templateName}
+                onChangeText={setTemplateName}
+                autoFocus
+              />
+
+              <View style={styles.confirmButtons}>
+                <TouchableOpacity
+                  style={[
+                    styles.confirmButton,
+                    styles.cancelButton,
+                    { backgroundColor: isDarkMode ? "rgba(79, 70, 229, 0.2)" : "#EEF2FF" },
+                  ]}
+                  onPress={() => setShowSaveTemplateModal(false)}
+                >
+                  <Text style={[styles.cancelButtonText, { color: isDarkMode ? "#818CF8" : "#4F46E5" }]}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={[styles.confirmButton, styles.saveTemplateButton]} onPress={saveAsTemplate}>
+                  <LinearGradient
+                    colors={isDarkMode ? ["#FF9500", "#FF5500"] : ["#8B5CF6", "#6366F1"]}
+                    style={styles.endButtonGradient}
+                  >
+                    <Text style={styles.endButtonText}>Save Template</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </BlurView>
+        </View>
+      </Modal>
     </SafeAreaView>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -335,67 +450,67 @@ const styles = StyleSheet.create({
   },
   emptyGradient: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     padding: 24,
   },
   emptyTitle: {
     fontSize: 24,
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: "700",
+    color: "#fff",
     marginTop: 16,
     marginBottom: 8,
   },
   emptyMessage: {
     fontSize: 16,
-    color: 'rgba(255,255,255,0.8)',
-    textAlign: 'center',
+    color: "rgba(255,255,255,0.8)",
+    textAlign: "center",
     marginBottom: 32,
   },
   emptyButton: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: "rgba(255,255,255,0.2)",
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 12,
   },
   emptyButtonText: {
-    color: '#fff',
-    fontWeight: '600',
+    color: "#fff",
+    fontWeight: "600",
     fontSize: 16,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: "700",
+    color: "#fff",
   },
   exitButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(255,255,255,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  addButton: {
+  saveButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(255,255,255,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   stopwatchContainer: {
     paddingVertical: 1,
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -407,25 +522,43 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   listHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 16,
+  },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   listTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   countBadge: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginLeft: 8,
   },
   countText: {
-    fontWeight: '700',
+    fontWeight: "700",
     fontSize: 14,
+  },
+  addExerciseButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+    marginLeft: 8,
+  },
+  addExerciseText: {
+    fontWeight: "600",
+    fontSize: 14,
+    marginLeft: 4,
   },
   scrollContainer: {
     flex: 1,
@@ -435,70 +568,1218 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
     padding: 24,
   },
   blurView: {
     borderRadius: 24,
-    overflow: 'hidden',
-    width: '100%',
+    overflow: "hidden",
+    width: "100%",
   },
   confirmModal: {
     borderRadius: 24,
     padding: 24,
-    alignItems: 'center',
-    width: '100%',
+    alignItems: "center",
+    width: "100%",
   },
   confirmIcon: {
     marginBottom: 16,
   },
   confirmTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: "700",
     marginBottom: 8,
   },
   confirmText: {
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 24,
   },
+  templateNameInput: {
+    width: "100%",
+    height: 56,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    fontSize: 16,
+  },
   confirmButtons: {
-    flexDirection: 'column',
-    width: '100%',
+    flexDirection: "column",
+    width: "100%",
   },
   confirmButton: {
     height: 56,
     borderRadius: 16,
     marginVertical: 8,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   cancelButton: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   cancelButtonText: {
-    fontWeight: '600',
+    fontWeight: "600",
     fontSize: 16,
   },
   endButton: {
-    backgroundColor: '#EF4444',
+    backgroundColor: "#EF4444",
+  },
+  saveTemplateButton: {
+    backgroundColor: "#6366F1",
   },
   endButtonGradient: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
   },
   endButtonText: {
-    color: '#fff',
-    fontWeight: '600',
+    color: "#fff",
+    fontWeight: "600",
     fontSize: 16,
   },
-});
+})
 
-export default WorkingOut;
+export default WorkingOut
+
+
+// "use client"
+
+// import React, { useContext, useState, useRef } from "react"
+// import {
+//   View,
+//   Text,
+//   StyleSheet,
+//   TouchableOpacity,
+//   Alert,
+//   Dimensions,
+//   Animated,
+//   Platform,
+//   Modal,
+//   TextInput,
+// } from "react-native"
+// import { SafeAreaView } from "react-native-safe-area-context"
+// import { LinearGradient } from "expo-linear-gradient"
+// import { Ionicons } from "@expo/vector-icons"
+// import { BlurView } from "expo-blur"
+// import { WorkoutContext } from "../../context/WorkoutContext"
+// import type { Workout } from "../../types/types"
+// import { useRouter } from "expo-router"
+// import Stopwatch from "../../components/Stopwatch"
+// import WorkoutCard from "../../components/WorkoutCard"
+// import WorkoutModal from "../../components/WorkoutModal"
+// import AddExerciseModal from "../../components/AddExerciseModal"
+// import { workouts as allWorkouts } from "../../constants/data"
+// import { StatusBar } from "expo-status-bar"
+// import * as Haptics from "expo-haptics"
+// import { FlatList } from "react-native"
+// import { useTheme, lightTheme, darkTheme } from "../../context/ThemeContext"
+
+// const { width, height } = Dimensions.get("window")
+
+// const WorkingOut: React.FC = () => {
+//   const { workoutPlan, setWorkoutPlan } = useContext(WorkoutContext)
+//   const { isDarkMode } = useTheme()
+//   const colors = isDarkMode ? darkTheme : lightTheme
+
+//   const router = useRouter()
+//   const workout_count = workoutPlan.length
+
+//   // Animation values
+//   const fadeAnim = useRef(new Animated.Value(0)).current
+//   const slideAnim = useRef(new Animated.Value(30)).current
+
+//   // Modal states
+//   const [addModalVisible, setAddModalVisible] = useState(false)
+//   const [replaceModalVisible, setReplaceModalVisible] = useState(false)
+//   const [workoutToReplace, setWorkoutToReplace] = useState<Workout | null>(null)
+//   const [modalVisible, setModalVisible] = useState<boolean>(false)
+//   const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null)
+//   const [showExitConfirm, setShowExitConfirm] = useState(false)
+//   const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false)
+//   const [templateName, setTemplateName] = useState("")
+
+//   // Animation on mount
+//   React.useEffect(() => {
+//     Animated.parallel([
+//       Animated.timing(fadeAnim, {
+//         toValue: 1,
+//         duration: 600,
+//         useNativeDriver: true,
+//       }),
+//       Animated.timing(slideAnim, {
+//         toValue: 0,
+//         duration: 600,
+//         useNativeDriver: true,
+//       }),
+//     ]).start()
+//   }, [])
+
+//   /** Remove Workout */
+//   const handleRemoveExercise = (workout: Workout) => {
+//     Alert.alert("Remove Exercise", `Are you sure you want to remove ${workout.name}?`, [
+//       { text: "Cancel", style: "cancel" },
+//       {
+//         text: "Remove",
+//         style: "destructive",
+//         onPress: () => {
+//           setWorkoutPlan(workoutPlan.filter((w) => w.id !== workout.id))
+
+//           // Animation for feedback
+//           const updatedPlan = workoutPlan.filter((w) => w.id !== workout.id)
+//           setWorkoutPlan(updatedPlan)
+
+//           // Show toast or feedback
+//           if (Platform.OS === "ios") {
+//             // Haptic feedback for iOS
+//             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy)
+//           }
+//         },
+//       },
+//     ])
+//   }
+
+//   /** Replace Workout */
+//   const handleReplaceExercise = (workout: Workout) => {
+//     setWorkoutToReplace(workout)
+//     setReplaceModalVisible(true)
+//   }
+
+//   /** Handle new workout selection for replacement */
+//   const handleReplaceWorkoutSelection = (selectedWorkouts: Workout[]) => {
+//     if (!workoutToReplace || selectedWorkouts.length === 0) return
+
+//     const updatedPlan = workoutPlan.map((w) => (w.id === workoutToReplace.id ? selectedWorkouts[0] : w))
+
+//     setWorkoutPlan(updatedPlan)
+//     setReplaceModalVisible(false)
+//     setWorkoutToReplace(null)
+//   }
+
+//   /** Handle exit confirmation */
+//   const handleExitPress = () => {
+//     setShowExitConfirm(true)
+//   }
+
+//   /** Handle exit confirmation */
+//   const handleConfirmExit = () => {
+//     router.back()
+//   }
+
+//   /** Handle save template */
+//   const handleSaveTemplate = () => {
+//     setShowSaveTemplateModal(true)
+//   }
+
+//   /** Save workout as template */
+//   const saveAsTemplate = () => {
+//     if (!templateName.trim()) {
+//       Alert.alert("Error", "Please enter a template name")
+//       return
+//     }
+
+//     // Here you would normally save to a database
+//     // For now, we'll just show a success message
+//     Alert.alert("Success", `Workout template "${templateName}" saved successfully!`, [
+//       {
+//         text: "OK",
+//         onPress: () => {
+//           setShowSaveTemplateModal(false)
+//           setTemplateName("")
+
+//           // Provide haptic feedback
+//           if (Platform.OS === "ios") {
+//             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+//           }
+//         },
+//       },
+//     ])
+//   }
+
+//   if (workoutPlan.length === 0) {
+//     return (
+//       <SafeAreaView style={styles.emptyContainer}>
+//         <LinearGradient
+//           colors={isDarkMode ? ["#FF9500", "#FF5500"] : ["#8B5CF6", "#6366F1", "#3B82F6"]}
+//           style={styles.emptyGradient}
+//         >
+//           <Ionicons name="barbell-outline" size={64} color="rgba(255,255,255,0.3)" />
+//           <Text style={styles.emptyTitle}>No Workout Plan</Text>
+//           <Text style={styles.emptyMessage}>Please generate a workout plan first to start your session</Text>
+//           <TouchableOpacity style={styles.emptyButton} onPress={() => router.back()}>
+//             <Text style={styles.emptyButtonText}>Go Back</Text>
+//           </TouchableOpacity>
+//         </LinearGradient>
+//       </SafeAreaView>
+//     )
+//   }
+
+//   return (
+//     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["top"]}>
+//       <StatusBar style={colors.statusBar as any} />
+
+//       {/* Header with Gradient */}
+//       <LinearGradient
+//         colors={isDarkMode ? ["#FF9500", "#FF5500"] : ["#8B5CF6", "#6366F1", "#3B82F6"]}
+//         style={styles.header}
+//       >
+//         {/* Exit Button */}
+//         <TouchableOpacity style={styles.exitButton} onPress={handleExitPress}>
+//           <Ionicons name="close" size={24} color="#fff" />
+//         </TouchableOpacity>
+
+//         <Text style={styles.headerTitle}>Workout Session</Text>
+
+//         {/* Save Template Button */}
+//         <TouchableOpacity style={styles.saveButton} onPress={handleSaveTemplate}>
+//           <Ionicons name="save-outline" size={24} color="#fff" />
+//         </TouchableOpacity>
+//       </LinearGradient>
+
+//       {/* Stopwatch Section */}
+//       <View
+//         style={[
+//           styles.stopwatchContainer,
+//           {
+//             backgroundColor: colors.card,
+//             borderBottomWidth: isDarkMode ? 1 : 0,
+//             borderBottomColor: colors.border,
+//           },
+//         ]}
+//       >
+//         <Stopwatch isDarkMode={isDarkMode} />
+//       </View>
+
+//       {/* Workout List Section */}
+//       <Animated.View
+//         style={[
+//           styles.listContainer,
+//           {
+//             opacity: fadeAnim,
+//             transform: [{ translateY: slideAnim }],
+//           },
+//         ]}
+//       >
+//         <View style={styles.listHeader}>
+//           <Text style={[styles.listTitle, { color: colors.text }]}>Your Exercises</Text>
+//           <View style={styles.headerActions}>
+//             <View
+//               style={[
+//                 styles.countBadge,
+//                 {
+//                   backgroundColor: isDarkMode ? "rgba(255, 149, 0, 0.2)" : "#C7D2FE",
+//                 },
+//               ]}
+//             >
+//               <Text style={[styles.countText, { color: isDarkMode ? "#FF9500" : "#4338CA" }]}>{workout_count}</Text>
+//             </View>
+
+//             {/* Add Exercise Button - Moved here */}
+//             <TouchableOpacity
+//               style={[
+//                 styles.addExerciseButton,
+//                 {
+//                   backgroundColor: isDarkMode ? "rgba(255, 149, 0, 0.2)" : "#C7D2FE",
+//                 },
+//               ]}
+//               onPress={() => setAddModalVisible(true)}
+//             >
+//               <Ionicons name="add" size={20} color={isDarkMode ? "#FF9500" : "#4338CA"} />
+//               <Text style={[styles.addExerciseText, { color: isDarkMode ? "#FF9500" : "#4338CA" }]}>Add</Text>
+//             </TouchableOpacity>
+//           </View>
+//         </View>
+
+//         <FlatList
+//           data={workoutPlan}
+//           keyExtractor={(item) => item.id.toString()}
+//           showsVerticalScrollIndicator={false}
+//           contentContainerStyle={styles.scrollContent}
+//           ListFooterComponent={<View style={{ height: 100 }} />}
+//           renderItem={({ item }) => (
+//             <WorkoutCard
+//               data={[item]} // assuming WorkoutCard accepts an array
+//               showMenu={true}
+//               onPress={() => {
+//                 setSelectedWorkout(item)
+//                 setModalVisible(true)
+//               }}
+//               onAddNote={() => console.log(`Adding note for ${item.name}`)}
+//               onReplaceExercise={handleReplaceExercise}
+//               onRemoveExercise={handleRemoveExercise}
+//               isDarkMode={isDarkMode}
+//             />
+//           )}
+//         />
+//       </Animated.View>
+
+//       {/* Workout Modal */}
+//       <WorkoutModal
+//         visible={modalVisible}
+//         workout={selectedWorkout}
+//         onClose={() => setModalVisible(false)}
+//         isDarkMode={isDarkMode}
+//       />
+
+//       {/* Add Exercise Modal */}
+//       <AddExerciseModal
+//         visible={addModalVisible}
+//         onClose={() => setAddModalVisible(false)}
+//         workouts={allWorkouts}
+//         onSelectWorkout={(selected) => {
+//           setWorkoutPlan([...workoutPlan, ...selected])
+//           setAddModalVisible(false)
+//         }}
+//         multipleSelection={true}
+//       />
+
+//       {/* Replace Exercise Modal */}
+//       <AddExerciseModal
+//         visible={replaceModalVisible}
+//         onClose={() => setReplaceModalVisible(false)}
+//         workouts={allWorkouts}
+//         onSelectWorkout={handleReplaceWorkoutSelection}
+//         multipleSelection={false}
+//       />
+
+//       {/* Exit Confirmation Modal */}
+//       <Modal
+//         animationType="fade"
+//         transparent={true}
+//         visible={showExitConfirm}
+//         onRequestClose={() => setShowExitConfirm(false)}
+//       >
+//         <View style={styles.modalOverlay}>
+//           <BlurView intensity={30} tint="dark" style={styles.blurView}>
+//             <View
+//               style={[
+//                 styles.confirmModal,
+//                 {
+//                   backgroundColor: colors.card,
+//                   borderWidth: isDarkMode ? 1 : 0,
+//                   borderColor: colors.border,
+//                 },
+//               ]}
+//             >
+//               <Ionicons
+//                 name="alert-circle-outline"
+//                 size={48}
+//                 color={isDarkMode ? "#FF9500" : "#8B5CF6"}
+//                 style={styles.confirmIcon}
+//               />
+//               <Text style={[styles.confirmTitle, { color: colors.text }]}>End Workout?</Text>
+//               <Text style={[styles.confirmText, { color: colors.secondaryText }]}>
+//                 Are you sure you want to end your current workout session? Your progress will be saved.
+//               </Text>
+
+//               <View style={styles.confirmButtons}>
+//                 <TouchableOpacity
+//                   style={[
+//                     styles.confirmButton,
+//                     styles.cancelButton,
+//                     { backgroundColor: isDarkMode ? "rgba(79, 70, 229, 0.2)" : "#EEF2FF" },
+//                   ]}
+//                   onPress={() => setShowExitConfirm(false)}
+//                 >
+//                   <Text style={[styles.cancelButtonText, { color: isDarkMode ? "#818CF8" : "#4F46E5" }]}>
+//                     Continue Workout
+//                   </Text>
+//                 </TouchableOpacity>
+
+//                 <TouchableOpacity style={[styles.confirmButton, styles.endButton]} onPress={handleConfirmExit}>
+//                   <LinearGradient colors={["#EF4444", "#DC2626"]} style={styles.endButtonGradient}>
+//                     <Text style={styles.endButtonText}>End Workout</Text>
+//                   </LinearGradient>
+//                 </TouchableOpacity>
+//               </View>
+//             </View>
+//           </BlurView>
+//         </View>
+//       </Modal>
+
+//       {/* Save Template Modal */}
+//       <Modal
+//         animationType="fade"
+//         transparent={true}
+//         visible={showSaveTemplateModal}
+//         onRequestClose={() => setShowSaveTemplateModal(false)}
+//       >
+//         <View style={styles.modalOverlay}>
+//           <BlurView intensity={30} tint="dark" style={styles.blurView}>
+//             <View
+//               style={[
+//                 styles.confirmModal,
+//                 {
+//                   backgroundColor: colors.card,
+//                   borderWidth: isDarkMode ? 1 : 0,
+//                   borderColor: colors.border,
+//                 },
+//               ]}
+//             >
+//               <Ionicons
+//                 name="save-outline"
+//                 size={48}
+//                 color={isDarkMode ? "#FF9500" : "#8B5CF6"}
+//                 style={styles.confirmIcon}
+//               />
+//               <Text style={[styles.confirmTitle, { color: colors.text }]}>Save as Template</Text>
+//               <Text style={[styles.confirmText, { color: colors.secondaryText }]}>
+//                 Save your current workout as a template for future use.
+//               </Text>
+
+//               <TextInput
+//                 style={[
+//                   styles.templateNameInput,
+//                   {
+//                     backgroundColor: isDarkMode ? "rgba(31, 41, 55, 0.5)" : "#F9FAFB",
+//                     borderWidth: isDarkMode ? 1 : 0,
+//                     borderColor: colors.border,
+//                     color: colors.text,
+//                   },
+//                 ]}
+//                 placeholder="Enter template name"
+//                 placeholderTextColor={colors.secondaryText}
+//                 value={templateName}
+//                 onChangeText={setTemplateName}
+//                 autoFocus
+//               />
+
+//               <View style={styles.confirmButtons}>
+//                 <TouchableOpacity
+//                   style={[
+//                     styles.confirmButton,
+//                     styles.cancelButton,
+//                     { backgroundColor: isDarkMode ? "rgba(79, 70, 229, 0.2)" : "#EEF2FF" },
+//                   ]}
+//                   onPress={() => setShowSaveTemplateModal(false)}
+//                 >
+//                   <Text style={[styles.cancelButtonText, { color: isDarkMode ? "#818CF8" : "#4F46E5" }]}>Cancel</Text>
+//                 </TouchableOpacity>
+
+//                 <TouchableOpacity style={[styles.confirmButton, styles.saveTemplateButton]} onPress={saveAsTemplate}>
+//                   <LinearGradient
+//                     colors={isDarkMode ? ["#FF9500", "#FF5500"] : ["#8B5CF6", "#6366F1"]}
+//                     style={styles.endButtonGradient}
+//                   >
+//                     <Text style={styles.endButtonText}>Save Template</Text>
+//                   </LinearGradient>
+//                 </TouchableOpacity>
+//               </View>
+//             </View>
+//           </BlurView>
+//         </View>
+//       </Modal>
+//     </SafeAreaView>
+//   )
+// }
+
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//   },
+//   emptyContainer: {
+//     flex: 1,
+//   },
+//   emptyGradient: {
+//     flex: 1,
+//     alignItems: "center",
+//     justifyContent: "center",
+//     padding: 24,
+//   },
+//   emptyTitle: {
+//     fontSize: 24,
+//     fontWeight: "700",
+//     color: "#fff",
+//     marginTop: 16,
+//     marginBottom: 8,
+//   },
+//   emptyMessage: {
+//     fontSize: 16,
+//     color: "rgba(255,255,255,0.8)",
+//     textAlign: "center",
+//     marginBottom: 32,
+//   },
+//   emptyButton: {
+//     backgroundColor: "rgba(255,255,255,0.2)",
+//     paddingVertical: 12,
+//     paddingHorizontal: 24,
+//     borderRadius: 12,
+//   },
+//   emptyButtonText: {
+//     color: "#fff",
+//     fontWeight: "600",
+//     fontSize: 16,
+//   },
+//   header: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     justifyContent: "space-between",
+//     paddingHorizontal: 20,
+//     paddingVertical: 16,
+//   },
+//   headerTitle: {
+//     fontSize: 18,
+//     fontWeight: "700",
+//     color: "#fff",
+//   },
+//   exitButton: {
+//     width: 40,
+//     height: 40,
+//     borderRadius: 20,
+//     backgroundColor: "rgba(255,255,255,0.2)",
+//     alignItems: "center",
+//     justifyContent: "center",
+//   },
+//   saveButton: {
+//     width: 40,
+//     height: 40,
+//     borderRadius: 20,
+//     backgroundColor: "rgba(255,255,255,0.2)",
+//     alignItems: "center",
+//     justifyContent: "center",
+//   },
+//   stopwatchContainer: {
+//     paddingVertical: 1,
+//     borderBottomLeftRadius: 24,
+//     borderBottomRightRadius: 24,
+//     shadowColor: "#000",
+//     shadowOffset: { width: 0, height: 2 },
+//     shadowOpacity: 0.05,
+//     shadowRadius: 8,
+//     elevation: 2,
+//   },
+//   listContainer: {
+//     flex: 1,
+//     paddingHorizontal: 20,
+//     paddingTop: 16,
+//   },
+//   listHeader: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     justifyContent: "space-between",
+//     marginBottom: 16,
+//   },
+//   headerActions: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//   },
+//   listTitle: {
+//     fontSize: 20,
+//     fontWeight: "700",
+//   },
+//   countBadge: {
+//     width: 28,
+//     height: 28,
+//     borderRadius: 14,
+//     justifyContent: "center",
+//     alignItems: "center",
+//     marginLeft: 8,
+//   },
+//   countText: {
+//     fontWeight: "700",
+//     fontSize: 14,
+//   },
+//   addExerciseButton: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     paddingHorizontal: 12,
+//     paddingVertical: 6,
+//     borderRadius: 14,
+//     marginLeft: 8,
+//   },
+//   addExerciseText: {
+//     fontWeight: "600",
+//     fontSize: 14,
+//     marginLeft: 4,
+//   },
+//   scrollContainer: {
+//     flex: 1,
+//   },
+//   scrollContent: {
+//     paddingBottom: 24,
+//   },
+//   modalOverlay: {
+//     flex: 1,
+//     justifyContent: "center",
+//     alignItems: "center",
+//     backgroundColor: "rgba(0, 0, 0, 0.5)",
+//     padding: 24,
+//   },
+//   blurView: {
+//     borderRadius: 24,
+//     overflow: "hidden",
+//     width: "100%",
+//   },
+//   confirmModal: {
+//     borderRadius: 24,
+//     padding: 24,
+//     alignItems: "center",
+//     width: "100%",
+//   },
+//   confirmIcon: {
+//     marginBottom: 16,
+//   },
+//   confirmTitle: {
+//     fontSize: 20,
+//     fontWeight: "700",
+//     marginBottom: 8,
+//   },
+//   confirmText: {
+//     fontSize: 16,
+//     textAlign: "center",
+//     marginBottom: 24,
+//   },
+//   templateNameInput: {
+//     width: "100%",
+//     height: 56,
+//     borderRadius: 16,
+//     paddingHorizontal: 16,
+//     marginBottom: 16,
+//     fontSize: 16,
+//   },
+//   confirmButtons: {
+//     flexDirection: "column",
+//     width: "100%",
+//   },
+//   confirmButton: {
+//     height: 56,
+//     borderRadius: 16,
+//     marginVertical: 8,
+//     overflow: "hidden",
+//   },
+//   cancelButton: {
+//     justifyContent: "center",
+//     alignItems: "center",
+//   },
+//   cancelButtonText: {
+//     fontWeight: "600",
+//     fontSize: 16,
+//   },
+//   endButton: {
+//     backgroundColor: "#EF4444",
+//   },
+//   saveTemplateButton: {
+//     backgroundColor: "#6366F1",
+//   },
+//   endButtonGradient: {
+//     width: "100%",
+//     height: "100%",
+//     justifyContent: "center",
+//     alignItems: "center",
+//   },
+//   endButtonText: {
+//     color: "#fff",
+//     fontWeight: "600",
+//     fontSize: 16,
+//   },
+// })
+
+// export default WorkingOut
+
+
+// import React, { useContext, useState, useRef } from 'react';
+// import { 
+//   View, 
+//   Text, 
+//   StyleSheet, 
+//   TouchableOpacity, 
+//   Alert, 
+//   Dimensions,
+//   Animated,
+//   ScrollView,
+//   Platform,
+//   Modal
+// } from 'react-native';
+// import { SafeAreaView } from 'react-native-safe-area-context';
+// import { LinearGradient } from 'expo-linear-gradient';
+// import { Ionicons } from '@expo/vector-icons';
+// import { BlurView } from 'expo-blur';
+// import { WorkoutContext } from '../../context/WorkoutContext'; 
+// import { Workout } from '../../types/types';
+// import { useRouter } from 'expo-router';
+// import Stopwatch from '../../components/Stopwatch';
+// import WorkoutCard from '../../components/WorkoutCard';
+// import WorkoutModal from '../../components/WorkoutModal';
+// import AddExerciseModal from '../../components/AddExerciseModal';
+// import { workouts as allWorkouts } from '../../constants/data';
+// import { StatusBar } from 'expo-status-bar';
+// import * as Haptics from 'expo-haptics';
+// import { FlatList } from 'react-native';
+// import { useTheme, lightTheme, darkTheme } from '../../context/ThemeContext';
+
+// const { width, height } = Dimensions.get('window');
+
+// const WorkingOut: React.FC = () => {
+//   const { workoutPlan, setWorkoutPlan } = useContext(WorkoutContext);
+//   const { isDarkMode } = useTheme();
+//   const colors = isDarkMode ? darkTheme : lightTheme;
+  
+//   const router = useRouter();
+//   const workout_count = workoutPlan.length;
+  
+//   // Animation values
+//   const fadeAnim = useRef(new Animated.Value(0)).current;
+//   const slideAnim = useRef(new Animated.Value(30)).current;
+  
+//   // Modal states
+//   const [addModalVisible, setAddModalVisible] = useState(false);
+//   const [replaceModalVisible, setReplaceModalVisible] = useState(false);
+//   const [workoutToReplace, setWorkoutToReplace] = useState<Workout | null>(null);
+//   const [modalVisible, setModalVisible] = useState<boolean>(false);
+//   const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null);
+//   const [showExitConfirm, setShowExitConfirm] = useState(false);
+
+//   // Animation on mount
+//   React.useEffect(() => {
+//     Animated.parallel([
+//       Animated.timing(fadeAnim, {
+//         toValue: 1,
+//         duration: 600,
+//         useNativeDriver: true,
+//       }),
+//       Animated.timing(slideAnim, {
+//         toValue: 0,
+//         duration: 600,
+//         useNativeDriver: true,
+//       }),
+//     ]).start();
+//   }, []);
+
+//   /** Remove Workout */
+//   const handleRemoveExercise = (workout: Workout) => {
+//     Alert.alert(
+//       "Remove Exercise",
+//       `Are you sure you want to remove ${workout.name}?`,
+//       [
+//         { text: "Cancel", style: "cancel" },
+//         { 
+//           text: "Remove", 
+//           style: "destructive",
+//           onPress: () => {
+//             setWorkoutPlan(workoutPlan.filter(w => w.id !== workout.id));
+            
+//             // Animation for feedback
+//             const updatedPlan = workoutPlan.filter(w => w.id !== workout.id);
+//             setWorkoutPlan(updatedPlan);
+            
+//             // Show toast or feedback
+//             if (Platform.OS === 'ios') {
+//               // Haptic feedback for iOS
+//               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+//             }
+//           } 
+//         }
+//       ]
+//     );
+//   };
+
+//   /** Replace Workout */
+//   const handleReplaceExercise = (workout: Workout) => {
+//     setWorkoutToReplace(workout);
+//     setReplaceModalVisible(true);
+//   };
+
+//   /** Handle new workout selection for replacement */
+//   const handleReplaceWorkoutSelection = (selectedWorkouts: Workout[]) => {
+//     if (!workoutToReplace || selectedWorkouts.length === 0) return;
+
+//     const updatedPlan = workoutPlan.map(w =>
+//       w.id === workoutToReplace.id ? selectedWorkouts[0] : w
+//     );
+
+//     setWorkoutPlan(updatedPlan);
+//     setReplaceModalVisible(false);
+//     setWorkoutToReplace(null);
+//   };
+
+//   /** Handle exit confirmation */
+//   const handleExitPress = () => {
+//     setShowExitConfirm(true);
+//   };
+
+//   /** Handle exit confirmation */
+//   const handleConfirmExit = () => {
+//     router.back();
+//   };
+
+//   if (workoutPlan.length === 0) {
+//     return (
+//       <SafeAreaView style={styles.emptyContainer}>
+//         <LinearGradient
+//           colors={isDarkMode ? ['#FF9500', '#FF5500'] : ['#8B5CF6', '#6366F1', '#3B82F6']}
+//           style={styles.emptyGradient}
+//         >
+//           <Ionicons name="barbell-outline" size={64} color="rgba(255,255,255,0.3)" />
+//           <Text style={styles.emptyTitle}>No Workout Plan</Text>
+//           <Text style={styles.emptyMessage}>
+//             Please generate a workout plan first to start your session
+//           </Text>
+//           <TouchableOpacity 
+//             style={styles.emptyButton}
+//             onPress={() => router.back()}
+//           >
+//             <Text style={styles.emptyButtonText}>Go Back</Text>
+//           </TouchableOpacity>
+//         </LinearGradient>
+//       </SafeAreaView>
+//     );
+//   }
+
+//   return (
+//     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+//       <StatusBar style={colors.statusBar as any} />
+      
+//       {/* Header with Gradient */}
+//       <LinearGradient
+//         colors={isDarkMode ? ['#FF9500', '#FF5500'] : ['#8B5CF6', '#6366F1', '#3B82F6']}
+//         style={styles.header}
+//       >
+//         {/* Exit Button */}
+//         <TouchableOpacity 
+//           style={styles.exitButton} 
+//           onPress={handleExitPress}
+//         >
+//           <Ionicons name="close" size={24} color="#fff" />
+//         </TouchableOpacity>
+        
+//         <Text style={styles.headerTitle}>Workout Session</Text>
+        
+//         {/* Add Button */}
+//         <TouchableOpacity 
+//           style={styles.addButton} 
+//           onPress={() => setAddModalVisible(true)}
+//         >
+//           <Ionicons name="add" size={24} color="#fff" />
+//         </TouchableOpacity>
+//       </LinearGradient>
+
+//       {/* Stopwatch Section */}
+//       <View style={[
+//         styles.stopwatchContainer, 
+//         { 
+//           backgroundColor: colors.card,
+//           borderBottomWidth: isDarkMode ? 1 : 0,
+//           borderBottomColor: colors.border
+//         }
+//       ]}>
+//         <Stopwatch isDarkMode={isDarkMode} />
+//       </View>
+
+//       {/* Workout List Section */}
+//       <Animated.View 
+//         style={[
+//           styles.listContainer,
+//           {
+//             opacity: fadeAnim,
+//             transform: [{ translateY: slideAnim }]
+//           }
+//         ]}
+//       >
+//         <View style={styles.listHeader}>
+//           <Text style={[styles.listTitle, { color: colors.text }]}>Your Exercises</Text>
+//           <View style={[
+//             styles.countBadge, 
+//             { 
+//               backgroundColor: isDarkMode ? 'rgba(255, 149, 0, 0.2)' : '#C7D2FE' 
+//             }
+//           ]}>
+//             <Text style={[
+//               styles.countText, 
+//               { color: isDarkMode ? '#FF9500' : '#4338CA' }
+//             ]}>{workout_count}</Text>
+//           </View>
+//         </View>
+
+//         <FlatList
+//           data={workoutPlan}
+//           keyExtractor={(item) => item.id.toString()}
+//           showsVerticalScrollIndicator={false}
+//           contentContainerStyle={styles.scrollContent}
+//           ListFooterComponent={<View style={{ height: 100 }} />}
+//           renderItem={({ item }) => (
+//             <WorkoutCard
+//               data={[item]} // assuming WorkoutCard accepts an array
+//               showMenu={true}
+//               onPress={() => {
+//                 setSelectedWorkout(item);
+//                 setModalVisible(true);
+//               }}
+//               onAddNote={() => console.log(`Adding note for ${item.name}`)}
+//               onReplaceExercise={handleReplaceExercise}
+//               onRemoveExercise={handleRemoveExercise}
+//               isDarkMode={isDarkMode}
+//             />
+//           )}
+//         />
+//       </Animated.View>
+
+//       {/* Workout Modal */}
+//       <WorkoutModal
+//         visible={modalVisible}
+//         workout={selectedWorkout}
+//         onClose={() => setModalVisible(false)}
+//         isDarkMode={isDarkMode}
+//       />
+      
+//       {/* Add Exercise Modal */}
+//       <AddExerciseModal
+//         visible={addModalVisible}
+//         onClose={() => setAddModalVisible(false)}
+//         workouts={allWorkouts}
+//         onSelectWorkout={(selected) => {
+//           setWorkoutPlan([...workoutPlan, ...selected]);
+//           setAddModalVisible(false);
+//         }}
+//         multipleSelection={true}
+//       />
+
+//       {/* Replace Exercise Modal */}
+//       <AddExerciseModal
+//         visible={replaceModalVisible}
+//         onClose={() => setReplaceModalVisible(false)}
+//         workouts={allWorkouts}
+//         onSelectWorkout={handleReplaceWorkoutSelection}
+//         multipleSelection={false}
+//       />
+      
+//       {/* Exit Confirmation Modal */}
+//       <Modal
+//         animationType="fade"
+//         transparent={true}
+//         visible={showExitConfirm}
+//         onRequestClose={() => setShowExitConfirm(false)}
+//       >
+//         <View style={styles.modalOverlay}>
+//           <BlurView intensity={30} tint="dark" style={styles.blurView}>
+//             <View style={[
+//               styles.confirmModal, 
+//               { 
+//                 backgroundColor: colors.card,
+//                 borderWidth: isDarkMode ? 1 : 0,
+//                 borderColor: colors.border
+//               }
+//             ]}>
+//               <Ionicons 
+//                 name="alert-circle-outline" 
+//                 size={48} 
+//                 color={isDarkMode ? "#FF9500" : "#8B5CF6"} 
+//                 style={styles.confirmIcon} 
+//               />
+//               <Text style={[styles.confirmTitle, { color: colors.text }]}>End Workout?</Text>
+//               <Text style={[styles.confirmText, { color: colors.secondaryText }]}>
+//                 Are you sure you want to end your current workout session? Your progress will be saved.
+//               </Text>
+              
+//               <View style={styles.confirmButtons}>
+//                 <TouchableOpacity 
+//                   style={[
+//                     styles.confirmButton, 
+//                     styles.cancelButton,
+//                     { backgroundColor: isDarkMode ? 'rgba(79, 70, 229, 0.2)' : '#EEF2FF' }
+//                   ]}
+//                   onPress={() => setShowExitConfirm(false)}
+//                 >
+//                   <Text style={[
+//                     styles.cancelButtonText,
+//                     { color: isDarkMode ? '#818CF8' : '#4F46E5' }
+//                   ]}>Continue Workout</Text>
+//                 </TouchableOpacity>
+                
+//                 <TouchableOpacity 
+//                   style={[styles.confirmButton, styles.endButton]}
+//                   onPress={handleConfirmExit}
+//                 >
+//                   <LinearGradient
+//                     colors={['#EF4444', '#DC2626']}
+//                     style={styles.endButtonGradient}
+//                   >
+//                     <Text style={styles.endButtonText}>End Workout</Text>
+//                   </LinearGradient>
+//                 </TouchableOpacity>
+//               </View>
+//             </View>
+//           </BlurView>
+//         </View>
+//       </Modal>
+//     </SafeAreaView>
+//   );
+// };
+
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//   },
+//   emptyContainer: {
+//     flex: 1,
+//   },
+//   emptyGradient: {
+//     flex: 1,
+//     alignItems: 'center',
+//     justifyContent: 'center',
+//     padding: 24,
+//   },
+//   emptyTitle: {
+//     fontSize: 24,
+//     fontWeight: '700',
+//     color: '#fff',
+//     marginTop: 16,
+//     marginBottom: 8,
+//   },
+//   emptyMessage: {
+//     fontSize: 16,
+//     color: 'rgba(255,255,255,0.8)',
+//     textAlign: 'center',
+//     marginBottom: 32,
+//   },
+//   emptyButton: {
+//     backgroundColor: 'rgba(255,255,255,0.2)',
+//     paddingVertical: 12,
+//     paddingHorizontal: 24,
+//     borderRadius: 12,
+//   },
+//   emptyButtonText: {
+//     color: '#fff',
+//     fontWeight: '600',
+//     fontSize: 16,
+//   },
+//   header: {
+//     flexDirection: 'row',
+//     alignItems: 'center',
+//     justifyContent: 'space-between',
+//     paddingHorizontal: 20,
+//     paddingVertical: 16,
+//   },
+//   headerTitle: {
+//     fontSize: 18,
+//     fontWeight: '700',
+//     color: '#fff',
+//   },
+//   exitButton: {
+//     width: 40,
+//     height: 40,
+//     borderRadius: 20,
+//     backgroundColor: 'rgba(255,255,255,0.2)',
+//     alignItems: 'center',
+//     justifyContent: 'center',
+//   },
+//   addButton: {
+//     width: 40,
+//     height: 40,
+//     borderRadius: 20,
+//     backgroundColor: 'rgba(255,255,255,0.2)',
+//     alignItems: 'center',
+//     justifyContent: 'center',
+//   },
+//   stopwatchContainer: {
+//     paddingVertical: 1,
+//     borderBottomLeftRadius: 24,
+//     borderBottomRightRadius: 24,
+//     shadowColor: '#000',
+//     shadowOffset: { width: 0, height: 2 },
+//     shadowOpacity: 0.05,
+//     shadowRadius: 8,
+//     elevation: 2,
+//   },
+//   listContainer: {
+//     flex: 1,
+//     paddingHorizontal: 20,
+//     paddingTop: 16,
+//   },
+//   listHeader: {
+//     flexDirection: 'row',
+//     alignItems: 'center',
+//     marginBottom: 16,
+//   },
+//   listTitle: {
+//     fontSize: 20,
+//     fontWeight: '700',
+//   },
+//   countBadge: {
+//     width: 28,
+//     height: 28,
+//     borderRadius: 14,
+//     justifyContent: 'center',
+//     alignItems: 'center',
+//     marginLeft: 8,
+//   },
+//   countText: {
+//     fontWeight: '700',
+//     fontSize: 14,
+//   },
+//   scrollContainer: {
+//     flex: 1,
+//   },
+//   scrollContent: {
+//     paddingBottom: 24,
+//   },
+//   modalOverlay: {
+//     flex: 1,
+//     justifyContent: 'center',
+//     alignItems: 'center',
+//     backgroundColor: 'rgba(0, 0, 0, 0.5)',
+//     padding: 24,
+//   },
+//   blurView: {
+//     borderRadius: 24,
+//     overflow: 'hidden',
+//     width: '100%',
+//   },
+//   confirmModal: {
+//     borderRadius: 24,
+//     padding: 24,
+//     alignItems: 'center',
+//     width: '100%',
+//   },
+//   confirmIcon: {
+//     marginBottom: 16,
+//   },
+//   confirmTitle: {
+//     fontSize: 20,
+//     fontWeight: '700',
+//     marginBottom: 8,
+//   },
+//   confirmText: {
+//     fontSize: 16,
+//     textAlign: 'center',
+//     marginBottom: 24,
+//   },
+//   confirmButtons: {
+//     flexDirection: 'column',
+//     width: '100%',
+//   },
+//   confirmButton: {
+//     height: 56,
+//     borderRadius: 16,
+//     marginVertical: 8,
+//     overflow: 'hidden',
+//   },
+//   cancelButton: {
+//     justifyContent: 'center',
+//     alignItems: 'center',
+//   },
+//   cancelButtonText: {
+//     fontWeight: '600',
+//     fontSize: 16,
+//   },
+//   endButton: {
+//     backgroundColor: '#EF4444',
+//   },
+//   endButtonGradient: {
+//     width: '100%',
+//     height: '100%',
+//     justifyContent: 'center',
+//     alignItems: 'center',
+//   },
+//   endButtonText: {
+//     color: '#fff',
+//     fontWeight: '600',
+//     fontSize: 16,
+//   },
+// });
+
+// export default WorkingOut;
 
 // import React, { useContext, useState, useRef } from 'react';
 // import { 
