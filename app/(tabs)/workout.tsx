@@ -20,7 +20,7 @@ import WorkoutInfoModal from '../../components/WorkoutInfoModal';
 import CreateExerciseModal from '../../components/CreateExerciseModal'; 
 import { supabase } from '@/src/supabaseClient'; 
 import { useUserProfile } from '@/hooks/useUserProfile'; 
-import { addExerciseToSupabase, getCachedCustomExercises } from '@/lib/exerciseService';
+import { addExerciseToSupabase, fetchCustomExercisesFromSupabase, getCachedCustomExercises } from '@/lib/exerciseService';
 
 
 // Constants
@@ -86,14 +86,27 @@ const WorkoutScreen: React.FC = () => {
   // }, []);
   useEffect(() => {
     const loadCustom = async () => {
-      const cached = await getCachedCustomExercises();
-      const combined = [...allWorkouts, ...cached];
+      const fromDB = await fetchCustomExercisesFromSupabase();
+      const combined = [...allWorkouts, ...fromDB];
       setAllAvailableWorkouts(combined);
       setFilteredWorkouts(combined);
     };
     loadCustom();
   }, []);
   
+  const syncFromSupabase = async () => {
+    setIsLoading(true);
+    try {
+      const fromDB = await fetchCustomExercisesFromSupabase();
+      const combined = [...allWorkouts, ...fromDB];
+      setAllAvailableWorkouts(combined);
+      setFilteredWorkouts(combined);
+    } catch (err) {
+      Alert.alert("Sync Error", "Failed to fetch workouts from database.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
 
   const isFilterActive =
@@ -338,9 +351,15 @@ const WorkoutScreen: React.FC = () => {
         </View> */}
 
         <View style={styles.resultsHeader}>
+          {/* Reload Button */}
+        <TouchableOpacity onPress={syncFromSupabase} style={{ marginRight: 12 }}>
+          <Ionicons name="sync-outline" size={24} color={colors.accent} />
+        </TouchableOpacity>
+
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
             {isLoading ? 'Loading Workouts...' : `Recommended Workouts (${filteredWorkouts.length})`}
           </Text>
+
 
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             {isFilterActive && (
@@ -398,6 +417,9 @@ const WorkoutScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={styles.contentContainer}
+        refreshing={isLoading}
+        onRefresh={syncFromSupabase}
+
       />
       
       {/* Start Workout Button - Floating */}

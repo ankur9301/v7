@@ -63,3 +63,31 @@ interface Exercise {
     }));
   }
   
+
+
+  export async function fetchCustomExercisesFromSupabase(): Promise<Workout[]> {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+  
+    const user = session?.user;
+    if (!user) throw new Error("User not logged in");
+  
+    const { data, error } = await supabase
+      .from("custom_exercises")
+      .select("*")
+      .eq("user_id", user.id);
+  
+    if (error) throw error;
+  
+    const workouts = (data || []).map((item) => ({
+      ...item,
+      isCustom: true,
+    }));
+  
+    // Save to local cache
+    await AsyncStorage.setItem("custom_exercises", JSON.stringify(workouts));
+  
+    return workouts;
+  }
+  
