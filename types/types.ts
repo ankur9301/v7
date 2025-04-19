@@ -1,4 +1,4 @@
-// Update your Workout type to match the structure needed
+// types/types.ts
 export interface Workout {
   id: string | number
   name: string
@@ -9,6 +9,7 @@ export interface Workout {
   reps?: string
   imageUrl?: any
   image?: any
+  isCustom?: boolean;
 }
 
 export interface WorkoutHistory {

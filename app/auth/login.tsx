@@ -54,7 +54,7 @@ const LogIn: React.FC = () => {
         alert("⚠️ Login failed: No user found in database.");
       } else {
         console.log("✅ Login Successful:", data.user);
-        alert("🎉 Login Successful!");
+        // alert("🎉 Login Successful!");
         router.replace("/home"); // Redirect to home page
       }
     } catch (err) {
@@ -117,7 +117,7 @@ const LogIn: React.FC = () => {
       <CustomButton
         text="Continue With Apple"
         icon={appleIcon}
-        onPress={() => router.push("/home")}
+        onPress={() => alert("Apple login not implemented yet")}
         style={{
           backgroundColor: "#FFF",
           width: 400,
@@ -131,7 +131,7 @@ const LogIn: React.FC = () => {
       <CustomButton
         text="Continue With Google"
         icon={googleIcon}
-        onPress={() => router.push("/home")}
+        onPress={() => alert("Google login not implemented yet")}
         style={{
           backgroundColor: "#FFF",
           width: 400,
@@ -145,7 +145,7 @@ const LogIn: React.FC = () => {
       <CustomButton
         text="Continue With Facebook"
         icon={facebookIcon}
-        onPress={() => router.push("/home")}
+        onPress={() => alert("Facebook login not implemented yet")}
         style={{
           backgroundColor: "#FFF",
           width: 400,

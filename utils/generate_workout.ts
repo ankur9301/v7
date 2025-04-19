@@ -8,6 +8,7 @@ interface GenerateWorkoutParams {
   searchQuery: string;
   allWorkouts: Workout[];
   bodyParts: string[];
+  allAvailableWorkouts?: Workout[]
 }
 
 
@@ -28,6 +29,7 @@ export const generateWorkoutPlan = ({
   searchQuery,
   allWorkouts,
   bodyParts,
+  allAvailableWorkouts,
 }: GenerateWorkoutParams): Workout[] => {
   const timeMapping: { [key: string]: number } = {
     '30 Min': 3,
@@ -46,8 +48,8 @@ export const generateWorkoutPlan = ({
   // Filter workouts by selected muscles, equipment, and search query
   let filtered = allWorkouts.filter(
     (workout) =>
-      (selectedMuscles.length === 0 || selectedMuscles.includes(workout.muscle)) &&
-      (selectedEquipment.length === 0 || selectedEquipment.includes(workout.category)) &&
+      (selectedMuscles.length === 0 || selectedMuscles.includes(workout.muscle ?? '')) &&
+      (selectedEquipment.length === 0 || selectedEquipment.includes(workout.category ?? '')) &&
       (searchQuery === '' || workout.name.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 

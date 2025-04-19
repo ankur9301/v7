@@ -13,6 +13,8 @@ const facebookIcon = require("../../assets/icons/facebook-logo.png");
 const SignUp: React.FC = () => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
+  const [username, setUsername] = useState<string>(""); // 👈 add this
+
 
   const router = useRouter();
   
@@ -87,7 +89,7 @@ const handleSignup = async () => {
     if (userId && userEmail) {
       const { error: insertError } = await supabase
         .from('users')
-        .insert({ id: userId, email: userEmail });
+        .insert({ id: userId, email: userEmail, username });
 
       if (insertError) {
         console.error("❌ Failed to insert user to 'users' table:", insertError);
@@ -114,15 +116,14 @@ const handleSignup = async () => {
       </View>
 
       <View style={styles.inputContainer}>
-        <Text style={styles.label}>Username</Text>
-        <TextInput
-          style={styles.input}
-          placeholder=""
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
+      <Text style={styles.label}>Username</Text>
+      <TextInput
+        style={styles.input}
+        placeholder=""
+        value={username} // ✅ use username
+        onChangeText={setUsername}
+      />
+
 
 
         <Text style={[styles.label, { marginTop: 20 }]}>Email Address</Text>
@@ -158,7 +159,7 @@ const handleSignup = async () => {
       <CustomButton
         text="Sign in With Apple"
         icon={appleIcon}
-        onPress={() => router.push("/home")}
+        onPress={() => alert("Apple login not implemented yet")}
         style={{
           backgroundColor: "#FFF",
           width: 400,
@@ -172,7 +173,7 @@ const handleSignup = async () => {
       <CustomButton
         text="Sign in With Google"
         icon={googleIcon}
-        onPress={() => router.push("/home")}
+        onPress={() => alert("Google login not implemented yet")}
         style={{
           backgroundColor: "#FFF",
           width: 400,
@@ -186,7 +187,7 @@ const handleSignup = async () => {
       <CustomButton
         text="Sign in With Facebook"
         icon={facebookIcon}
-        onPress={() => router.push("/home")}
+        onPress={() => alert("Facebook login not implemented yet")}
         style={{
           backgroundColor: "#FFF",
           width: 400,

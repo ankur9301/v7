@@ -14,6 +14,8 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme, lightTheme, darkTheme } from '../../context/ThemeContext';
+import { useUserProfile } from "@/hooks/useUserProfile";
+import { supabase } from "@/src/supabaseClient";
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -21,22 +23,28 @@ export default function ProfileScreen() {
   const colors = isDarkMode ? darkTheme : lightTheme;
   
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const { userData } = useUserProfile();
+
   
-  const handleLogout = () => {
-    Alert.alert(
-      "Logout",
-      "Are you sure you want to logout?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel"
+  const handleLogout = async () => {
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Logout",
+        onPress: async () => {
+          const { error } = await supabase.auth.signOut();
+  
+          if (error) {
+            console.error("Logout failed:", error.message);
+          } else {
+            router.replace("/auth/login"); // or your actual login screen
+          }
         },
-        { 
-          text: "Logout", 
-          onPress: () => router.replace('/') 
-        }
-      ]
-    );
+      },
+    ]);
   };
 
   return (
@@ -57,8 +65,12 @@ export default function ProfileScreen() {
             source={require('../../assets/images/profile.jpg')} 
             style={styles.profileImage}
           />
-          <Text style={[styles.profileName, { color: colors.text }]}>John Doe</Text>
-          <Text style={[styles.profileEmail, { color: colors.secondaryText }]}>john.doe@example.com</Text>
+          <Text style={[styles.profileName, { color: colors.text }]}>
+            {userData?.username || "Loading..."}
+          </Text>
+          <Text style={[styles.profileEmail, { color: colors.secondaryText }]}>
+            {userData?.email}
+          </Text>
           
           <TouchableOpacity style={[styles.editProfileButton, { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : '#f0f0f0' }]}>
             <Text style={[styles.editProfileText, { color: colors.text }]}>Edit Profile</Text>

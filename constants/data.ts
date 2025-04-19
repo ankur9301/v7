@@ -1,3 +1,4 @@
+// constants/data.ts
 export const workouts = [
   // CORE (1-10)
   { id: 1, name: 'Jumping Jacks', muscle: 'Core', category: 'Pre_warmup', level: 'Beginner', image: 'jumping_jacks' },

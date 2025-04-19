@@ -11,7 +11,7 @@ const imageHelpers: { [key: string]: any } = {
 
 export const getWorkoutImage = (name: string) => {
   const key = name.toLowerCase().replace(/ /g, '_');
-  return imageHelpers[key] || require('../assets/workout_images/sample.png');
+  return imageHelpers[key] || require('@/assets/workout_images/sample.png');
 };
 
 

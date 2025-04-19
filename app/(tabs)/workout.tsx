@@ -17,6 +17,11 @@ import { WorkoutContext } from '../../context/WorkoutContext';
 import { StatusBar } from 'expo-status-bar';
 import { useTheme, lightTheme, darkTheme } from '../../context/ThemeContext';
 import WorkoutInfoModal from '../../components/WorkoutInfoModal';
+import CreateExerciseModal from '../../components/CreateExerciseModal'; 
+import { supabase } from '@/src/supabaseClient'; 
+import { useUserProfile } from '@/hooks/useUserProfile'; 
+import { addExerciseToSupabase, getCachedCustomExercises } from '@/lib/exerciseService';
+
 
 // Constants
 const TIMES = ['30 Min', '45 Min', '60 Min', '90 Min', '120 Min'];
@@ -32,6 +37,10 @@ const WorkoutScreen: React.FC = () => {
   const colors = isDarkMode ? darkTheme : lightTheme;
   
   const windowWidth = Dimensions.get('window').width;
+  const { userData } = useUserProfile();
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createModalVisible, setCreateModalVisible] = useState(false);
+
   
   // Animation values
   const fadeAnim = useState(new Animated.Value(0))[0];
@@ -44,6 +53,7 @@ const WorkoutScreen: React.FC = () => {
   const [selectedEquipment, setSelectedEquipment] = useState<string[]>([]);
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
   const [filteredWorkouts, setFilteredWorkouts] = useState<Workout[]>(allWorkouts);
+  const [allAvailableWorkouts, setAllAvailableWorkouts] = useState<Workout[]>([...allWorkouts]);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentWorkoutPlan, setCurrentWorkoutPlan] = useState<Workout[]>([]);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
@@ -66,6 +76,25 @@ const WorkoutScreen: React.FC = () => {
       }),
     ]).start();
   }, []);
+
+  // useEffect(() => {
+  //   const loadCustom = async () => {
+  //     const cached = await getCachedCustomExercises();
+  //     setFilteredWorkouts([...allWorkouts, ...cached]);
+  //   };
+  //   loadCustom();
+  // }, []);
+  useEffect(() => {
+    const loadCustom = async () => {
+      const cached = await getCachedCustomExercises();
+      const combined = [...allWorkouts, ...cached];
+      setAllAvailableWorkouts(combined);
+      setFilteredWorkouts(combined);
+    };
+    loadCustom();
+  }, []);
+  
+  
 
   const isFilterActive =
     !!selectedTime || selectedMuscles.length > 0 || selectedEquipment.length > 0 || !!selectedLevel;
@@ -121,14 +150,16 @@ const WorkoutScreen: React.FC = () => {
   useEffect(() => {
     const applyFilters = async () => {
       setIsLoading(true);
-      let filtered = allWorkouts;
+      // let filtered = allWorkouts;
+      let filtered = allAvailableWorkouts;
+
       
       if (selectedMuscles.length > 0) {
-        filtered = filtered.filter(workout => selectedMuscles.includes(workout.muscle));
+        filtered = filtered.filter(workout => workout.muscle && selectedMuscles.includes(workout.muscle));
       }
       
       if (selectedEquipment.length > 0) {
-        filtered = filtered.filter(workout => selectedEquipment.includes(workout.category));
+        filtered = filtered.filter(workout => selectedEquipment.includes(workout.category ?? ''));
       }
       
       if (selectedLevel) {
@@ -142,9 +173,10 @@ const WorkoutScreen: React.FC = () => {
             selectedMuscles,
             selectedEquipment,
             searchQuery,
-            allWorkouts,
+            allWorkouts: allAvailableWorkouts, 
             bodyParts,
           });
+          
           
           setFilteredWorkouts(plan);
           setCurrentWorkoutPlan(plan);
@@ -192,6 +224,79 @@ const WorkoutScreen: React.FC = () => {
     setSelectedWorkout(null);
   };
 
+  // const handleCreateExercise = async (exercise: { name: string; muscle: string; category: string; level: string }) => {
+  //   try {
+  //     const newExercise: Workout = {
+  //       id: Date.now(), // Generate a unique ID
+  //       ...exercise,
+  //     };
+      
+  //     const { data, error } = await supabase
+  //       .from('custom_exercises')
+  //       .insert([{ ...newExercise, user_id: userData?.id }]);
+  
+  //     if (error) throw error;
+  
+  //     // Merge it with local workouts
+  //     setFilteredWorkouts(prev => [...prev, { ...exercise, id: Date.now() }]);
+  //     setWorkoutPlan([...currentWorkoutPlan, { ...exercise, id: Date.now() }]);
+  //     Alert.alert("Success", "New exercise created!");
+  //   } catch (err: any) {
+  //     Alert.alert("Error", err.message || "Could not create exercise.");
+  //   }
+  // };
+  // const handleCreateExercise = async (exercise: { name: string; muscle: string; category: string; level: string }) => {
+  //   try {
+  //     const savedExercise = await addExerciseToSupabase(exercise);
+  
+  //     // Add to current workouts list
+  //     setFilteredWorkouts(prev => [...prev, savedExercise]);
+  //     setWorkoutPlan([...currentWorkoutPlan, savedExercise]);
+  
+  //     Alert.alert("Success", "New exercise created!");
+  //   } catch (err: any) {
+  //     Alert.alert("Error", err.message || "Could not create exercise.");
+  //   }
+  // };
+  
+  const handleCreateExercise = async (exercise: { name: string; muscle: string; category: string; level: string }) => {
+    try {
+      const savedExercise = await addExerciseToSupabase(exercise);
+      const customExercise = { ...savedExercise, isCustom: true }; // 🆕
+  
+      setAllAvailableWorkouts(prev => [...prev, customExercise]);
+      setFilteredWorkouts(prev => [...prev, customExercise]);
+      setWorkoutPlan([...currentWorkoutPlan, customExercise]);
+  
+      Alert.alert("Success", "New exercise created!");
+    } catch (err: any) {
+      Alert.alert("Error", err.message || "Could not create exercise.");
+    }
+  };
+  
+
+  const handleDeleteExercise = async (workout: Workout) => {
+    try {
+      // Remove from Supabase
+      await supabase
+        .from('custom_exercises')
+        .delete()
+        .eq('id', workout.id);
+  
+      // Remove from state
+      const updatedList = allAvailableWorkouts.filter(w => w.id !== workout.id);
+      setAllAvailableWorkouts(updatedList);
+      setFilteredWorkouts(prev => prev.filter(w => w.id !== workout.id));
+      setWorkoutPlan(allAvailableWorkouts.filter((w: Workout) => w.id !== workout.id));
+  
+      Alert.alert("Deleted", `${workout.name} has been removed.`);
+    } catch (error: any) {
+      Alert.alert("Error", error.message || "Failed to delete workout.");
+    }
+  };
+  
+  
+
   const renderContent = () => (
     <>
       {/* Filters Section */}
@@ -221,7 +326,7 @@ const WorkoutScreen: React.FC = () => {
       
       {/* Results Section */}
       <View style={styles.resultsSection}>
-        <View style={styles.resultsHeader}>
+        {/* <View style={styles.resultsHeader}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
             {isLoading ? 'Loading Workouts...' : `Recommended Workouts (${filteredWorkouts.length})`}
           </Text>
@@ -230,13 +335,33 @@ const WorkoutScreen: React.FC = () => {
               <Text style={[styles.clearText, { color: colors.accent }]}>Clear all</Text>
             </TouchableOpacity>
           )}
+        </View> */}
+
+        <View style={styles.resultsHeader}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            {isLoading ? 'Loading Workouts...' : `Recommended Workouts (${filteredWorkouts.length})`}
+          </Text>
+
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            {isFilterActive && (
+              <TouchableOpacity onPress={clearAllFilters}>
+                <Text style={[styles.clearText, { color: colors.accent, marginRight: 12 }]}>Clear all</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity onPress={() => setShowCreateModal(true)}>
+              <Ionicons name="add-circle-outline" size={26} color={colors.accent} />
+            </TouchableOpacity>
+          </View>
         </View>
+
         
         <WorkoutCard 
           data={filteredWorkouts} 
           onPress={handleWorkoutPress}
+          onRemoveExercise={handleDeleteExercise} // 🆕
           isDarkMode={isDarkMode}
         />
+
       </View>
     </>
   );
@@ -362,6 +487,13 @@ const WorkoutScreen: React.FC = () => {
         onClose={handleModalClose}
         isDarkMode={isDarkMode}
       />
+
+<CreateExerciseModal
+  visible={showCreateModal}
+  onClose={() => setShowCreateModal(false)}
+  onSubmit={handleCreateExercise}
+/>
+
     </SafeAreaView>
   );
 };

@@ -52,7 +52,12 @@ const WorkoutDetailsModal: React.FC<WorkoutDetailsModalProps> = ({ visible, onCl
   
   const handleStartWorkout = () => {
     // Set the workout plan in context
-    setWorkoutPlan(workout.exercises);
+    setWorkoutPlan(
+      workout.exercises.map((exercise) => ({
+        ...exercise,
+        reps: exercise.reps ? exercise.reps.toString() : undefined,
+      }))
+    );
     
     // Close the modal
     onClose();

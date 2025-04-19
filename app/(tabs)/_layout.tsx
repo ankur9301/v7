@@ -7,9 +7,21 @@ import { icons } from '../../constants/icons';
 import { Image } from 'react-native';
 import { useTheme, lightTheme, darkTheme } from '../../context/ThemeContext';
 
+import { useAuth } from "@/context/AuthContext";
+import { Redirect, Stack } from "expo-router";
+
+
 export default function TabLayout() {
   const { isDarkMode, theme } = useTheme();
   const colors = isDarkMode ? darkTheme : lightTheme;
+  const { session, loading } = useAuth();
+
+  // 👉 While Supabase is still checking for session, show nothing (or loading spinner)
+  if (loading) return null;
+
+  // ❌ If session is not found after loading
+  if (!session) return <Redirect href="/auth/login" />;
+
 
   return (
     <Tabs
