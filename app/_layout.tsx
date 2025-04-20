@@ -1,5 +1,5 @@
 // app/_layout.tsx
-import React from "react";
+import React, { useEffect } from "react";
 import { Stack } from "expo-router";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { StyleSheet } from "react-native";
@@ -8,9 +8,32 @@ import { WorkoutProvider } from "../context/WorkoutContext"; // Adjust the path 
 // import { AuthProvider } from "@/context/AuthProvider";
 import { ThemeProvider } from "../context/ThemeContext";
 import { AuthProvider } from "@/context/AuthContext";
+import { supabase } from "@/src/supabaseClient";
+import { useUserStore } from "@/store/useUserStore";
 
 
 export default function RootLayout() {
+  useEffect(() => {
+    const loadUser = async () => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const user = sessionData?.session?.user;
+  
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+  
+        if (profile) {
+          useUserStore.getState().setUser(profile);
+        }
+      }
+    };
+  
+    loadUser();
+  }, []);
+  
   return (
     <GestureHandlerRootView style={styles.container}>
       <ThemeProvider>

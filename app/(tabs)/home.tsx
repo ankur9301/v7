@@ -20,7 +20,8 @@ import { useTheme, lightTheme, darkTheme } from '@/context/ThemeContext';
 import { useRouter } from 'expo-router';
 import { workouts } from '@/constants/data';
 import WorkoutDetailsModal from '@/components/WorkoutDetailsModal';
-import { useUserProfile } from "@/hooks/useUserProfile";
+import { useUserStore } from '@/store/useUserStore';
+
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.7;
@@ -151,7 +152,7 @@ const HomeScreen = () => {
   const { isDarkMode } = useTheme();
   const colors = isDarkMode ? darkTheme : lightTheme;
   const router = useRouter();
-  const { userData } = useUserProfile();
+  const { user } = useUserStore();
   
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [scrollY] = useState(new Animated.Value(0));
@@ -359,7 +360,7 @@ const HomeScreen = () => {
           />
           <View style={styles.userTextContainer}>
           <Text style={[styles.userName, { color: colors.text }]}>
-            {userData?.username || "Welcome!"}
+            {user?.username || "Welcome!"}
           </Text>
             <Text style={[styles.userStatus, { color: colors.secondaryText }]}>Get Ready 🔥</Text>
           </View>

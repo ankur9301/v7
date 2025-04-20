@@ -165,33 +165,33 @@ const WorkoutCard: React.FC<WorkoutCardProps> = ({
                       </View>
                     </View>
                     {showMenu ? (
-  <TouchableOpacity
-    style={[styles.menuIcon, { backgroundColor: isDarkMode ? '#222' : '#f3f4f6' }]}
-    onPress={(event) => handleMenuPress(item, event)}
-  >
-    <Ionicons name="ellipsis-vertical" size={20} color={isDarkMode ? "#999" : "#6b7280"} />
-  </TouchableOpacity>
-) : item.isCustom && onRemoveExercise ? (
-  <TouchableOpacity
-    style={[styles.menuIcon, { backgroundColor: isDarkMode ? '#222' : '#f3f4f6' }]}
-    onPress={() => {
-      Alert.alert(
-        "Delete Custom Exercise",
-        `Are you sure you want to delete "${item.name}"?`,
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Delete",
-            onPress: () => onRemoveExercise?.(item),
-            style: "destructive",
-          },
-        ]
-      );
-    }}
-  >
-    <Ionicons name="trash-outline" size={20} color={isDarkMode ? "#f87171" : "#ef4444"} />
-  </TouchableOpacity>
-) : null}
+                      <TouchableOpacity
+                        style={[styles.menuIcon, { backgroundColor: isDarkMode ? '#222' : '#f3f4f6' }]}
+                        onPress={(event) => handleMenuPress(item, event)}
+                      >
+                        <Ionicons name="ellipsis-vertical" size={20} color={isDarkMode ? "#999" : "#6b7280"} />
+                      </TouchableOpacity>
+                    ) : item.isCustom && onRemoveExercise ? (
+                      <TouchableOpacity
+                        style={[styles.menuIcon, { backgroundColor: isDarkMode ? '#222' : '#f3f4f6' }]}
+                        onPress={() => {
+                          Alert.alert(
+                            "Delete Custom Exercise",
+                            `Are you sure you want to delete "${item.name}"?`,
+                            [
+                              { text: "Cancel", style: "cancel" },
+                              {
+                                text: "Delete",
+                                onPress: () => onRemoveExercise?.(item),
+                                style: "destructive",
+                              },
+                            ]
+                          );
+                        }}
+                      >
+                        <Ionicons name="trash-outline" size={20} color={isDarkMode ? "#f87171" : "#ef4444"} />
+                      </TouchableOpacity>
+                    ) : null}
 
 
 

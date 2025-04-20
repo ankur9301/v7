@@ -8,7 +8,8 @@ import {
   Modal,
   Dimensions,
   Easing,
-  Platform
+  Platform,
+  TextInput
 } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
@@ -42,6 +43,8 @@ const Stopwatch: React.FC<StopwatchProps> = ({ isDarkMode = false }) => {
   const progressAnimation = useRef(new Animated.Value(0)).current;
   const pulseAnimation = useRef(new Animated.Value(1)).current;
   const buttonScaleAnim = useRef(new Animated.Value(1)).current;
+  const [workoutName, setWorkoutName] = useState('');
+
   const router = useRouter();
 
   // Calculate calories burned (rough estimate)
@@ -166,11 +169,14 @@ const Stopwatch: React.FC<StopwatchProps> = ({ isDarkMode = false }) => {
 
   // Handle Log Workout Button Press
   const handleLogWorkoutPress = async () => {
-    // Get logged-in user
+    if (!workoutName.trim()) {
+      alert("Please enter a workout name.");
+      return;
+    }
+  
     const { data: userData, error: userError } = await supabase.auth.getUser();
   
     if (userError || !userData?.user) {
-      console.error("No user found, cannot log workout.");
       alert("You must be logged in to log a workout.");
       return;
     }
@@ -179,7 +185,7 @@ const Stopwatch: React.FC<StopwatchProps> = ({ isDarkMode = false }) => {
       const { error } = await supabase.from("workouts").insert([
         {
           user_id: userData.user.id,
-          workout_name: "Custom Workout",
+          workout_name: workoutName.trim(),
           duration: time,
           calories_burned: calories,
           logged_at: new Date(),
@@ -187,20 +193,19 @@ const Stopwatch: React.FC<StopwatchProps> = ({ isDarkMode = false }) => {
       ]);
   
       if (error) {
-        console.error("Error logging workout:", error.message);
         alert("Workout log failed: " + error.message);
       } else {
-        console.log("Workout logged successfully!");
         alert("Workout logged successfully!");
         setTime(0);
         setModalVisible(false);
-        router.push('/workout');
+        setWorkoutName(""); // Reset field
+        router.push("/workout"); // Go to history
       }
     } catch (err) {
-      console.error("Unexpected Error:", err);
       alert("An unexpected error occurred.");
     }
   };
+  
 
   // Calculate stroke dashoffset for progress circle
   const strokeDashoffset = progressAnimation.interpolate({
@@ -399,35 +404,58 @@ const Stopwatch: React.FC<StopwatchProps> = ({ isDarkMode = false }) => {
                 </View>
               </View>
               
-              <View style={styles.modalButtons}>
-                <TouchableOpacity
-                  style={[
-                    styles.modalButton, 
-                    styles.resumeButton,
-                    { backgroundColor: isDarkMode ? 'rgba(79, 70, 229, 0.2)' : '#EEF2FF' }
-                  ]}
-                  onPress={handleResumePress}
-                >
-                  <Text style={[
-                    styles.resumeButtonText,
-                    { color: isDarkMode ? '#818CF8' : '#4F46E5' }
-                  ]}>Resume</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.logWorkoutButton]}
-                  onPress={handleLogWorkoutPress}
-                >
-                  <ExpoLinearGradient
-                    colors={isDarkMode ? ['#FF9500', '#FF5500'] : ['#8B5CF6', '#3B82F6']}
-                    style={styles.logButtonGradient}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                  >
-                    <Text style={styles.logWorkoutButtonText}>Log Workout</Text>
-                  </ExpoLinearGradient>
-                </TouchableOpacity>
-              </View>
+              {/* Workout name input ABOVE buttons */}
+<TextInput
+  style={[
+    styles.templateNameInput,
+    {
+      backgroundColor: isDarkMode ? 'rgba(31, 41, 55, 0.5)' : '#F9FAFB',
+      borderWidth: isDarkMode ? 1 : 0,
+      borderColor: colors.border,
+      color: colors.text,
+    }
+  ]}
+  placeholder="Enter workout name"
+  placeholderTextColor={colors.secondaryText}
+  value={workoutName}
+  onChangeText={setWorkoutName}
+/>
+
+{/* Buttons grouped below the input */}
+<View style={styles.modalButtons}>
+  <TouchableOpacity
+    style={[
+      styles.modalButton,
+      styles.resumeButton,
+      { backgroundColor: isDarkMode ? 'rgba(79, 70, 229, 0.2)' : '#EEF2FF' },
+    ]}
+    onPress={handleResumePress}
+  >
+    <Text
+      style={[
+        styles.resumeButtonText,
+        { color: isDarkMode ? '#818CF8' : '#4F46E5' },
+      ]}
+    >
+      Resume
+    </Text>
+  </TouchableOpacity>
+
+  <TouchableOpacity
+    style={[styles.modalButton, styles.logWorkoutButton]}
+    onPress={handleLogWorkoutPress}
+  >
+    <ExpoLinearGradient
+      colors={isDarkMode ? ['#FF9500', '#FF5500'] : ['#8B5CF6', '#3B82F6']}
+      style={styles.logButtonGradient}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 0 }}
+    >
+      <Text style={styles.logWorkoutButtonText}>Log Workout</Text>
+    </ExpoLinearGradient>
+  </TouchableOpacity>
+</View>
+
             </View>
           </BlurView>
         </View>
@@ -441,6 +469,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 12,
+  },
+  templateNameInput: {
+    padding: 12,
+    borderRadius: 8,
+    fontSize: 16,
+    marginVertical: 8,
   },
   verticalContainer: {
     alignItems: 'center',

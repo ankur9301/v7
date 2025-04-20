@@ -5,7 +5,7 @@ import { SafeAreaView, View, Text, TextInput, StyleSheet, Pressable, Animated } 
 import { useRouter } from "expo-router";
 import CustomButton from "@/components/buttons";
 import { supabase } from '@/src/supabaseClient';
-
+import { useUserStore } from "@/store/useUserStore";
 
 const appleIcon = require("../../assets/icons/apple-logo.png");
 const googleIcon = require("../../assets/icons/google-logo.png");
@@ -36,8 +36,6 @@ const LogIn: React.FC = () => {
   //   }
   // };
   const handleLogin = async () => {
-    console.log("📢 Attempting login with email:", email);
-  
     if (!email || !password) {
       alert("⚠️ Please enter both email and password.");
       return;
@@ -46,17 +44,28 @@ const LogIn: React.FC = () => {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   
-      if (error) {
-        console.error("❌ Login Error:", error.message);
-        alert("⚠️ Login failed: " + error.message);
-      } else if (!data.user) {
-        console.error("🚨 No user returned from Supabase!");
-        alert("⚠️ Login failed: No user found in database.");
-      } else {
-        console.log("✅ Login Successful:", data.user);
-        // alert("🎉 Login Successful!");
-        router.replace("/home"); // Redirect to home page
+      if (error || !data.user) {
+        alert("❌ Login failed: " + (error?.message || "No user found"));
+        return;
       }
+  
+      // ✅ Fetch user profile from Supabase
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", data.user.id)
+        .single();
+  
+      if (profileError || !profileData) {
+        alert("❌ Failed to fetch profile: " + (profileError?.message || ""));
+        return;
+      }
+  
+      // ✅ Store in Zustand
+      useUserStore.getState().setUser(profileData);
+  
+      // ✅ Redirect
+      router.replace("/home");
     } catch (err) {
       console.error("🚨 Unexpected Error:", err);
       alert("⚠️ An unexpected error occurred.");

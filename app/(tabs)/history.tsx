@@ -486,9 +486,6 @@ const WorkoutHistoryScreen = () => {
   }
 
   const renderTemplateItem = ({ item, index }: { item: WorkoutTemplate; index: number }) => {
-    // Calculate animation delay based on index
-    const animationDelay = index * 100
-
     return (
       <Animated.View
         style={{
@@ -498,7 +495,7 @@ const WorkoutHistoryScreen = () => {
       >
         <TouchableOpacity
           style={[
-            styles.historyCard,
+            styles.historyCard, // Reuse historyCard style
             {
               backgroundColor: colors.card,
               borderWidth: isDarkMode ? 1 : 0,
@@ -508,8 +505,6 @@ const WorkoutHistoryScreen = () => {
           onPress={() => {
             setSelectedItem(item)
             setDetailModalVisible(true)
-
-            // Provide haptic feedback
             if (Platform.OS === "ios") {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
             }
@@ -517,47 +512,105 @@ const WorkoutHistoryScreen = () => {
           activeOpacity={0.7}
         >
           <LinearGradient
-            colors={isDarkMode ? ["#FF9500", "#FF5500"] : ["#8B5CF6", "#6366F1"]}
+            colors={
+              isDarkMode
+                ? ["rgba(255,149,0,0.15)", "rgba(255,85,0,0.05)"]
+                : ["rgba(139,92,246,0.15)", "rgba(99,102,241,0.05)"]
+            }
             style={styles.cardGradient}
           >
-            <View style={styles.templateContent}>
-              <Text style={styles.historyCardTitle}>{item.title}</Text>
-              <View style={styles.templateStats}>
-                <View style={styles.templateStat}>
-                  <Ionicons name="barbell-outline" size={16} color="#fff" />
-                  <Text style={styles.templateStatText}>{item.workouts.length} exercises</Text>
-                </View>
-              </View>
-
-              <View style={styles.templateWorkouts}>
-                {item.workouts.slice(0, 3).map((workout, index) => (
-                  <View key={workout.id.toString()} style={styles.workoutPreviewItem}>
-                    <Text style={styles.workoutPreviewText} numberOfLines={1}>
-                      {index + 1}. {workout.name}
-                    </Text>
-                  </View>
-                ))}
-                {item.workouts.length > 3 && (
-                  <View style={styles.templateWorkoutItem}>
-                    <Text style={styles.templateWorkoutText}>+{item.workouts.length - 3} more</Text>
-                  </View>
-                )}
-              </View>
-
-              <TouchableOpacity
-                style={styles.startHistoryButton}
-                onPress={() => handleStartWorkout(item.workouts)}
-                activeOpacity={0.8}
+            <View style={styles.historyCardHeader}>
+              <Text style={[styles.historyCardTitle, { color: colors.text }]}>
+                {item.title}
+              </Text>
+              <View
+                style={[
+                  styles.durationBadge,
+                  {
+                    backgroundColor: isDarkMode
+                      ? "rgba(255, 149, 0, 0.2)"
+                      : "rgba(99, 102, 241, 0.1)",
+                  },
+                ]}
               >
-                <Ionicons name="play" size={16} color="#fff" style={styles.startTemplateIcon} />
-                <Text style={styles.startTemplateButtonText}>Start Workout</Text>
-              </TouchableOpacity>
+                <Ionicons name="barbell-outline" size={14} color={isDarkMode ? "#FF9500" : "#6366F1"} />
+                <Text style={[styles.durationText, { color: isDarkMode ? "#FF9500" : "#6366F1" }]}>
+                  {item.workouts.length} exercises
+                </Text>
+              </View>
             </View>
+  
+            <View style={styles.workoutPreview}>
+              {item.workouts.slice(0, 3).map((workout, index) => (
+                <View
+                  key={workout.id.toString()}
+                  style={[
+                    styles.workoutPreviewItem,
+                    {
+                      backgroundColor: isDarkMode ? "rgba(31, 41, 55, 0.5)" : "#f9fafb",
+                      borderWidth: isDarkMode ? 1 : 0,
+                      borderColor: colors.border,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.workoutPreviewText, { color: colors.text }]} numberOfLines={1}>
+                    {index + 1}. {workout.name}
+                  </Text>
+                </View>
+              ))}
+  
+              {item.workouts.length > 3 && (
+                <View
+                  style={[
+                    styles.workoutPreviewItem,
+                    {
+                      backgroundColor: isDarkMode
+                        ? "rgba(255, 149, 0, 0.2)"
+                        : "rgba(99, 102, 241, 0.1)",
+                      borderWidth: 0,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.workoutPreviewText,
+                      { color: isDarkMode ? "#FF9500" : "#6366F1" },
+                    ]}
+                  >
+                    +{item.workouts.length - 3} more
+                  </Text>
+                </View>
+              )}
+            </View>
+  
+            <TouchableOpacity
+              style={[
+                styles.startHistoryButton,
+                {
+                  backgroundColor: isDarkMode
+                    ? "rgba(255, 149, 0, 0.2)"
+                    : "rgba(99, 102, 241, 0.1)",
+                },
+              ]}
+              onPress={() => handleStartWorkout(item.workouts)}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="play" size={16} color={isDarkMode ? "#FF9500" : "#6366F1"} />
+              <Text
+                style={[
+                  styles.startHistoryButtonText,
+                  { color: isDarkMode ? "#FF9500" : "#6366F1" },
+                ]}
+              >
+                Start Workout
+              </Text>
+            </TouchableOpacity>
           </LinearGradient>
         </TouchableOpacity>
       </Animated.View>
     )
   }
+  
 
   const renderCreateTemplateCard = () => (
     <Animated.View

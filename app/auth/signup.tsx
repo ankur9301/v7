@@ -5,6 +5,8 @@ import { SafeAreaView, View, Text, TextInput, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import CustomButton from "@/components/buttons";
 import { supabase } from '@/src/supabaseClient';
+import { useUserStore } from "@/store/useUserStore";
+
 
 const appleIcon = require("../../assets/icons/apple-logo.png");
 const googleIcon = require("../../assets/icons/google-logo.png");
@@ -18,91 +20,48 @@ const SignUp: React.FC = () => {
 
   const router = useRouter();
   
-  // const handleSignup = async (email: string, password: string) => {
-  //   const { data, error } = await supabase.auth.signUp({ email, password });
-  
-  //   if (error) {
-  //     console.error('Signup Error:', error.message);
-  //   } else {
-  //     console.log('User signed up:', data);
-  //   }
-  // };
 
-//   const handleSignup = async () => {
-//     console.log("📢 Attempting signup with email:", email);
-  
-//     if (!email || !password) {
-//       alert("⚠️ Please enter both email and password.");
-//       return;
-//     }
-  
-//     try {
-//       const { data, error } = await supabase.auth.signUp({ email, password });
-//       const userId = data.user?.id;
-// const userEmail = data.user?.email;
-
-// if (userId && userEmail) {
-//   const { error: insertError } = await supabase
-//     .from('users')
-//     .insert({ id: userId, email: userEmail });
-
-//   if (insertError) {
-//     console.error("❌ Failed to insert user to 'users' table:", insertError);
-//   } else {
-//     alert("🎉 Signup Successful! Please log in.");
-//     router.replace("/auth/login");
-//   }
-// }
-
-  
-//       if (error) {
-//         console.error("❌ Signup Error:", error.message);
-//         alert("⚠️ Signup failed: " + error.message);
-//       } else {
-//         console.log("✅ Signup Successful:", data);
-//         alert("🎉 Signup Successful! Please log in.");
-//         router.replace("/auth/login"); // ✅ Redirect to login instead of home
-//       }
-//     } catch (err) {
-//       console.error("🚨 Unexpected Error:", err);
-//       alert("⚠️ An unexpected error occurred.");
-//     }
-//   };
-  
-const handleSignup = async () => {
-  if (!email || !password) {
-    alert("⚠️ Please enter both email and password.");
-    return;
-  }
-
-  try {
-    const { data, error } = await supabase.auth.signUp({ email, password });
-
-    if (error) {
-      alert("Signup failed: " + error.message);
+  const handleSignup = async () => {
+    if (!email || !password || !username) {
+      alert("⚠️ Please fill all fields.");
       return;
     }
-
-    const userId = data.user?.id;
-    const userEmail = data.user?.email;
-
-    if (userId && userEmail) {
-      const { error: insertError } = await supabase
-        .from('users')
-        .insert({ id: userId, email: userEmail, username });
-
-      if (insertError) {
-        console.error("❌ Failed to insert user to 'users' table:", insertError);
-      } else {
-        alert("🎉 Signup Successful! Please log in.");
-        router.replace("/auth/login");
+  
+    try {
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password });
+  
+      if (signUpError) {
+        alert("Signup failed: " + signUpError.message);
+        return;
       }
+  
+      const userId = signUpData.user?.id;
+  
+      if (userId) {
+        const { error: insertError } = await supabase.from("profiles").insert({
+          id: userId,
+          email,
+          username,
+        });
+  
+        if (insertError) {
+          alert("Profile save error: " + insertError.message);
+          return;
+        }
+  
+        // ✅ Zustand: store user
+        useUserStore.getState().setUser({ id: userId, email, username });
+  
+        // ✅ Route to home
+        router.replace("/home");
+      }
+    } catch (err) {
+      alert("An unexpected error occurred.");
+      console.error("🚨", err);
     }
-  } catch (err) {
-    alert("An unexpected error occurred.");
-    console.error("🚨", err);
-  }
-};
+  };
+  
+  
 
 
   return (

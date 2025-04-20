@@ -236,41 +236,6 @@ const WorkoutScreen: React.FC = () => {
     setModalVisible(false);
     setSelectedWorkout(null);
   };
-
-  // const handleCreateExercise = async (exercise: { name: string; muscle: string; category: string; level: string }) => {
-  //   try {
-  //     const newExercise: Workout = {
-  //       id: Date.now(), // Generate a unique ID
-  //       ...exercise,
-  //     };
-      
-  //     const { data, error } = await supabase
-  //       .from('custom_exercises')
-  //       .insert([{ ...newExercise, user_id: userData?.id }]);
-  
-  //     if (error) throw error;
-  
-  //     // Merge it with local workouts
-  //     setFilteredWorkouts(prev => [...prev, { ...exercise, id: Date.now() }]);
-  //     setWorkoutPlan([...currentWorkoutPlan, { ...exercise, id: Date.now() }]);
-  //     Alert.alert("Success", "New exercise created!");
-  //   } catch (err: any) {
-  //     Alert.alert("Error", err.message || "Could not create exercise.");
-  //   }
-  // };
-  // const handleCreateExercise = async (exercise: { name: string; muscle: string; category: string; level: string }) => {
-  //   try {
-  //     const savedExercise = await addExerciseToSupabase(exercise);
-  
-  //     // Add to current workouts list
-  //     setFilteredWorkouts(prev => [...prev, savedExercise]);
-  //     setWorkoutPlan([...currentWorkoutPlan, savedExercise]);
-  
-  //     Alert.alert("Success", "New exercise created!");
-  //   } catch (err: any) {
-  //     Alert.alert("Error", err.message || "Could not create exercise.");
-  //   }
-  // };
   
   const handleCreateExercise = async (exercise: { name: string; muscle: string; category: string; level: string }) => {
     try {
