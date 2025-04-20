@@ -351,13 +351,18 @@ const HomeScreen = () => {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.userInfo}>
-          <Image 
-            source={require('@/assets/images/placeholder.jpg')} 
-            style={[
-              styles.avatar,
-              { borderColor: isDarkMode ? '#FF9500' : '#6366F1' }
-            ]} 
-          />
+        <Image 
+  source={
+    user?.avatar_url
+      ? { uri: user.avatar_url }
+      : require('@/assets/images/placeholder.jpg')
+  }
+  style={[
+    styles.avatar,
+    { borderColor: isDarkMode ? '#FF9500' : '#6366F1' }
+  ]}
+/>
+
           <View style={styles.userTextContainer}>
           <Text style={[styles.userName, { color: colors.text }]}>
             {user?.username || "Welcome!"}

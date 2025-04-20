@@ -73,16 +73,39 @@ export default function ProfileScreen() {
       if (image && !image.startsWith('http') && !image.startsWith('https')) {
         const ext = image.split('.').pop();
         const filename = `${user.id}_${Date.now()}.${ext}`;
-        const path = `avatars/${filename}`;
+const path = filename; // ✅ no folder nesting
 
-        const res = await fetch(image);
-        const blob = await res.blob();
+// Convert the image URI to a Blob
+const res = await fetch(image);
+const blob = await res.blob();
 
-        const { error: uploadErr } = await supabase.storage.from('avatars').upload(path, blob, { upsert: true });
-        if (uploadErr) throw uploadErr;
+const { error: uploadErr } = await supabase.storage
+  .from('avatars')
+  .upload(path, blob, {
+    cacheControl: '3600',
+    upsert: true,
+  });
 
-        const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(path);
-        imageUrl = publicUrlData.publicUrl;
+if (uploadErr) throw uploadErr;
+
+// Get public URL
+const { data: publicUrlData } = supabase.storage
+  .from('avatars')
+  .getPublicUrl(path);
+
+const imageUrl = publicUrlData.publicUrl;
+
+        // const filename = `${user.id}_${Date.now()}.${ext}`;
+        // const path = `avatars/${filename}`;
+
+        // const res = await fetch(image);
+        // const blob = await res.blob();
+
+        // const { error: uploadErr } = await supabase.storage.from('avatars').upload(path, blob, { upsert: true });
+        // if (uploadErr) throw uploadErr;
+
+        // const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(path);
+        // imageUrl = publicUrlData.publicUrl;
       }
 
       // Update profile in database
@@ -93,9 +116,6 @@ export default function ProfileScreen() {
           avatar_url: imageUrl 
         })
         .eq('id', user.id);
-        console.log("user.id:", user.id);
-        console.log("auth.uid():", (await supabase.auth.getUser()).data.user?.id);
-
 
       if (error) throw error;
 
