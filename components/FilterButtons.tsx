@@ -35,6 +35,18 @@ const FilterButtons: React.FC<FilterButtonsProps> = ({
 
   return (
     <View style={styles.container}>
+      {isFilterActive && (
+        <TouchableOpacity 
+          style={[
+            styles.clearButton,
+            { backgroundColor: isDarkMode ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.1)' }
+          ]} 
+          onPress={onClearAllPress}
+        >
+          <Ionicons name="close-circle-outline" size={18} color={isDarkMode ? '#FF7A7A' : '#EF4444'} style={styles.filterIcon} />
+          {/* <Text style={[styles.clearText, { color: isDarkMode ? '#FF7A7A' : '#EF4444' }]}>Clear All</Text> */}
+        </TouchableOpacity>
+      )}
       {isEnabled('time') && (
         <TouchableOpacity 
           style={[
@@ -151,18 +163,7 @@ const FilterButtons: React.FC<FilterButtonsProps> = ({
         </TouchableOpacity>
       )}
 
-      {isFilterActive && (
-        <TouchableOpacity 
-          style={[
-            styles.clearButton,
-            { backgroundColor: isDarkMode ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.1)' }
-          ]} 
-          onPress={onClearAllPress}
-        >
-          <Ionicons name="close-circle-outline" size={16} color={isDarkMode ? '#FF7A7A' : '#EF4444'} style={styles.filterIcon} />
-          <Text style={[styles.clearText, { color: isDarkMode ? '#FF7A7A' : '#EF4444' }]}>Clear All</Text>
-        </TouchableOpacity>
-      )}
+      
     </View>
   );
 };

@@ -352,9 +352,9 @@ const WorkoutScreen: React.FC = () => {
 
         <View style={styles.resultsHeader}>
           {/* Reload Button */}
-        <TouchableOpacity onPress={syncFromSupabase} style={{ marginRight: 12 }}>
+        {/* <TouchableOpacity onPress={syncFromSupabase} style={{ marginRight: 12 }}>
           <Ionicons name="sync-outline" size={24} color={colors.accent} />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
             {isLoading ? 'Loading Workouts...' : `Recommended Workouts (${filteredWorkouts.length})`}
@@ -362,11 +362,11 @@ const WorkoutScreen: React.FC = () => {
 
 
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            {isFilterActive && (
+            {/* {isFilterActive && (
               <TouchableOpacity onPress={clearAllFilters}>
                 <Text style={[styles.clearText, { color: colors.accent, marginRight: 12 }]}>Clear all</Text>
               </TouchableOpacity>
-            )}
+            )} */}
             <TouchableOpacity onPress={() => setShowCreateModal(true)}>
               <Ionicons name="add-circle-outline" size={26} color={colors.accent} />
             </TouchableOpacity>
