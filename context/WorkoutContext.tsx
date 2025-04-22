@@ -2,7 +2,7 @@
 
 import React, { createContext, useState } from 'react';
 import { Workout } from '../types/types';
-import { supabase } from '../utils/supabaseClient';
+import { supabase } from '../src/supabaseClient';
 
 
 interface WorkoutContextProps {

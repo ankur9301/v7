@@ -17,7 +17,7 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { LinearGradient } from "expo-linear-gradient"
 import { Ionicons } from "@expo/vector-icons"
 import { BlurView } from "expo-blur"
-import { WorkoutContext } from "../../context/WorkoutContext"
+// import { WorkoutContext } from "../../context/WorkoutContext"
 import type { Workout } from "../../types/types"
 import { useRouter } from "expo-router"
 import Stopwatch from "../../components/Stopwatch"
@@ -29,11 +29,13 @@ import { StatusBar } from "expo-status-bar"
 import * as Haptics from "expo-haptics"
 import { FlatList } from "react-native"
 import { useTheme, lightTheme, darkTheme } from "../../context/ThemeContext"
+import { useWorkoutStore } from '@/src/stores/useWorkoutStore'
 
 const { width, height } = Dimensions.get("window")
 
 const WorkingOut: React.FC = () => {
-  const { workoutPlan, setWorkoutPlan } = useContext(WorkoutContext)
+  // const { workoutPlan, setWorkoutPlan } = useContext(WorkoutContext)
+  const { plan: workoutPlan, setPlan } = useWorkoutStore()
   const { isDarkMode } = useTheme()
   const colors = isDarkMode ? darkTheme : lightTheme
 
@@ -80,7 +82,8 @@ const WorkingOut: React.FC = () => {
         onPress: () => {
           // Animation for feedback
           const updatedPlan = workoutPlan.filter((w) => w.id !== workout.id)
-          setWorkoutPlan(updatedPlan)
+          setPlan(updatedPlan)
+
 
           // Show toast or feedback
           if (Platform.OS === "ios") {
@@ -105,7 +108,7 @@ const WorkingOut: React.FC = () => {
     // Ensure we're using the workout ID as the key for replacement
     const updatedPlan = workoutPlan.map((w) => (w.id === workoutToReplace.id ? selectedWorkouts[0] : w))
 
-    setWorkoutPlan(updatedPlan)
+    setPlan(updatedPlan)
     setReplaceModalVisible(false)
     setWorkoutToReplace(null)
   }
@@ -117,6 +120,7 @@ const WorkingOut: React.FC = () => {
 
   /** Handle exit confirmation */
   const handleConfirmExit = () => {
+    useWorkoutStore.getState().resetSession();
     router.back()
   }
 
@@ -295,7 +299,7 @@ const WorkingOut: React.FC = () => {
             return { ...workout, id: Number(workout.id) } // Ensure id is a number
           })
 
-          setWorkoutPlan([...workoutPlan, ...selectedWithUniqueIds])
+          setPlan([...workoutPlan, ...selectedWithUniqueIds])
           setAddModalVisible(false)
         }}
         multipleSelection={true}

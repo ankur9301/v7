@@ -18,6 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LineChart } from "react-native-chart-kit";
 import { useTheme, lightTheme, darkTheme } from "../context/ThemeContext";
 
+
 const { width } = Dimensions.get("window");
 
 interface WorkoutInfoProps {

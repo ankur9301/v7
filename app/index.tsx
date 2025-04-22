@@ -1,4 +1,40 @@
-// app/index.tsx
+// // // app/index.tsx
+// import { View, Text, Button } from 'react-native'
+// import React from 'react'
+// import { SafeAreaView } from 'react-native-safe-area-context'
+// import { create } from 'zustand';
+
+// // Define the type of your store
+ 
+
+// // Define the type of your store
+// type StoreState = {
+//   decrement(): void;
+//   count: number;
+//   increment: () => void;
+// };
+
+// // Create the store
+// const useStore = create<StoreState>((set) => ({
+//   count: 0,
+//   increment: () => set((state) => ({ count: state.count + 1 })),
+//   decrement: () => set((state) => ({ count: state.count - 1 })),
+// }));
+
+// const index = () => {
+//   const count = useStore((state) => state.count);
+  
+//   return (
+//     <SafeAreaView>
+//       <Text style={{ textAlign: 'center' , marginTop:400}}>Counter: {count}</Text>
+//       <Button title="Increment" onPress={() => useStore.getState().increment()} />
+//       <Button title="Decrement" onPress={() => useStore.getState().decrement()} />
+//     </SafeAreaView>
+//   )
+// }
+
+// export default index
+
 import React, { useEffect } from "react";
 import { View, StyleSheet, Dimensions } from "react-native";
 import { useRouter } from "expo-router";
@@ -16,7 +52,7 @@ export default function Index() {
 
   useEffect(() => {
     if (!loading && session) {
-      console.log("🟢 Supabase session:", session);
+      // console.log("🟢 Supabase session:", session);
       router.replace("/home");
     }
   }, [session, loading]);

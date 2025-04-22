@@ -27,6 +27,26 @@ export interface WorkoutTemplate {
   workouts: Workout[]
 }
 
+export interface SetLog {
+  weight: number
+  reps: number
+  timestamp: number    // when that set was completed
+}
+
+export interface ExerciseLog {
+  exerciseId: string
+  sets: SetLog[]
+}
+
+export interface WorkoutSession {
+  id?: string            // Supabase PK
+  name: string           // your “session name” input
+  durationSec: number    // total seconds on the stopwatch
+  calories: number       // computed on the fly
+  loggedAt: string       // ISO timestamp when you hit “Log Workout”
+  exerciseLogs: ExerciseLog[]
+}
+
 
 // // types/types.ts
 

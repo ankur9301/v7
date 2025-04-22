@@ -1,5 +1,6 @@
 // app/(tabs)/workout.tsx
-import React, { useState, useEffect, useContext } from 'react';
+// import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Alert, ScrollView, TouchableOpacity, Text, StyleSheet, Dimensions, Animated, Easing, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -8,7 +9,7 @@ import SearchBar from '../../components/SearchBar';
 import FilterButtons from '../../components/FilterButtons';
 import DialogBox from '../../components/DialogBox';
 import WorkoutCard from '../../components/WorkoutCard';
-import WorkoutInfo from '../../components/WorkoutInfoModal';
+// import WorkoutInfo from '../../components/WorkoutInfoModal';
 import { workouts as allWorkouts, bodyParts, categories } from '../../constants/data';
 import { Workout } from '../../types/types';
 import { generateWorkoutPlan } from '../../utils/generate_workout';
@@ -21,7 +22,11 @@ import CreateExerciseModal from '../../components/CreateExerciseModal';
 import { supabase } from '@/src/supabaseClient'; 
 import { useUserProfile } from '@/hooks/useUserProfile'; 
 import { addExerciseToSupabase, fetchCustomExercisesFromSupabase, getCachedCustomExercises } from '@/lib/exerciseService';
-
+import { useWorkoutStore } from '@/src/stores/useWorkoutStore'
+import { useWorkoutFilterStore } from '@/src/stores/useWorkoutFilterStore';
+import { useWorkoutDataStore } from '@/src/stores/useWorkoutDataStore';
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
 
 // Constants
 const TIMES = ['30 Min', '45 Min', '60 Min', '90 Min', '120 Min'];
@@ -32,14 +37,16 @@ type DialogType = 'time' | 'muscles' | 'equipment' | 'level' | null;
 
 const WorkoutScreen: React.FC = () => {
   const router = useRouter();
-  const { setWorkoutPlan } = useContext(WorkoutContext);
+  const { plan: currentWorkoutPlan, setPlan } = useWorkoutStore();
+  // const { setWorkoutPlan } = useContext(WorkoutContext);
+
   const { isDarkMode } = useTheme();
   const colors = isDarkMode ? darkTheme : lightTheme;
   
   const windowWidth = Dimensions.get('window').width;
   const { userData } = useUserProfile();
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [createModalVisible, setCreateModalVisible] = useState(false);
+
 
   
   // Animation values
@@ -48,18 +55,51 @@ const WorkoutScreen: React.FC = () => {
   
   // State Variables
   const [visibleDialog, setVisibleDialog] = useState<DialogType>(null);
-  const [selectedTime, setSelectedTime] = useState<string | null>(null);
-  const [selectedMuscles, setSelectedMuscles] = useState<string[]>([]);
-  const [selectedEquipment, setSelectedEquipment] = useState<string[]>([]);
-  const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
-  const [filteredWorkouts, setFilteredWorkouts] = useState<Workout[]>(allWorkouts);
-  const [allAvailableWorkouts, setAllAvailableWorkouts] = useState<Workout[]>([...allWorkouts]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [currentWorkoutPlan, setCurrentWorkoutPlan] = useState<Workout[]>([]);
+
+  // const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  // const [selectedMuscles, setSelectedMuscles] = useState<string[]>([]);
+  // const [selectedEquipment, setSelectedEquipment] = useState<string[]>([]);
+  // const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
+  // const [filteredWorkouts, setFilteredWorkouts] = useState<Workout[]>(allWorkouts);
+  // const [allAvailableWorkouts, setAllAvailableWorkouts] = useState<Workout[]>([...allWorkouts]);
+  // const [searchQuery, setSearchQuery] = useState('');
+  const {
+    selectedTime,
+    selectedMuscles,
+    selectedEquipment,
+    selectedLevel,
+    searchQuery,
+    setTime,
+    setMuscles,
+    setEquipment,
+    setLevel,
+    setSearchQuery,
+    resetFilters,
+  } = useWorkoutFilterStore();
+  
+  
+  const {
+    allAvailableWorkouts,
+    filteredWorkouts,
+    setAllAvailableWorkouts,
+    setFilteredWorkouts,
+    resetWorkouts
+  } = useWorkoutDataStore();
+  
+
+  // const [currentWorkoutPlan, setCurrentWorkoutPlan] = useState<Workout[]>([]);
+
   const [modalVisible, setModalVisible] = useState<boolean>(false);
   const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-
+  useFocusEffect(
+    useCallback(() => {
+      // This runs when the Workout screen gains focus (i.e., when you return from WorkingOut)
+      resetFilters();
+      setPlan([]);
+    }, [])
+  );
+  
   useEffect(() => {
     // Animation on mount
     Animated.parallel([
@@ -90,10 +130,12 @@ const WorkoutScreen: React.FC = () => {
       const combined = [...allWorkouts, ...fromDB];
       setAllAvailableWorkouts(combined);
       setFilteredWorkouts(combined);
+
     };
     loadCustom();
   }, []);
   
+ 
   const syncFromSupabase = async () => {
     setIsLoading(true);
     try {
@@ -112,38 +154,59 @@ const WorkoutScreen: React.FC = () => {
   const isFilterActive =
     !!selectedTime || selectedMuscles.length > 0 || selectedEquipment.length > 0 || !!selectedLevel;
 
+  // const clearAllFilters = () => {
+  //   setSelectedTime(null);
+  //   setSelectedMuscles([]);
+  //   setSelectedEquipment([]);
+  //   setSelectedLevel(null);
+  //   setSearchQuery('');
+  //   // setWorkoutPlan([]);
+  //   setPlan([]);
+  // };
   const clearAllFilters = () => {
-    setSelectedTime(null);
-    setSelectedMuscles([]);
-    setSelectedEquipment([]);
-    setSelectedLevel(null);
-    setSearchQuery('');
-    setWorkoutPlan([]);
+    resetFilters();
+    setPlan([]);
   };
+  
 
   const openDialog = (type: DialogType) => {
     setVisibleDialog(type);
   };
   
+  // const handleTimeSelect = (option: string) => {
+  //   if (option === selectedTime) {
+  //     setSelectedTime(null);
+  //   } else {
+  //     setSelectedTime(option);
+  //   }
+  //   setVisibleDialog(null);
+  // };
   const handleTimeSelect = (option: string) => {
-    if (option === selectedTime) {
-      setSelectedTime(null);
-    } else {
-      setSelectedTime(option);
-    }
+    setTime(option === selectedTime ? null : option);
     setVisibleDialog(null);
   };
+  
 
+  // const handleMultiSelect = (option: string, selectedArray: string[], setSelectedFn: Function) => {
+  //   if (selectedArray.includes(option)) {
+  //     setSelectedFn(selectedArray.filter((item: string) => item !== option));
+  //   } else {
+  //     setSelectedFn([...selectedArray, option]);
+  //   }
+  // };
   const handleMultiSelect = (option: string, selectedArray: string[], setSelectedFn: Function) => {
     if (selectedArray.includes(option)) {
-      setSelectedFn(selectedArray.filter((item: string) => item !== option));
+      setSelectedFn(selectedArray.filter((item) => item !== option));
     } else {
       setSelectedFn([...selectedArray, option]);
     }
   };
+  
 
   const handleCloseDialog = () => setVisibleDialog(null);
+  // const handleSearch = (query: string) => setSearchQuery(query);
   const handleSearch = (query: string) => setSearchQuery(query);
+
 
   const getTimeLabel = () => (selectedTime ? selectedTime : 'Time');
   const getLevelLabel = () => (selectedLevel ? selectedLevel : 'Level');
@@ -192,14 +255,16 @@ const WorkoutScreen: React.FC = () => {
           
           
           setFilteredWorkouts(plan);
-          setCurrentWorkoutPlan(plan);
-          setWorkoutPlan(plan);
+          // setCurrentWorkoutPlan(plan);
+          // setWorkoutPlan(plan);
+          setPlan(plan);
           setIsLoading(false);
           return;
         } catch (error: any) {
           setFilteredWorkouts([]);
-          setCurrentWorkoutPlan([]);
-          setWorkoutPlan([]);
+          // setCurrentWorkoutPlan([]);
+          // setWorkoutPlan([]);
+          setPlan([]);
           Alert.alert('Error', error.message);
           setIsLoading(false);
           return;
@@ -212,7 +277,8 @@ const WorkoutScreen: React.FC = () => {
       }
       
       setFilteredWorkouts(filtered);
-      setWorkoutPlan(filtered);
+      // setWorkoutPlan(filtered);
+      setPlan(filtered);
       setIsLoading(false);
     };
     
@@ -242,9 +308,11 @@ const WorkoutScreen: React.FC = () => {
       const savedExercise = await addExerciseToSupabase(exercise);
       const customExercise = { ...savedExercise, isCustom: true }; // 🆕
   
-      setAllAvailableWorkouts(prev => [...prev, customExercise]);
-      setFilteredWorkouts(prev => [...prev, customExercise]);
-      setWorkoutPlan([...currentWorkoutPlan, customExercise]);
+      setAllAvailableWorkouts([...allAvailableWorkouts, customExercise]);
+      setFilteredWorkouts([...filteredWorkouts, customExercise]);
+      // setWorkoutPlan([...currentWorkoutPlan, customExercise]);
+      setPlan([...currentWorkoutPlan, customExercise]);
+
   
       Alert.alert("Success", "New exercise created!");
     } catch (err: any) {
@@ -264,8 +332,9 @@ const WorkoutScreen: React.FC = () => {
       // Remove from state
       const updatedList = allAvailableWorkouts.filter(w => w.id !== workout.id);
       setAllAvailableWorkouts(updatedList);
-      setFilteredWorkouts(prev => prev.filter(w => w.id !== workout.id));
-      setWorkoutPlan(allAvailableWorkouts.filter((w: Workout) => w.id !== workout.id));
+      setFilteredWorkouts(allAvailableWorkouts.filter((w: Workout) => w.id !== workout.id));
+      // setWorkoutPlan(allAvailableWorkouts.filter((w: Workout) => w.id !== workout.id));
+      setPlan(updatedList);
   
       Alert.alert("Deleted", `${workout.name} has been removed.`);
     } catch (error: any) {
@@ -366,12 +435,19 @@ const WorkoutScreen: React.FC = () => {
           }
         ]}
       >
-        <SearchBar
+        {/* <SearchBar
           value={searchQuery}
           onChangeText={handleSearch}
           placeholder="Search workouts..."
           isDarkMode={isDarkMode}
+        /> */}
+        <SearchBar
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search workouts..."
+          isDarkMode={isDarkMode}
         />
+
       </Animated.View>
       
       {/* Main Content - Using FlatList to avoid VirtualizedList warning */}
@@ -424,7 +500,15 @@ const WorkoutScreen: React.FC = () => {
         visible={visibleDialog === 'muscles'}
         options={MUSCLES}
         onClose={handleCloseDialog}
-        onSelect={(option) => handleMultiSelect(option, selectedMuscles, setSelectedMuscles)}
+        // onSelect={(option) => handleMultiSelect(option, selectedMuscles, setSelectedMuscles)}
+        onSelect={(option) => {
+          if (selectedMuscles.includes(option)) {
+            setMuscles(selectedMuscles.filter(m => m !== option));
+          } else {
+            setMuscles([...selectedMuscles, option]);
+          }
+        }}
+        
         selectedOptions={selectedMuscles}
         multiple={true}
         title="Select Target Muscles"
@@ -435,7 +519,16 @@ const WorkoutScreen: React.FC = () => {
         visible={visibleDialog === 'equipment'}
         options={EQUIPMENTS}
         onClose={handleCloseDialog}
-        onSelect={(option) => handleMultiSelect(option, selectedEquipment, setSelectedEquipment)}
+        // onSelect={(option) => handleMultiSelect(option, selectedEquipment, setSelectedEquipment)}
+        onSelect={(option) => {
+          if (selectedEquipment.includes(option)) {
+            setEquipment(selectedEquipment.filter(e => e !== option));
+          } else {
+            setEquipment([...selectedEquipment, option]);
+          }
+        }}
+        
+        
         selectedOptions={selectedEquipment}
         multiple={true}
         title="Select Equipment"
@@ -458,7 +551,7 @@ const WorkoutScreen: React.FC = () => {
         options={LEVELS}
         onClose={handleCloseDialog}
         onSelect={(option) => {
-          setSelectedLevel(option);
+          setLevel(option);
           setVisibleDialog(null);
         }}
         selectedOptions={selectedLevel ? [selectedLevel] : []}
