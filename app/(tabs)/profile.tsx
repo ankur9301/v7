@@ -16,6 +16,9 @@ import { useUserStore } from '@/store/useUserStore';
 import { supabase } from '@/src/supabaseClient';
 import { useFocusEffect } from '@react-navigation/native';
 
+
+
+
 export default function ProfileScreen() {
   const router = useRouter();
   const { theme, isDarkMode, toggleTheme } = useTheme();

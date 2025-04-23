@@ -27,129 +27,132 @@ import { workouts as allWorkouts } from "@/constants/data"
 import type { Workout, WorkoutHistory, WorkoutTemplate } from "@/types/types"
 import * as Haptics from "expo-haptics"
 import { clearWorkoutHistory } from "@/lib/exerciseService"
+import { fetchWorkoutHistory } from "@/lib/fetchWorkoutHistory";
+import { useWorkoutStore } from "@/src/stores/useWorkoutStore"
+
 
 const { width } = Dimensions.get("window")
 
 // Sample data for workout history
-const workoutHistoryData: WorkoutHistory[] = [
-  {
-    id: "h1",
-    date: "Today, 10:30 AM",
-    title: "Morning Workout",
-    duration: "45 min",
-    calories: 320,
-    workouts: [
-      {
-        id: "w1",
-        name: "Push-ups",
-        muscle: "Chest",
-        level: "Beginner",
-        sets: 3,
-        reps: "12-15",
-        imageUrl: require("@/assets/images/placeholder.jpg"),
-      },
-      {
-        id: "w2",
-        name: "Squats",
-        muscle: "Legs",
-        level: "Beginner",
-        sets: 4,
-        reps: "10-12",
-        imageUrl: require("@/assets/images/placeholder.jpg"),
-      },
-      {
-        id: "w3",
-        name: "Plank",
-        muscle: "Core",
-        level: "Beginner",
-        sets: 3,
-        reps: "30 sec",
-        imageUrl: require("@/assets/images/placeholder.jpg"),
-      },
-    ],
-  },
-  {
-    id: "h2",
-    date: "Yesterday, 6:15 PM",
-    title: "Evening Cardio",
-    duration: "30 min",
-    calories: 280,
-    workouts: [
-      {
-        id: "w4",
-        name: "Jumping Jacks",
-        muscle: "Full Body",
-        level: "Beginner",
-        sets: 3,
-        reps: "45 sec",
-        imageUrl: require("@/assets/images/placeholder.jpg"),
-      },
-      {
-        id: "w5",
-        name: "Mountain Climbers",
-        muscle: "Core",
-        level: "Intermediate",
-        sets: 3,
-        reps: "30 sec",
-        imageUrl: require("@/assets/images/placeholder.jpg"),
-      },
-      {
-        id: "w6",
-        name: "Burpees",
-        muscle: "Full Body",
-        level: "Advanced",
-        sets: 3,
-        reps: "10-12",
-        imageUrl: require("@/assets/images/placeholder.jpg"),
-      },
-    ],
-  },
-  {
-    id: "h3",
-    date: "May 15, 2023, 8:00 AM",
-    title: "Full Body Workout",
-    duration: "60 min",
-    calories: 420,
-    workouts: [
-      {
-        id: "w7",
-        name: "Deadlifts",
-        muscle: "Back",
-        level: "Intermediate",
-        sets: 4,
-        reps: "8-10",
-        imageUrl: require("@/assets/images/placeholder.jpg"),
-      },
-      {
-        id: "w8",
-        name: "Bench Press",
-        muscle: "Chest",
-        level: "Intermediate",
-        sets: 4,
-        reps: "8-10",
-        imageUrl: require("@/assets/images/placeholder.jpg"),
-      },
-      {
-        id: "w9",
-        name: "Pull-ups",
-        muscle: "Back",
-        level: "Advanced",
-        sets: 3,
-        reps: "8-10",
-        imageUrl: require("@/assets/images/placeholder.jpg"),
-      },
-      {
-        id: "w10",
-        name: "Shoulder Press",
-        muscle: "Shoulders",
-        level: "Intermediate",
-        sets: 3,
-        reps: "10-12",
-        imageUrl: require("@/assets/images/placeholder.jpg"),
-      },
-    ],
-  },
-]
+// const workoutHistoryData: WorkoutHistory[] = [
+//   {
+//     id: "h1",
+//     date: "Today, 10:30 AM",
+//     title: "Morning Workout",
+//     duration: "45 min",
+//     calories: 320,
+//     workouts: [
+//       {
+//         id: "w1",
+//         name: "Push-ups",
+//         muscle: "Chest",
+//         level: "Beginner",
+//         sets: 3,
+//         reps: "12-15",
+//         imageUrl: require("@/assets/images/placeholder.jpg"),
+//       },
+//       {
+//         id: "w2",
+//         name: "Squats",
+//         muscle: "Legs",
+//         level: "Beginner",
+//         sets: 4,
+//         reps: "10-12",
+//         imageUrl: require("@/assets/images/placeholder.jpg"),
+//       },
+//       {
+//         id: "w3",
+//         name: "Plank",
+//         muscle: "Core",
+//         level: "Beginner",
+//         sets: 3,
+//         reps: "30 sec",
+//         imageUrl: require("@/assets/images/placeholder.jpg"),
+//       },
+//     ],
+//   },
+//   {
+//     id: "h2",
+//     date: "Yesterday, 6:15 PM",
+//     title: "Evening Cardio",
+//     duration: "30 min",
+//     calories: 280,
+//     workouts: [
+//       {
+//         id: "w4",
+//         name: "Jumping Jacks",
+//         muscle: "Full Body",
+//         level: "Beginner",
+//         sets: 3,
+//         reps: "45 sec",
+//         imageUrl: require("@/assets/images/placeholder.jpg"),
+//       },
+//       {
+//         id: "w5",
+//         name: "Mountain Climbers",
+//         muscle: "Core",
+//         level: "Intermediate",
+//         sets: 3,
+//         reps: "30 sec",
+//         imageUrl: require("@/assets/images/placeholder.jpg"),
+//       },
+//       {
+//         id: "w6",
+//         name: "Burpees",
+//         muscle: "Full Body",
+//         level: "Advanced",
+//         sets: 3,
+//         reps: "10-12",
+//         imageUrl: require("@/assets/images/placeholder.jpg"),
+//       },
+//     ],
+//   },
+//   {
+//     id: "h3",
+//     date: "May 15, 2023, 8:00 AM",
+//     title: "Full Body Workout",
+//     duration: "60 min",
+//     calories: 420,
+//     workouts: [
+//       {
+//         id: "w7",
+//         name: "Deadlifts",
+//         muscle: "Back",
+//         level: "Intermediate",
+//         sets: 4,
+//         reps: "8-10",
+//         imageUrl: require("@/assets/images/placeholder.jpg"),
+//       },
+//       {
+//         id: "w8",
+//         name: "Bench Press",
+//         muscle: "Chest",
+//         level: "Intermediate",
+//         sets: 4,
+//         reps: "8-10",
+//         imageUrl: require("@/assets/images/placeholder.jpg"),
+//       },
+//       {
+//         id: "w9",
+//         name: "Pull-ups",
+//         muscle: "Back",
+//         level: "Advanced",
+//         sets: 3,
+//         reps: "8-10",
+//         imageUrl: require("@/assets/images/placeholder.jpg"),
+//       },
+//       {
+//         id: "w10",
+//         name: "Shoulder Press",
+//         muscle: "Shoulders",
+//         level: "Intermediate",
+//         sets: 3,
+//         reps: "10-12",
+//         imageUrl: require("@/assets/images/placeholder.jpg"),
+//       },
+//     ],
+//   },
+// ]
 
 // Sample data for saved templates
 const savedTemplatesData: WorkoutTemplate[] = [
@@ -285,13 +288,32 @@ const WorkoutHistoryScreen = () => {
   const { isDarkMode } = useTheme()
   const colors = isDarkMode ? darkTheme : lightTheme
   const router = useRouter()
-  const { setWorkoutPlan } = useContext(WorkoutContext)
 
   const [activeTab, setActiveTab] = useState("history") // 'history' or 'templates'
   const [selectedItem, setSelectedItem] = useState<WorkoutHistory | WorkoutTemplate | null>(null)
   const [detailModalVisible, setDetailModalVisible] = useState(false)
   const [addExerciseModalVisible, setAddExerciseModalVisible] = useState(false)
   const [newTemplate, setNewTemplate] = useState<Workout[]>([])
+
+  const [workoutHistoryData, setWorkoutHistoryData] = useState<WorkoutHistory[]>([]);
+  const [loading, setLoading] = useState(true);
+
+useEffect(() => {
+  const load = async () => {
+    try {
+      setLoading(true);
+      const history = await fetchWorkoutHistory();
+      setWorkoutHistoryData(history);
+    } catch (err: any) {
+      Alert.alert("Error", err.message || "Failed to fetch workout history.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  load();
+}, []);
+
 
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current
@@ -320,25 +342,47 @@ const WorkoutHistoryScreen = () => {
   }, [])
 
   // Start workout with selected workouts
-  const handleStartWorkout = (workouts: Workout[]) => {
-    // Convert workouts to the format expected by WorkoutContext
-    const formattedWorkouts = workouts.map((workout) => ({
-      ...workout,
-      id: typeof workout.id === "string" ? workout.id : String(workout.id),
-      category: workout.muscle || workout.category || "",
-      image: workout.imageUrl || workout.image || null,
-    }))
+ 
+const handleStartWorkout = (workouts: Workout[]) => {
+  const { setPlan, resetSession, startTimer } = useWorkoutStore.getState();
 
-    setWorkoutPlan(formattedWorkouts)
-    setDetailModalVisible(false)
+  const formatted = workouts.map((w) => ({
+    ...w,
+    id: String(w.id), // ensure string id
+    category: w.muscle || w.category || "",
+    image: w.imageUrl || w.image || null,
+  }));
+  resetSession();  
+  startTimer();
+  setPlan(formatted); // ✅ sets global state for WorkingOut
+  setDetailModalVisible(false);
 
-    // Provide haptic feedback
-    if (Platform.OS === "ios") {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-    }
-
-    router.push("/subScreen/WorkingOut")
+  if (Platform.OS === "ios") {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   }
+
+  router.push("/subScreen/WorkingOut"); // ✅ Go to WorkingOut screen
+};
+  
+  // const handleStartWorkout = (workouts: Workout[]) => {
+  //   // Convert workouts to the format expected by WorkoutContext
+  //   const formattedWorkouts = workouts.map((workout) => ({
+  //     ...workout,
+  //     id: typeof workout.id === "string" ? workout.id : String(workout.id),
+  //     category: workout.muscle || workout.category || "",
+  //     image: workout.imageUrl || workout.image || null,
+  //   }))
+
+  //   setWorkoutPlan(formattedWorkouts)
+  //   setDetailModalVisible(false)
+
+  //   // Provide haptic feedback
+  //   if (Platform.OS === "ios") {
+  //     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+  //   }
+
+  //   router.push("/subScreen/WorkingOut")
+  // }
 
   // Create new template with selected workouts
   const handleCreateTemplate = (selectedWorkouts: Workout[]) => {
@@ -784,6 +828,7 @@ const WorkoutHistoryScreen = () => {
                 onPress: async () => {
                   try {
                     await clearWorkoutHistory();
+                    setWorkoutHistoryData([]);
                     Alert.alert("Success", "Workout history cleared!");
                     // Optionally refresh state here
                   } catch (err: any) {
@@ -877,27 +922,28 @@ const WorkoutHistoryScreen = () => {
  
       {/* Content */}
       {activeTab === "history" ? (
-        <FlatList
-          data={workoutHistoryData}
-          renderItem={renderHistoryItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          initialNumToRender={5}
-          maxToRenderPerBatch={10}
-        />
-      ) : (
-        <FlatList
-          data={savedTemplatesData}
-          renderItem={renderTemplateItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          ListHeaderComponent={renderCreateTemplateCard}
-          initialNumToRender={5}
-          maxToRenderPerBatch={10}
-        />
-      )}
+  loading ? (
+    <Text style={{ textAlign: "center", marginTop: 32, color: colors.secondaryText }}>Loading...</Text>
+  ) : (
+    <FlatList
+      data={workoutHistoryData}
+      renderItem={renderHistoryItem}
+      keyExtractor={(item) => item.id}
+      contentContainerStyle={styles.listContent}
+      showsVerticalScrollIndicator={false}
+    />
+  )
+) : (
+  <FlatList
+    data={savedTemplatesData}
+    renderItem={renderTemplateItem}
+    keyExtractor={(item) => item.id}
+    contentContainerStyle={styles.listContent}
+    ListHeaderComponent={renderCreateTemplateCard}
+    showsVerticalScrollIndicator={false}
+  />
+)}
+
 
       {/* Detail Modal */}
       <Modal

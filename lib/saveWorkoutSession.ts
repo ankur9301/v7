@@ -55,7 +55,9 @@ const sessionExercises = Object.entries(logs)
       .filter(set => set.logged) // ✅ only logged sets
       .map(set => ({
         session_id: session.id,  // from your workout_sessions insert
-        exercise_name: plan.find(exercise => exercise.id === workoutId)?.name || workoutId, // fallback to workoutId if name is unavailable
+        // exercise_name: plan.find(exercise => exercise.id === workoutId)?.name || workoutId, // fallback to workoutId if name is unavailable
+        exercise_name: plan.find(ex => String(ex.id) === String(workoutId))?.name || "Unknown",
+
         sets: 1,
         reps: set.reps,
         weight: set.weight,

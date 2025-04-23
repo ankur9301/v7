@@ -117,6 +117,7 @@ interface Exercise {
       .from("workout_sessions")
       .delete()
       .in("id", sessionIds);
+      
   
     if (deleteError) throw deleteError;
   }

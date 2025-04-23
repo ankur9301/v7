@@ -118,13 +118,7 @@ const WorkoutScreen: React.FC = () => {
     ]).start();
   }, []);
 
-  // useEffect(() => {
-  //   const loadCustom = async () => {
-  //     const cached = await getCachedCustomExercises();
-  //     setFilteredWorkouts([...allWorkouts, ...cached]);
-  //   };
-  //   loadCustom();
-  // }, []);
+
   useEffect(() => {
     const loadCustom = async () => {
       const fromDB = await fetchCustomExercisesFromSupabase();
@@ -155,15 +149,7 @@ const WorkoutScreen: React.FC = () => {
   const isFilterActive =
     !!selectedTime || selectedMuscles.length > 0 || selectedEquipment.length > 0 || !!selectedLevel;
 
-  // const clearAllFilters = () => {
-  //   setSelectedTime(null);
-  //   setSelectedMuscles([]);
-  //   setSelectedEquipment([]);
-  //   setSelectedLevel(null);
-  //   setSearchQuery('');
-  //   // setWorkoutPlan([]);
-  //   setPlan([]);
-  // };
+
   const clearAllFilters = () => {
     resetFilters();
     setPlan([]);
@@ -174,27 +160,14 @@ const WorkoutScreen: React.FC = () => {
     setVisibleDialog(type);
   };
   
-  // const handleTimeSelect = (option: string) => {
-  //   if (option === selectedTime) {
-  //     setSelectedTime(null);
-  //   } else {
-  //     setSelectedTime(option);
-  //   }
-  //   setVisibleDialog(null);
-  // };
+
   const handleTimeSelect = (option: string) => {
     setTime(option === selectedTime ? null : option);
     setVisibleDialog(null);
   };
   
 
-  // const handleMultiSelect = (option: string, selectedArray: string[], setSelectedFn: Function) => {
-  //   if (selectedArray.includes(option)) {
-  //     setSelectedFn(selectedArray.filter((item: string) => item !== option));
-  //   } else {
-  //     setSelectedFn([...selectedArray, option]);
-  //   }
-  // };
+
   const handleMultiSelect = (option: string, selectedArray: string[], setSelectedFn: Function) => {
     if (selectedArray.includes(option)) {
       setSelectedFn(selectedArray.filter((item) => item !== option));
@@ -380,35 +353,51 @@ const WorkoutScreen: React.FC = () => {
       </View>
       
       {/* Results Section */}
-      <View style={styles.resultsSection}>
-        {/* <View style={styles.resultsHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            {isLoading ? 'Loading Workouts...' : `Recommended Workouts (${filteredWorkouts.length})`}
-          </Text>
-          {isFilterActive && (
-            <TouchableOpacity onPress={clearAllFilters}>
-              <Text style={[styles.clearText, { color: colors.accent }]}>Clear all</Text>
-            </TouchableOpacity>
-          )}
-        </View> */}
+{/* Results Section */}
+<View style={styles.resultsSection}>
+  <View style={styles.resultsHeader}>
+    {/* header text: loading → non-filter “Your Workouts” → filter “Recommended Workouts” */}
+    <Text style={[styles.sectionTitle, { color: colors.text }]}>
+      {isLoading
+        ? 'Loading Workouts...'
+        : !isFilterActive
+          ? `Your Workouts (${filteredWorkouts.length})`
+          : `Recommended Workouts (${filteredWorkouts.length})`
+      }
+    </Text>
+
+    {/* only show the “+” button when NOT filtering */}
+    {!isFilterActive && (
+      <TouchableOpacity onPress={() => setShowCreateModal(true)}>
+        <Ionicons
+          name="add-circle-outline"
+          size={26}
+          color={colors.accent}
+        />
+      </TouchableOpacity>
+    )}
+  </View>
+
+  <WorkoutCard
+    data={filteredWorkouts}
+    onPress={handleWorkoutPress}
+    onRemoveExercise={handleDeleteExercise}
+    isDarkMode={isDarkMode}
+  />
+</View>
+
+      {/* <View style={styles.resultsSection}>
+   
 
         <View style={styles.resultsHeader}>
-          {/* Reload Button */}
-        {/* <TouchableOpacity onPress={syncFromSupabase} style={{ marginRight: 12 }}>
-          <Ionicons name="sync-outline" size={24} color={colors.accent} />
-        </TouchableOpacity> */}
-
+      
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
             {isLoading ? 'Loading Workouts...' : `Recommended Workouts (${filteredWorkouts.length})`}
           </Text>
 
 
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            {/* {isFilterActive && (
-              <TouchableOpacity onPress={clearAllFilters}>
-                <Text style={[styles.clearText, { color: colors.accent, marginRight: 12 }]}>Clear all</Text>
-              </TouchableOpacity>
-            )} */}
+        
             <TouchableOpacity onPress={() => setShowCreateModal(true)}>
               <Ionicons name="add-circle-outline" size={26} color={colors.accent} />
             </TouchableOpacity>
@@ -423,7 +412,7 @@ const WorkoutScreen: React.FC = () => {
           isDarkMode={isDarkMode}
         />
 
-      </View>
+      </View> */}
     </>
   );
 
