@@ -121,3 +121,12 @@ interface Exercise {
   
     if (deleteError) throw deleteError;
   }
+
+  export const deleteWorkoutSession = async (sessionId: string) => {
+    const { error } = await supabase
+      .from("workout_sessions")
+      .delete()
+      .eq("id", sessionId);
+  
+    if (error) throw new Error(error.message);
+  };

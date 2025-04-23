@@ -102,3 +102,6 @@ const sessionExercises = Object.entries(logs)
 
   return true;
 };
+
+
+

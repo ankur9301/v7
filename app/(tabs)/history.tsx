@@ -14,6 +14,7 @@ import {
   Animated,
   Platform,
   Alert,
+  TextInput,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
@@ -26,9 +27,11 @@ import AddExerciseModal from "@/components/AddExerciseModal"
 import { workouts as allWorkouts } from "@/constants/data"
 import type { Workout, WorkoutHistory, WorkoutTemplate } from "@/types/types"
 import * as Haptics from "expo-haptics"
-import { clearWorkoutHistory } from "@/lib/exerciseService"
+import { clearWorkoutHistory, deleteWorkoutSession } from "@/lib/exerciseService"
 import { fetchWorkoutHistory } from "@/lib/fetchWorkoutHistory";
 import { useWorkoutStore } from "@/src/stores/useWorkoutStore"
+import { clearAllTemplates, deleteTemplate, fetchTemplates, saveTemplateToSupabase } from "@/lib/templateService"
+import { useUserStore } from "@/store/useUserStore"
 
 
 const { width } = Dimensions.get("window")
@@ -155,134 +158,134 @@ const { width } = Dimensions.get("window")
 // ]
 
 // Sample data for saved templates
-const savedTemplatesData: WorkoutTemplate[] = [
-  {
-    id: "t1",
-    title: "Upper Body Blast",
-    workouts: [
-      {
-        id: "w11",
-        name: "Bench Press",
-        muscle: "Chest",
-        level: "Intermediate",
-        sets: 4,
-        reps: "8-10",
-        imageUrl: require("@/assets/images/placeholder.jpg"),
-      },
-      {
-        id: "w12",
-        name: "Shoulder Press",
-        muscle: "Shoulders",
-        level: "Intermediate",
-        sets: 3,
-        reps: "10-12",
-        imageUrl: require("@/assets/images/placeholder.jpg"),
-      },
-      {
-        id: "w13",
-        name: "Bicep Curls",
-        muscle: "Arms",
-        level: "Beginner",
-        sets: 3,
-        reps: "12-15",
-        imageUrl: require("@/assets/images/placeholder.jpg"),
-      },
-      {
-        id: "w14",
-        name: "Tricep Extensions",
-        muscle: "Arms",
-        level: "Beginner",
-        sets: 3,
-        reps: "12-15",
-        imageUrl: require("@/assets/images/placeholder.jpg"),
-      },
-    ],
-  },
-  {
-    id: "t2",
-    title: "Leg Day",
-    workouts: [
-      {
-        id: "w15",
-        name: "Squats",
-        muscle: "Legs",
-        level: "Intermediate",
-        sets: 4,
-        reps: "8-10",
-        imageUrl: require("@/assets/images/placeholder.jpg"),
-      },
-      {
-        id: "w16",
-        name: "Lunges",
-        muscle: "Legs",
-        level: "Intermediate",
-        sets: 3,
-        reps: "10 each leg",
-        imageUrl: require("@/assets/images/placeholder.jpg"),
-      },
-      {
-        id: "w17",
-        name: "Leg Press",
-        muscle: "Legs",
-        level: "Intermediate",
-        sets: 3,
-        reps: "12-15",
-        imageUrl: require("@/assets/images/placeholder.jpg"),
-      },
-      {
-        id: "w18",
-        name: "Calf Raises",
-        muscle: "Legs",
-        level: "Beginner",
-        sets: 4,
-        reps: "15-20",
-        imageUrl: require("@/assets/images/placeholder.jpg"),
-      },
-    ],
-  },
-  {
-    id: "t3",
-    title: "Quick HIIT",
-    workouts: [
-      {
-        id: "w19",
-        name: "Burpees",
-        muscle: "Full Body",
-        level: "Advanced",
-        sets: 4,
-        reps: "45 sec",
-        imageUrl: require("@/assets/images/placeholder.jpg"),
-      },
-      {
-        id: "w20",
-        name: "Mountain Climbers",
-        muscle: "Core",
-        level: "Intermediate",
-        sets: 4,
-        reps: "45 sec",
-        imageUrl: require("@/assets/images/placeholder.jpg"),
-      },
-      {
-        id: "w21",
-        name: "Jumping Jacks",
-        muscle: "Full Body",
-        level: "Beginner",
-        sets: 4,
-        reps: "45 sec",
-        imageUrl: require("@/assets/images/placeholder.jpg"),
-      },
-      {
-        id: "w22",
-        name: "High Knees",
-        muscle: "Legs",
-        level: "Intermediate",
-        sets: 4,
-        reps: "45 sec",
-        imageUrl: require("@/assets/images/placeholder.jpg"),
-      },
-    ],
-  },
-]
+// const savedTemplatesData: WorkoutTemplate[] = [
+//   {
+//     id: "t1",
+//     title: "Upper Body Blast",
+//     workouts: [
+//       {
+//         id: "w11",
+//         name: "Bench Press",
+//         muscle: "Chest",
+//         level: "Intermediate",
+//         sets: 4,
+//         reps: "8-10",
+//         imageUrl: require("@/assets/images/placeholder.jpg"),
+//       },
+//       {
+//         id: "w12",
+//         name: "Shoulder Press",
+//         muscle: "Shoulders",
+//         level: "Intermediate",
+//         sets: 3,
+//         reps: "10-12",
+//         imageUrl: require("@/assets/images/placeholder.jpg"),
+//       },
+//       {
+//         id: "w13",
+//         name: "Bicep Curls",
+//         muscle: "Arms",
+//         level: "Beginner",
+//         sets: 3,
+//         reps: "12-15",
+//         imageUrl: require("@/assets/images/placeholder.jpg"),
+//       },
+//       {
+//         id: "w14",
+//         name: "Tricep Extensions",
+//         muscle: "Arms",
+//         level: "Beginner",
+//         sets: 3,
+//         reps: "12-15",
+//         imageUrl: require("@/assets/images/placeholder.jpg"),
+//       },
+//     ],
+//   },
+//   {
+//     id: "t2",
+//     title: "Leg Day",
+//     workouts: [
+//       {
+//         id: "w15",
+//         name: "Squats",
+//         muscle: "Legs",
+//         level: "Intermediate",
+//         sets: 4,
+//         reps: "8-10",
+//         imageUrl: require("@/assets/images/placeholder.jpg"),
+//       },
+//       {
+//         id: "w16",
+//         name: "Lunges",
+//         muscle: "Legs",
+//         level: "Intermediate",
+//         sets: 3,
+//         reps: "10 each leg",
+//         imageUrl: require("@/assets/images/placeholder.jpg"),
+//       },
+//       {
+//         id: "w17",
+//         name: "Leg Press",
+//         muscle: "Legs",
+//         level: "Intermediate",
+//         sets: 3,
+//         reps: "12-15",
+//         imageUrl: require("@/assets/images/placeholder.jpg"),
+//       },
+//       {
+//         id: "w18",
+//         name: "Calf Raises",
+//         muscle: "Legs",
+//         level: "Beginner",
+//         sets: 4,
+//         reps: "15-20",
+//         imageUrl: require("@/assets/images/placeholder.jpg"),
+//       },
+//     ],
+//   },
+//   {
+//     id: "t3",
+//     title: "Quick HIIT",
+//     workouts: [
+//       {
+//         id: "w19",
+//         name: "Burpees",
+//         muscle: "Full Body",
+//         level: "Advanced",
+//         sets: 4,
+//         reps: "45 sec",
+//         imageUrl: require("@/assets/images/placeholder.jpg"),
+//       },
+//       {
+//         id: "w20",
+//         name: "Mountain Climbers",
+//         muscle: "Core",
+//         level: "Intermediate",
+//         sets: 4,
+//         reps: "45 sec",
+//         imageUrl: require("@/assets/images/placeholder.jpg"),
+//       },
+//       {
+//         id: "w21",
+//         name: "Jumping Jacks",
+//         muscle: "Full Body",
+//         level: "Beginner",
+//         sets: 4,
+//         reps: "45 sec",
+//         imageUrl: require("@/assets/images/placeholder.jpg"),
+//       },
+//       {
+//         id: "w22",
+//         name: "High Knees",
+//         muscle: "Legs",
+//         level: "Intermediate",
+//         sets: 4,
+//         reps: "45 sec",
+//         imageUrl: require("@/assets/images/placeholder.jpg"),
+//       },
+//     ],
+//   },
+// ]
 
 const WorkoutHistoryScreen = () => {
   const { isDarkMode } = useTheme()
@@ -297,6 +300,14 @@ const WorkoutHistoryScreen = () => {
 
   const [workoutHistoryData, setWorkoutHistoryData] = useState<WorkoutHistory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [workoutHistory, setWorkoutHistory] = useState<WorkoutHistory[]>([]);
+
+  const [savedTemplates, setSavedTemplates] = useState<WorkoutTemplate[]>([]);
+
+
+  const [showNamePrompt, setShowNamePrompt] = useState(false);
+  const [templateName, setTemplateName] = useState(""); // Add this line
+  
 
 useEffect(() => {
   const load = async () => {
@@ -340,6 +351,24 @@ useEffect(() => {
       }),
     ]).start()
   }, [])
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const history = await fetchWorkoutHistory();
+        const templates = await fetchTemplates(); // ⬅️ from your service
+        setWorkoutHistoryData(history);
+        setSavedTemplates(templates);
+      } catch (err: any) {
+        Alert.alert("Error", err.message || "Failed to load data");
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    loadData();
+  }, []);
+  
 
   // Start workout with selected workouts
  
@@ -386,25 +415,12 @@ const handleStartWorkout = (workouts: Workout[]) => {
 
   // Create new template with selected workouts
   const handleCreateTemplate = (selectedWorkouts: Workout[]) => {
-    setNewTemplate(selectedWorkouts)
-    setAddExerciseModalVisible(false)
+    setNewTemplate(selectedWorkouts);
+    setAddExerciseModalVisible(false);
+    setShowNamePrompt(true);
+  };
+  
 
-    // Here you would normally save the template to your database
-    // For now, we'll just show a success message and provide haptic feedback
-    if (Platform.OS === "ios") {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-    }
-
-    // Create a new template object
-    const newTemplateObj: WorkoutTemplate = {
-      id: `t${Date.now()}`,
-      title: `Custom Template ${savedTemplatesData.length + 1}`,
-      workouts: selectedWorkouts,
-    }
-
-    // In a real app, you would save this to your database
-    alert(`New template "${newTemplateObj.title}" created with ${selectedWorkouts.length} exercises!`)
-  }
 
   const renderHistoryItem = ({ item, index }: { item: WorkoutHistory; index: number }) => {
     // Calculate animation delay based on index
@@ -466,16 +482,35 @@ const handleStartWorkout = (workouts: Workout[]) => {
       </Text>
     </View>
     <TouchableOpacity 
-      style={styles.deleteButton}
-      onPress={() => {
-        // Delete this template
-        if (Platform.OS === "ios") {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-        }
-      }}
-    >
-      <Ionicons name="trash-outline" size={16} color={isDarkMode ? "#ef4444" : "#dc2626"} />
-    </TouchableOpacity>
+  style={styles.deleteButton}
+  onPress={async () => {
+    try {
+      if (Platform.OS === "ios") {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      }
+
+      Alert.alert("Delete Session", "Are you sure you want to delete this workout?", [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            await deleteWorkoutSession(item.id); // 🔥 DELETE from DB
+            await clearWorkoutHistory();
+            setWorkoutHistoryData([]);
+            // ❗Then update your local state:
+            setWorkoutHistory((prev) => prev.filter((h) => h.id !== item.id));
+          },
+        },
+      ]);
+    } catch (err) {
+      Alert.alert("Error", (err as Error).message);
+    }
+  }}
+>
+  <Ionicons name="trash-outline" size={16} color={isDarkMode ? "#ef4444" : "#dc2626"} />
+</TouchableOpacity>
+
   </View>
 </View>
 
@@ -604,11 +639,24 @@ const handleStartWorkout = (workouts: Workout[]) => {
     <TouchableOpacity 
       style={styles.deleteButton}
       onPress={() => {
-        // Delete this template
-        if (Platform.OS === "ios") {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-        }
+        Alert.alert("Delete Template", "Are you sure you want to delete this template?", [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                await deleteTemplate(item.id); // 
+                const updated = await fetchTemplates();
+                setSavedTemplates(updated);
+              } catch (err) {
+                Alert.alert("Error", (err as Error).message);
+              }
+            },
+          },
+        ]);
       }}
+      
     >
       <Ionicons name="trash-outline" size={16} color={isDarkMode ? "#ef4444" : "#dc2626"} />
     </TouchableOpacity>
@@ -813,13 +861,15 @@ const handleStartWorkout = (workouts: Workout[]) => {
     </Text>
     
     {((activeTab === "history" && workoutHistoryData.length > 0) || 
-      (activeTab === "templates" && savedTemplatesData.length > 1)) && (
+      (activeTab === "templates" && savedTemplates.length > 1)) && (
         <TouchableOpacity
         style={styles.clearButton}
         onPress={() => {
+          const isHistoryTab = activeTab === "history";
+
           Alert.alert(
-            "Clear Workout History",
-            "Are you sure you want to clear all workout history?",
+            isHistoryTab ? "Clear Workout History" : "Clear All Templates",
+            `Are you sure you want to delete all ${isHistoryTab ? "workout history" : "templates"}?`,
             [
               { text: "Cancel", style: "cancel" },
               {
@@ -827,10 +877,21 @@ const handleStartWorkout = (workouts: Workout[]) => {
                 style: "destructive",
                 onPress: async () => {
                   try {
-                    await clearWorkoutHistory();
-                    setWorkoutHistoryData([]);
-                    Alert.alert("Success", "Workout history cleared!");
-                    // Optionally refresh state here
+                    if (isHistoryTab) {
+                      await clearWorkoutHistory();
+                      setWorkoutHistoryData([]);
+                      Alert.alert("Success", "Workout history cleared!");
+                    } else {
+                      const { user } = useUserStore.getState();
+                      if (!user) {
+                        Alert.alert("Error", "User not found.");
+                        return;
+                      }
+                      await clearAllTemplates(); // Adjusted to match the expected arguments
+                      const refreshed = await fetchTemplates();
+                      setSavedTemplates(refreshed);
+                      Alert.alert("Success", "All templates deleted!");
+                    }
                   } catch (err: any) {
                     Alert.alert("Error", err.message || "Something went wrong.");
                   }
@@ -848,77 +909,7 @@ const handleStartWorkout = (workouts: Workout[]) => {
     )}
   </View>
 </View>
-      {/* <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[
-            styles.tab,
-            activeTab === "history" && [
-              styles.activeTab,
-              { backgroundColor: isDarkMode ? "rgba(255, 149, 0, 0.2)" : "rgba(99, 102, 241, 0.1)" },
-            ],
-          ]}
-          onPress={() => {
-            setActiveTab("history")
-            if (Platform.OS === "ios") {
-              Haptics.selectionAsync()
-            }
-          }}
-          activeOpacity={0.7}
-        >
-          <Ionicons 
-            name="time-outline" 
-            size={18} 
-            color={activeTab === "history" ? (isDarkMode ? "#FF9500" : "#6366F1") : colors.secondaryText} 
-            style={styles.tabIcon}
-          />
-          <Text
-            style={[
-              styles.tabText,
-              {
-                color: activeTab === "history" ? (isDarkMode ? "#FF9500" : "#6366F1") : colors.secondaryText,
-              },
-            ]}
-          >
-            History
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.tab,
-            activeTab === "templates" && [
-              styles.activeTab,
-              { backgroundColor: isDarkMode ? "rgba(255, 149, 0, 0.2)" : "rgba(99, 102, 241, 0.1)" },
-            ],
-          ]}
-          onPress={() => {
-            setActiveTab("templates")
-            if (Platform.OS === "ios") {
-              Haptics.selectionAsync()
-            }
-          }}
-          activeOpacity={0.7}
-        >
-          <Ionicons 
-            name="bookmark-outline" 
-            size={18} 
-            color={activeTab === "templates" ? (isDarkMode ? "#FF9500" : "#6366F1") : colors.secondaryText} 
-            style={styles.tabIcon}
-          />
-          <Text
-            style={[
-              styles.tabText,
-              {
-                color: activeTab === "templates" ? (isDarkMode ? "#FF9500" : "#6366F1") : colors.secondaryText,
-              }, 
-            ]}
-          >
-            Templates
-          </Text>
-        </TouchableOpacity>
-</View> */}
-
-
+      
  
       {/* Content */}
       {activeTab === "history" ? (
@@ -935,7 +926,7 @@ const handleStartWorkout = (workouts: Workout[]) => {
   )
 ) : (
   <FlatList
-    data={savedTemplatesData}
+    data={savedTemplates}
     renderItem={renderTemplateItem}
     keyExtractor={(item) => item.id}
     contentContainerStyle={styles.listContent}
@@ -1091,6 +1082,97 @@ const handleStartWorkout = (workouts: Workout[]) => {
           </BlurView>
         </View>
       </Modal>
+{/* Template Name Prompt Modal */}
+<Modal
+  animationType="fade"
+  transparent={true}
+  visible={showNamePrompt}
+  onRequestClose={() => setShowNamePrompt(false)}
+>
+  <View style={styles.modalOverlay}>
+    <BlurView intensity={30} tint={isDarkMode ? "dark" : "light"} style={styles.blurView}>
+      <View
+        style={[
+          styles.namePromptContainer,
+          {
+            backgroundColor: colors.card,
+            borderWidth: isDarkMode ? 1 : 0,
+            borderColor: colors.border,
+          },
+        ]}
+      >
+        <Ionicons
+          name="bookmark-outline"
+          size={40}
+          color={isDarkMode ? "#FF9500" : "#6366F1"}
+          style={{ marginBottom: 12 }}
+        />
+
+        <Text style={[styles.namePromptTitle, { color: colors.text }]}>Name Your Template</Text>
+        <Text style={[styles.namePromptSubtitle, { color: colors.secondaryText }]}>
+          Create a custom routine to reuse later.
+        </Text>
+
+        <TextInput
+          placeholder="e.g. Push Day"
+          placeholderTextColor={colors.secondaryText}
+          value={templateName}
+          onChangeText={setTemplateName}
+          style={[
+            styles.templateInput,
+            {
+              backgroundColor: isDarkMode ? "rgba(31, 41, 55, 0.5)" : "#F9FAFB",
+              borderColor: colors.border,
+              color: colors.text,
+            },
+          ]}
+        />
+
+        <View style={styles.namePromptButtons}>
+          <TouchableOpacity
+            style={[
+              styles.namePromptButton,
+              {
+                backgroundColor: isDarkMode ? "rgba(79, 70, 229, 0.2)" : "#EEF2FF",
+              },
+            ]}
+            onPress={() => {
+              setShowNamePrompt(false);
+              setTemplateName("");
+            }}
+          >
+            <Text style={{ color: isDarkMode ? "#818CF8" : "#4F46E5", fontWeight: "600" }}>Cancel</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.namePromptButton,
+              {
+                backgroundColor: isDarkMode ? "#FF9500" : "#6366F1",
+              },
+            ]}
+            onPress={async () => {
+              try {
+                if (!templateName.trim()) return Alert.alert("Error", "Please enter a template name.");
+
+                await saveTemplateToSupabase(templateName, newTemplate);
+                const updated = await fetchTemplates();
+                setSavedTemplates(updated);
+                setShowNamePrompt(false);
+                setTemplateName("");
+              } catch (err: any) {
+                Alert.alert("Error", err.message);
+              }
+            }}
+          >
+            <Text style={{ color: "#fff", fontWeight: "600" }}>Create</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </BlurView>
+  </View>
+</Modal>
+
 
       {/* Add Exercise Modal for creating templates */}
       <AddExerciseModal
@@ -1114,6 +1196,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 16,
+  },
+  confirmModal: {
+    padding: 20,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
   },
   // backButton: {
   //   width: 40,
@@ -1535,6 +1623,50 @@ tabText: {
     fontSize: 14,
     fontWeight: "500",
   },
+  namePromptContainer: {
+    borderRadius: 24,
+    padding: 24,
+    alignItems: "center",
+    width: "100%",
+  },
+  
+  namePromptTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  
+  namePromptSubtitle: {
+    fontSize: 14,
+    textAlign: "center",
+    marginBottom: 16,
+  },
+  
+  templateInput: {
+    width: "100%",
+    height: 56,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    fontSize: 16,
+    marginBottom: 16,
+  },
+  
+  namePromptButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  
+  namePromptButton: {
+    flex: 1,
+    height: 48,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    marginHorizontal: 4,
+  },
+  
 })
 
 export default WorkoutHistoryScreen
