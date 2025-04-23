@@ -117,10 +117,11 @@ export const useWorkoutStore = create<WorkoutStore>()(
       addSet: (workoutId) => {
         const newSet: SetLog = {
           id: Date.now().toString(),
-          reps: '8',
-          weight: '0',
+          reps: '',
+          weight: '',
           logged: false
         };
+        
         const prev = get().logs[workoutId] || [];
         const updated = [...prev, newSet];
         console.log(`[WorkoutStore] addSet →`, { workoutId, newSet });

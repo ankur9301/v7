@@ -6,6 +6,15 @@ import { useUserStore } from "@/store/useUserStore";
 export const saveWorkoutToSupabase = async (workoutName: string) => {
   const { plan, logs, elapsed, calories } = useWorkoutStore.getState();
   const { user } = useUserStore.getState();
+  // ✅ Check: Are there any logged sets at all?
+    const hasLoggedSets = Object.values(logs).some((sets) =>
+        sets.some((set) => set.logged)
+    );
+
+    if (!hasLoggedSets) {
+        throw new Error("❗Please complete at least one set before logging your workout.");
+    }
+  
 
   if (!user?.id) {
     throw new Error("User not logged in.");
@@ -28,16 +37,32 @@ export const saveWorkoutToSupabase = async (workoutName: string) => {
   }
 
   // 2. Save session exercises
-  const sessionExercises = plan.map((exercise) => {
-    const sets = logs[exercise.id] || [];
-    return {
-      session_id: session.id,
-      exercise_name: exercise.name,
-      sets: sets.length,
-      reps: sets.map((s) => s.reps).join("-"),
-      weight: sets.map((s) => s.weight).join("-"),
-    };
-  });
+//   const sessionExercises = plan.map((exercise) => {
+//     const sets = logs[exercise.id] || [];
+//     return {
+//       session_id: session.id,
+//       exercise_name: exercise.name,
+//       sets: sets.length,
+//       reps: sets.map((s) => s.reps).join("-"),
+//       weight: sets.map((s) => s.weight).join("-"),
+//     };
+//   });
+
+
+const sessionExercises = Object.entries(logs)
+  .flatMap(([workoutId, sets]) =>
+    sets
+      .filter(set => set.logged) // ✅ only logged sets
+      .map(set => ({
+        session_id: session.id,  // from your workout_sessions insert
+        exercise_name: plan.find(exercise => exercise.id === workoutId)?.name || workoutId, // fallback to workoutId if name is unavailable
+        sets: 1,
+        reps: set.reps,
+        weight: set.weight,
+        created_at: new Date().toISOString(),
+      }))
+  );
+
 
   const { error: exError } = await supabase
     .from("session_exercises")
@@ -50,16 +75,21 @@ export const saveWorkoutToSupabase = async (workoutName: string) => {
   // 3. Save exercise logs (for graphs + PRs)
   const allSetLogs = plan.flatMap((exercise) => {
     const sets = logs[exercise.id] || [];
-    return sets.map((set) => ({
-      user_id: user.id,
-      name: exercise.name,
-      weight: parseFloat(set.weight),
-      reps: parseInt(set.reps),
-      sets: 1,
-      logged_at: new Date(set.timestamp || Date.now()).toISOString(),
-    }));
+  
+    return sets
+      .filter(set => set.logged)
+      .map((set) => ({
+        user_id: user.id,
+        name: exercise.name,
+        weight: parseFloat(set.weight),
+        reps: parseInt(set.reps),
+        sets: 1,
+        logged_at: new Date(set.timestamp || Date.now()).toISOString(),
+        session_id: session.id, // ✅ include this
+      }));
   });
-
+  
+  
   const { error: logError } = await supabase
     .from("exercise_logs")
     .insert(allSetLogs);

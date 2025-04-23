@@ -1,6 +1,7 @@
 import { supabase } from "@/src/supabaseClient";
 import { Workout } from "@/types/types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useUserStore } from "@/store/useUserStore"
 
 export async function saveCustomExerciseLocally(exercise: Exercise) {
   try {
@@ -91,3 +92,31 @@ interface Exercise {
     return workouts;
   }
   
+
+  export const clearWorkoutHistory = async () => {
+    const user = useUserStore.getState().user;
+  
+    if (!user?.id) {
+      throw new Error("User not authenticated");
+    }
+  
+    // Step 1: Fetch all session IDs for user
+    const { data: sessions, error: fetchError } = await supabase
+      .from("workout_sessions")
+      .select("id")
+      .eq("user_id", user.id);
+  
+    if (fetchError) throw fetchError;
+  
+    const sessionIds = sessions.map((s) => s.id);
+  
+    if (sessionIds.length === 0) return; // No sessions to delete
+  
+    // Step 2: Delete all sessions (cascade will handle exercises/logs)
+    const { error: deleteError } = await supabase
+      .from("workout_sessions")
+      .delete()
+      .in("id", sessionIds);
+  
+    if (deleteError) throw deleteError;
+  }

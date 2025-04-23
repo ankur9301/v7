@@ -26,6 +26,7 @@ import AddExerciseModal from "@/components/AddExerciseModal"
 import { workouts as allWorkouts } from "@/constants/data"
 import type { Workout, WorkoutHistory, WorkoutTemplate } from "@/types/types"
 import * as Haptics from "expo-haptics"
+import { clearWorkoutHistory } from "@/lib/exerciseService"
 
 const { width } = Dimensions.get("window")
 
@@ -769,38 +770,36 @@ const WorkoutHistoryScreen = () => {
     
     {((activeTab === "history" && workoutHistoryData.length > 0) || 
       (activeTab === "templates" && savedTemplatesData.length > 1)) && (
-      <TouchableOpacity
+        <TouchableOpacity
         style={styles.clearButton}
         onPress={() => {
-          // Implement delete functionality
-          if (Platform.OS === "ios") {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
-          }
           Alert.alert(
-            activeTab === "history" ? "Clear Workout History" : "Delete All Templates",
-            activeTab === "history" 
-              ? "Are you sure you want to clear all workout history?" 
-              : "Are you sure you want to delete all workout templates?",
+            "Clear Workout History",
+            "Are you sure you want to clear all workout history?",
             [
+              { text: "Cancel", style: "cancel" },
               {
-                text: "Cancel",
-                style: "cancel"
-              },
-              { 
-                text: "Delete", 
+                text: "Delete",
                 style: "destructive",
-                onPress: () => {
-                  // Handle deletion
-                }
-              }
+                onPress: async () => {
+                  try {
+                    await clearWorkoutHistory();
+                    Alert.alert("Success", "Workout history cleared!");
+                    // Optionally refresh state here
+                  } catch (err: any) {
+                    Alert.alert("Error", err.message || "Something went wrong.");
+                  }
+                },
+              },
             ]
           );
         }}
       >
         <Text style={[styles.clearButtonText, { color: isDarkMode ? "#ef4444" : "#dc2626" }]}>
-          {activeTab === "history" ? "Clear All" : "Delete All"}
+          Clear All
         </Text>
       </TouchableOpacity>
+      
     )}
   </View>
 </View>
