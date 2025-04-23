@@ -13,12 +13,12 @@ interface SetLog {
   timestamp?: number;
 }
 
-
 type WorkoutStore = {
   plan: Workout[];
   logs: Record<string, SetLog[]>; // workoutId -> [sets]
   elapsed: number;
   calories: number;
+ 
 
   setPlan: (plan: Workout[]) => void;
 
@@ -30,6 +30,9 @@ type WorkoutStore = {
 
   updateTimer: (secs: number) => void;
   resetSession: () => void;
+  startTimer: () => void;   // <-- new
+  stopTimer: () => void;    // <-- new
+  intervalId?: NodeJS.Timeout | null; // Add intervalId to the WorkoutStore type
 };
 
 export const useWorkoutStore = create<WorkoutStore>()(
@@ -129,6 +132,25 @@ export const useWorkoutStore = create<WorkoutStore>()(
         }));
         console.log("[Zustand] Updated Logs:", get().logs);
 
+      },
+      startTimer: () => {
+        if (get().intervalId) {
+          console.warn("⏱ Timer already running");
+          return;
+        }
+      
+        const interval = setInterval(() => {
+          const current = get().elapsed + 1;
+          get().updateTimer(current);
+        }, 1000);
+      
+        set({ intervalId: interval });
+      },
+      
+      stopTimer: () => {
+        const id = get().intervalId;
+        if (id) clearInterval(id);
+        set({ intervalId: null });
       },
 
       updateTimer: (secs) => {

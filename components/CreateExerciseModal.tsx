@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { useTheme, darkTheme, lightTheme } from '@/context/ThemeContext';
+import { getNextCustomId } from '@/utils/customIdTracker';
 
 // Constants for dropdown options
 const LEVELS = ['Beginner', 'Intermediate', 'Advanced'];

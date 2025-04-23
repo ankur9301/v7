@@ -27,6 +27,7 @@ import { useWorkoutFilterStore } from '@/src/stores/useWorkoutFilterStore';
 import { useWorkoutDataStore } from '@/src/stores/useWorkoutDataStore';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback } from 'react';
+import { getNextCustomId } from '@/utils/customIdTracker';
 
 // Constants
 const TIMES = ['30 Min', '45 Min', '60 Min', '90 Min', '120 Min'];
@@ -37,7 +38,7 @@ type DialogType = 'time' | 'muscles' | 'equipment' | 'level' | null;
 
 const WorkoutScreen: React.FC = () => {
   const router = useRouter();
-  const { plan: currentWorkoutPlan, setPlan } = useWorkoutStore();
+  const { plan: currentWorkoutPlan, setPlan,startTimer } = useWorkoutStore();
   // const { setWorkoutPlan } = useContext(WorkoutContext);
 
   const { isDarkMode } = useTheme();
@@ -287,7 +288,10 @@ const WorkoutScreen: React.FC = () => {
 
   const handleStartWorkout = () => {
     if (currentWorkoutPlan.length > 0) {
+      // setTimeout(() => startTimer(), 500);
+      startTimer();
       router.push('/subScreen/WorkingOut');
+      
     } else {
       Alert.alert('No Workout Plan', 'Please generate a workout plan before starting.');
     }
@@ -303,23 +307,27 @@ const WorkoutScreen: React.FC = () => {
     setSelectedWorkout(null);
   };
   
+
   const handleCreateExercise = async (exercise: { name: string; muscle: string; category: string; level: string }) => {
     try {
-      const savedExercise = await addExerciseToSupabase(exercise);
-      const customExercise = { ...savedExercise, isCustom: true }; // 🆕
+      const newId = getNextCustomId();
+  
+      const savedExercise = await addExerciseToSupabase({
+        ...exercise,
+        id: newId, // ✅ override with unique ID starting at 200
+      });
+  
+      const customExercise = { ...savedExercise, id: newId, isCustom: true };
   
       setAllAvailableWorkouts([...allAvailableWorkouts, customExercise]);
       setFilteredWorkouts([...filteredWorkouts, customExercise]);
-      // setWorkoutPlan([...currentWorkoutPlan, customExercise]);
       setPlan([...currentWorkoutPlan, customExercise]);
-
   
-      Alert.alert("Success", "New exercise created!");
+      Alert.alert('Success', 'New exercise created!');
     } catch (err: any) {
-      Alert.alert("Error", err.message || "Could not create exercise.");
+      Alert.alert('Error', err.message || 'Could not create exercise.');
     }
   };
-  
 
   const handleDeleteExercise = async (workout: Workout) => {
     try {
@@ -675,6 +683,8 @@ const styles = StyleSheet.create({
 });
 
 export default WorkoutScreen;
+
+
 
 
 // import React, { useState, useEffect, useContext } from 'react';

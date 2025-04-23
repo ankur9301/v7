@@ -35,7 +35,7 @@ const { width, height } = Dimensions.get("window")
 
 const WorkingOut: React.FC = () => {
   // const { workoutPlan, setWorkoutPlan } = useContext(WorkoutContext)
-  const { plan: workoutPlan, setPlan } = useWorkoutStore()
+  const { plan: workoutPlan, setPlan,stopTimer } = useWorkoutStore()
   const { isDarkMode } = useTheme()
   const colors = isDarkMode ? darkTheme : lightTheme
 
@@ -121,6 +121,7 @@ const WorkingOut: React.FC = () => {
   /** Handle exit confirmation */
   const handleConfirmExit = () => {
     useWorkoutStore.getState().resetSession();
+    stopTimer();
     router.back()
   }
 

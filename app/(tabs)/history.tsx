@@ -13,6 +13,7 @@ import {
   Image,
   Animated,
   Platform,
+  Alert,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
@@ -400,22 +401,38 @@ const WorkoutHistoryScreen = () => {
             style={styles.cardGradient}
           >
             <View style={styles.historyCardHeader}>
-              <View>
-                <Text style={[styles.historyCardTitle, { color: colors.text }]}>{item.title}</Text>
-                <Text style={[styles.historyCardDate, { color: colors.secondaryText }]}>{item.date}</Text>
-              </View>
-              <View
-                style={[
-                  styles.durationBadge,
-                  { backgroundColor: isDarkMode ? "rgba(255, 149, 0, 0.2)" : "rgba(99, 102, 241, 0.1)" },
-                ]}
-              >
-                <Ionicons name="time-outline" size={14} color={isDarkMode ? "#FF9500" : "#6366F1"} />
-                <Text style={[styles.durationText, { color: isDarkMode ? "#FF9500" : "#6366F1" }]}>
-                  {item.duration}
-                </Text>
-              </View>
-            </View>
+  <Text style={[styles.historyCardTitle, { color: colors.text }]}>
+    {item.title}
+  </Text>
+  <View style={styles.historyCardActions}>
+    <View
+      style={[
+        styles.durationBadge,
+        {
+          backgroundColor: isDarkMode
+            ? "rgba(255, 149, 0, 0.2)"
+            : "rgba(99, 102, 241, 0.1)",
+        },
+      ]}
+    >
+      <Ionicons name="barbell-outline" size={14} color={isDarkMode ? "#FF9500" : "#6366F1"} />
+      <Text style={[styles.durationText, { color: isDarkMode ? "#FF9500" : "#6366F1" }]}>
+        {item.workouts.length} exercises
+      </Text>
+    </View>
+    <TouchableOpacity 
+      style={styles.deleteButton}
+      onPress={() => {
+        // Delete this template
+        if (Platform.OS === "ios") {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+        }
+      }}
+    >
+      <Ionicons name="trash-outline" size={16} color={isDarkMode ? "#ef4444" : "#dc2626"} />
+    </TouchableOpacity>
+  </View>
+</View>
 
             <View style={styles.historyCardStats}>
               <View style={styles.historyCardStat}>
@@ -519,26 +536,39 @@ const WorkoutHistoryScreen = () => {
             }
             style={styles.cardGradient}
           >
-            <View style={styles.historyCardHeader}>
-              <Text style={[styles.historyCardTitle, { color: colors.text }]}>
-                {item.title}
-              </Text>
-              <View
-                style={[
-                  styles.durationBadge,
-                  {
-                    backgroundColor: isDarkMode
-                      ? "rgba(255, 149, 0, 0.2)"
-                      : "rgba(99, 102, 241, 0.1)",
-                  },
-                ]}
-              >
-                <Ionicons name="barbell-outline" size={14} color={isDarkMode ? "#FF9500" : "#6366F1"} />
-                <Text style={[styles.durationText, { color: isDarkMode ? "#FF9500" : "#6366F1" }]}>
-                  {item.workouts.length} exercises
-                </Text>
-              </View>
-            </View>
+<View style={styles.historyCardHeader}>
+  <Text style={[styles.historyCardTitle, { color: colors.text }]}>
+    {item.title}
+  </Text>
+  <View style={styles.historyCardActions}>
+    <View
+      style={[
+        styles.durationBadge,
+        {
+          backgroundColor: isDarkMode
+            ? "rgba(255, 149, 0, 0.2)"
+            : "rgba(99, 102, 241, 0.1)",
+        },
+      ]}
+    >
+      <Ionicons name="barbell-outline" size={14} color={isDarkMode ? "#FF9500" : "#6366F1"} />
+      <Text style={[styles.durationText, { color: isDarkMode ? "#FF9500" : "#6366F1" }]}>
+        {item.workouts.length} exercises
+      </Text>
+    </View>
+    <TouchableOpacity 
+      style={styles.deleteButton}
+      onPress={() => {
+        // Delete this template
+        if (Platform.OS === "ios") {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+        }
+      }}
+    >
+      <Ionicons name="trash-outline" size={16} color={isDarkMode ? "#ef4444" : "#dc2626"} />
+    </TouchableOpacity>
+  </View>
+</View>
   
             <View style={styles.workoutPreview}>
               {item.workouts.slice(0, 3).map((workout, index) => (
@@ -659,31 +689,122 @@ const WorkoutHistoryScreen = () => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["top"]}>
-      {/* Header with Gradient */}
-      <LinearGradient
-        colors={isDarkMode ? ["#FF9500", "#FF5500"] : ["#8B5CF6", "#6366F1", "#3B82F6"]}
-        style={styles.header}
-      >
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => {
-            router.back()
-
-            // Provide haptic feedback
-            if (Platform.OS === "ios") {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-            }
-          }}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="arrow-back" size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Workout History</Text>
-        <View style={{ width: 40 }} />
-      </LinearGradient>
 
       {/* Tabs */}
-      <View style={styles.tabContainer}>
+      {/* Replace your current tab section with this */}
+<View style={styles.sectionHeader}>
+  <View style={styles.tabContainer}>
+    <TouchableOpacity
+      style={[
+        styles.tab,
+        activeTab === "history" && [
+          styles.activeTab,
+          { backgroundColor: isDarkMode ? "rgba(255, 149, 0, 0.2)" : "rgba(99, 102, 241, 0.1)" },
+        ],
+      ]}
+      onPress={() => {
+        setActiveTab("history")
+        if (Platform.OS === "ios") {
+          Haptics.selectionAsync()
+        }
+      }}
+      activeOpacity={0.7}
+    >
+      <Ionicons 
+        name="time-outline" 
+        size={18} 
+        color={activeTab === "history" ? (isDarkMode ? "#FF9500" : "#6366F1") : colors.secondaryText} 
+      />
+      <Text
+        style={[
+          styles.tabText,
+          {
+            color: activeTab === "history" ? (isDarkMode ? "#FF9500" : "#6366F1") : colors.secondaryText,
+          },
+        ]}
+      >
+        History
+      </Text>
+    </TouchableOpacity>
+
+    <TouchableOpacity
+      style={[
+        styles.tab,
+        activeTab === "templates" && [
+          styles.activeTab,
+          { backgroundColor: isDarkMode ? "rgba(255, 149, 0, 0.2)" : "rgba(99, 102, 241, 0.1)" },
+        ],
+      ]}
+      onPress={() => {
+        setActiveTab("templates")
+        if (Platform.OS === "ios") {
+          Haptics.selectionAsync()
+        }
+      }}
+      activeOpacity={0.7}
+    >
+      <Ionicons 
+        name="bookmark-outline" 
+        size={18} 
+        color={activeTab === "templates" ? (isDarkMode ? "#FF9500" : "#6366F1") : colors.secondaryText} 
+      />
+      <Text
+        style={[
+          styles.tabText,
+          {
+            color: activeTab === "templates" ? (isDarkMode ? "#FF9500" : "#6366F1") : colors.secondaryText,
+          },
+        ]}
+      >
+        Templates
+      </Text>
+    </TouchableOpacity>
+  </View>
+  
+  {/* Section title with clear button */}
+  <View style={styles.sectionTitleRow}>
+    <Text style={[styles.sectionTitle, { color: colors.text }]}>
+      {activeTab === "history" ? "Recent Workouts" : "Saved Templates"}
+    </Text>
+    
+    {((activeTab === "history" && workoutHistoryData.length > 0) || 
+      (activeTab === "templates" && savedTemplatesData.length > 1)) && (
+      <TouchableOpacity
+        style={styles.clearButton}
+        onPress={() => {
+          // Implement delete functionality
+          if (Platform.OS === "ios") {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
+          }
+          Alert.alert(
+            activeTab === "history" ? "Clear Workout History" : "Delete All Templates",
+            activeTab === "history" 
+              ? "Are you sure you want to clear all workout history?" 
+              : "Are you sure you want to delete all workout templates?",
+            [
+              {
+                text: "Cancel",
+                style: "cancel"
+              },
+              { 
+                text: "Delete", 
+                style: "destructive",
+                onPress: () => {
+                  // Handle deletion
+                }
+              }
+            ]
+          );
+        }}
+      >
+        <Text style={[styles.clearButtonText, { color: isDarkMode ? "#ef4444" : "#dc2626" }]}>
+          {activeTab === "history" ? "Clear All" : "Delete All"}
+        </Text>
+      </TouchableOpacity>
+    )}
+  </View>
+</View>
+      {/* <View style={styles.tabContainer}>
         <TouchableOpacity
           style={[
             styles.tab,
@@ -694,14 +815,18 @@ const WorkoutHistoryScreen = () => {
           ]}
           onPress={() => {
             setActiveTab("history")
-
-            // Provide haptic feedback
             if (Platform.OS === "ios") {
               Haptics.selectionAsync()
             }
           }}
           activeOpacity={0.7}
         >
+          <Ionicons 
+            name="time-outline" 
+            size={18} 
+            color={activeTab === "history" ? (isDarkMode ? "#FF9500" : "#6366F1") : colors.secondaryText} 
+            style={styles.tabIcon}
+          />
           <Text
             style={[
               styles.tabText,
@@ -724,27 +849,33 @@ const WorkoutHistoryScreen = () => {
           ]}
           onPress={() => {
             setActiveTab("templates")
-
-            // Provide haptic feedback
             if (Platform.OS === "ios") {
               Haptics.selectionAsync()
             }
           }}
           activeOpacity={0.7}
         >
+          <Ionicons 
+            name="bookmark-outline" 
+            size={18} 
+            color={activeTab === "templates" ? (isDarkMode ? "#FF9500" : "#6366F1") : colors.secondaryText} 
+            style={styles.tabIcon}
+          />
           <Text
             style={[
               styles.tabText,
               {
                 color: activeTab === "templates" ? (isDarkMode ? "#FF9500" : "#6366F1") : colors.secondaryText,
-              },
+              }, 
             ]}
           >
             Templates
           </Text>
         </TouchableOpacity>
-      </View>
+</View> */}
 
+
+ 
       {/* Content */}
       {activeTab === "history" ? (
         <FlatList
@@ -939,36 +1070,47 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.2)",
-  },
+  // backButton: {
+  //   width: 40,
+  //   height: 40,
+  //   borderRadius: 20,
+  //   justifyContent: "center",
+  //   alignItems: "center",
+  //   backgroundColor: "rgba(255,255,255,0.2)",
+  // },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 24,
+    alignContent: "center",
+    alignItems: "center",
     fontWeight: "700",
     color: "#fff",
   },
-  tabContainer: {
-    flexDirection: "row",
-    paddingHorizontal: 20,
-    marginVertical: 16,
-  },
-  tab: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    marginRight: 12,
-  },
+// Update the tabContainer style
+tabContainer: {
+  flexDirection: "row",
+  paddingHorizontal: 20,
+  marginVertical: 16,
+  alignItems: "center", // Make sure tabs are vertically centered
+},
+
+// Update the tab style
+tab: {
+  flexDirection: "row",
+  alignItems: "center", // Center icon and text vertically
+  paddingVertical: 8,
+  paddingHorizontal: 16,
+  borderRadius: 20,
+  marginRight: 12,
+},
+
+// Update tabText to align properly with icon
+tabText: {
+  fontSize: 16,
+  fontWeight: "600",
+  marginLeft: 4, // Add consistent spacing from icon
+},
   activeTab: {
     borderRadius: 20,
-  },
-  tabText: {
-    fontSize: 16,
-    fontWeight: "600",
   },
   listContent: {
     paddingHorizontal: 20,
@@ -1287,6 +1429,66 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
+  },
+  tabIcon: {
+    marginRight: 6,
+  },
+  headerActionsContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 16,
+    marginTop: -8, // Pull slightly higher to reduce gap after tabs
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  
+  // Update deleteAllButton to look more consistent
+  deleteAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+  },
+  
+  // Make text consistent
+  deleteAllText: {
+    fontSize: 14,
+    fontWeight: '600', 
+    marginLeft: 6,
+  },
+  historyCardActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  deleteButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  sectionHeader: {
+    paddingHorizontal: 20,
+  },
+  // Removed duplicate definition
+ 
+  sectionTitleRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  clearButton: {
+    padding: 6,
+  },
+  clearButtonText: {
+    fontSize: 14,
+    fontWeight: "500",
   },
 })
 

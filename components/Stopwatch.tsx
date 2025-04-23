@@ -21,6 +21,9 @@ import MaskedView from '@react-native-masked-view/masked-view';
 import { useTheme, lightTheme, darkTheme } from '../context/ThemeContext';
 import { useWorkoutModalStore } from "@/src/stores/useWorkoutModalStore";
 import { useWorkoutStore } from '@/src/stores/useWorkoutStore';
+import { saveWorkoutToSupabase } from "@/lib/saveWorkoutSession"; // add this
+
+
 
 const { width } = Dimensions.get('window');
 // Reduced circle size to make the stopwatch more compact
@@ -39,88 +42,23 @@ const Stopwatch: React.FC<StopwatchProps> = ({ isDarkMode = false }) => {
   const [isRunning, setIsRunning] = useState(true);
   // const [time, setTime] = useState(0);
   // const [calories, setCalories] = useState(0);
-  const {
-    elapsed: time,
-    calories,
-    updateTimer,
-    resetSession
-  } = useWorkoutStore();
-  
-  const timeRef = useRef(time); 
+  const { startTimer, stopTimer, resetSession, elapsed, calories } = useWorkoutStore();
+  const time = elapsed;
+
 
   const [modalVisible, setModalVisible] = useState(false);
 
-  
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const progressAnimation = useRef(new Animated.Value(0)).current;
   const pulseAnimation = useRef(new Animated.Value(1)).current;
+  const timeRef = useRef(0); // Define timeRef
   const buttonScaleAnim = useRef(new Animated.Value(1)).current;
   const [workoutName, setWorkoutName] = useState('');
 
   const router = useRouter();
 
-  // Calculate calories burned (rough estimate)
-  // useEffect(() => {
-  //   // Assuming average person burns ~10 calories per minute during moderate exercise
-  //   const caloriesPerSecond = 10 / 60;
-  //   setStopwatchData(time, Math.round(time * caloriesPerSecond));
-  // }, [time]);
+ 
 
-  // Start the stopwatch
-  // const startTimer = () => {
-  //   // intervalRef.current = setInterval(() => {
-  //   //   // setTime((prevTime) => prevTime + 1);
-  //   //   setStopwatchData(time + 1, Math.round((time + 1) * (10 / 60))); // update both time and calories
-
-  //   // }, 1000);
-  //   intervalRef.current = setInterval(() => {
-  //     const currentTime = activeWorkout?.stopwatchDuration || 0;
-  //     const newTime = currentTime + 1;
-  //     const newCalories = Math.round(newTime * (10 / 60));
-  //     setStopwatchData(newTime, newCalories); // Zustand update
-  //   }, 1000);
-    
-    
-    
-  //   // Start pulse animation
-  //   startPulseAnimation();
-  // };
-
-
-  let tick = 0; // counter to track intervals (scoped outside useEffect)
-
-  const startTimer = () => {
-    if (intervalRef.current) return;
   
-    intervalRef.current = setInterval(() => {
-      const updatedTime = timeRef.current + 1;
-      timeRef.current = updatedTime;            // ✅ keep the ref up-to-date
-      updateTimer(updatedTime);                 // ✅ update Zustand
-  
-      if (updatedTime % 10 === 0) {
-        console.log(`[Zustand Stopwatch] ⏱ ${updatedTime}s | 🔥 ${Math.round((updatedTime * 10) / 60)} cal`);
-      }
-    }, 1000);
-  
-    startPulseAnimation();
-  };
-  
-
-  // Stop the stopwatch
-  const stopTimer = () => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-    
-    
-    // Stop pulse animation
-    Animated.timing(pulseAnimation, {
-      toValue: 1,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-  };
 
   // Toggle timer on tap
   const toggleTimer = () => {
@@ -146,13 +84,7 @@ const Stopwatch: React.FC<StopwatchProps> = ({ isDarkMode = false }) => {
     ]).start();
   };
 
-  // Start the timer automatically on mount
-  useEffect(() => {
-    startTimer();
-    return () => {
-      stopTimer();
-    };
-  }, []);
+
 
   // Pulse animation
   const startPulseAnimation = () => {
@@ -211,45 +143,25 @@ const Stopwatch: React.FC<StopwatchProps> = ({ isDarkMode = false }) => {
 
   // Handle Log Workout Button Press
   const handleLogWorkoutPress = async () => {
-    stopTimer(); 
     if (!workoutName.trim()) {
       alert("Please enter a workout name.");
       return;
     }
   
-    const { data: userData, error: userError } = await supabase.auth.getUser();
-  
-    if (userError || !userData?.user) {
-      alert("You must be logged in to log a workout.");
-      return;
-    }
-  
     try {
-      const { error } = await supabase.from("workouts").insert([
-        {
-          user_id: userData.user.id,
-          workout_name: workoutName.trim(),
-          duration: time,
-          calories_burned: calories,
-          logged_at: new Date(),
-        },
-      ]);
-  
-      if (error) {
-        alert("Workout log failed: " + error.message);
-      } else {
-        alert("Workout logged successfully!");
-        updateTimer(0); // ✅ resets both elapsed and calories
-
-        setModalVisible(false);
-        setWorkoutName(""); // Reset field
-        router.push("/workout"); // Go to history
-      }
-    } catch (err) {
-      alert("An unexpected error occurred.");
+      await saveWorkoutToSupabase(workoutName.trim());
+      resetSession();
+      stopTimer(); // ← will stop timer & reset all
+      setWorkoutName("");
+      setModalVisible(false);
+      setIsRunning(false);
+      router.push("/workout");
+    } catch (error: any) {
+      alert("Failed: " + error.message);
     }
   };
   
+
 
   // Calculate stroke dashoffset for progress circle
   const strokeDashoffset = progressAnimation.interpolate({
