@@ -32,261 +32,10 @@ import { fetchWorkoutHistory } from "@/lib/fetchWorkoutHistory";
 import { useWorkoutStore } from "@/src/stores/useWorkoutStore"
 import { clearAllTemplates, deleteTemplate, fetchTemplates, saveTemplateToSupabase } from "@/lib/templateService"
 import { useUserStore } from "@/store/useUserStore"
+import { RefreshControl } from "react-native"
 
 
 const { width } = Dimensions.get("window")
-
-// Sample data for workout history
-// const workoutHistoryData: WorkoutHistory[] = [
-//   {
-//     id: "h1",
-//     date: "Today, 10:30 AM",
-//     title: "Morning Workout",
-//     duration: "45 min",
-//     calories: 320,
-//     workouts: [
-//       {
-//         id: "w1",
-//         name: "Push-ups",
-//         muscle: "Chest",
-//         level: "Beginner",
-//         sets: 3,
-//         reps: "12-15",
-//         imageUrl: require("@/assets/images/placeholder.jpg"),
-//       },
-//       {
-//         id: "w2",
-//         name: "Squats",
-//         muscle: "Legs",
-//         level: "Beginner",
-//         sets: 4,
-//         reps: "10-12",
-//         imageUrl: require("@/assets/images/placeholder.jpg"),
-//       },
-//       {
-//         id: "w3",
-//         name: "Plank",
-//         muscle: "Core",
-//         level: "Beginner",
-//         sets: 3,
-//         reps: "30 sec",
-//         imageUrl: require("@/assets/images/placeholder.jpg"),
-//       },
-//     ],
-//   },
-//   {
-//     id: "h2",
-//     date: "Yesterday, 6:15 PM",
-//     title: "Evening Cardio",
-//     duration: "30 min",
-//     calories: 280,
-//     workouts: [
-//       {
-//         id: "w4",
-//         name: "Jumping Jacks",
-//         muscle: "Full Body",
-//         level: "Beginner",
-//         sets: 3,
-//         reps: "45 sec",
-//         imageUrl: require("@/assets/images/placeholder.jpg"),
-//       },
-//       {
-//         id: "w5",
-//         name: "Mountain Climbers",
-//         muscle: "Core",
-//         level: "Intermediate",
-//         sets: 3,
-//         reps: "30 sec",
-//         imageUrl: require("@/assets/images/placeholder.jpg"),
-//       },
-//       {
-//         id: "w6",
-//         name: "Burpees",
-//         muscle: "Full Body",
-//         level: "Advanced",
-//         sets: 3,
-//         reps: "10-12",
-//         imageUrl: require("@/assets/images/placeholder.jpg"),
-//       },
-//     ],
-//   },
-//   {
-//     id: "h3",
-//     date: "May 15, 2023, 8:00 AM",
-//     title: "Full Body Workout",
-//     duration: "60 min",
-//     calories: 420,
-//     workouts: [
-//       {
-//         id: "w7",
-//         name: "Deadlifts",
-//         muscle: "Back",
-//         level: "Intermediate",
-//         sets: 4,
-//         reps: "8-10",
-//         imageUrl: require("@/assets/images/placeholder.jpg"),
-//       },
-//       {
-//         id: "w8",
-//         name: "Bench Press",
-//         muscle: "Chest",
-//         level: "Intermediate",
-//         sets: 4,
-//         reps: "8-10",
-//         imageUrl: require("@/assets/images/placeholder.jpg"),
-//       },
-//       {
-//         id: "w9",
-//         name: "Pull-ups",
-//         muscle: "Back",
-//         level: "Advanced",
-//         sets: 3,
-//         reps: "8-10",
-//         imageUrl: require("@/assets/images/placeholder.jpg"),
-//       },
-//       {
-//         id: "w10",
-//         name: "Shoulder Press",
-//         muscle: "Shoulders",
-//         level: "Intermediate",
-//         sets: 3,
-//         reps: "10-12",
-//         imageUrl: require("@/assets/images/placeholder.jpg"),
-//       },
-//     ],
-//   },
-// ]
-
-// Sample data for saved templates
-// const savedTemplatesData: WorkoutTemplate[] = [
-//   {
-//     id: "t1",
-//     title: "Upper Body Blast",
-//     workouts: [
-//       {
-//         id: "w11",
-//         name: "Bench Press",
-//         muscle: "Chest",
-//         level: "Intermediate",
-//         sets: 4,
-//         reps: "8-10",
-//         imageUrl: require("@/assets/images/placeholder.jpg"),
-//       },
-//       {
-//         id: "w12",
-//         name: "Shoulder Press",
-//         muscle: "Shoulders",
-//         level: "Intermediate",
-//         sets: 3,
-//         reps: "10-12",
-//         imageUrl: require("@/assets/images/placeholder.jpg"),
-//       },
-//       {
-//         id: "w13",
-//         name: "Bicep Curls",
-//         muscle: "Arms",
-//         level: "Beginner",
-//         sets: 3,
-//         reps: "12-15",
-//         imageUrl: require("@/assets/images/placeholder.jpg"),
-//       },
-//       {
-//         id: "w14",
-//         name: "Tricep Extensions",
-//         muscle: "Arms",
-//         level: "Beginner",
-//         sets: 3,
-//         reps: "12-15",
-//         imageUrl: require("@/assets/images/placeholder.jpg"),
-//       },
-//     ],
-//   },
-//   {
-//     id: "t2",
-//     title: "Leg Day",
-//     workouts: [
-//       {
-//         id: "w15",
-//         name: "Squats",
-//         muscle: "Legs",
-//         level: "Intermediate",
-//         sets: 4,
-//         reps: "8-10",
-//         imageUrl: require("@/assets/images/placeholder.jpg"),
-//       },
-//       {
-//         id: "w16",
-//         name: "Lunges",
-//         muscle: "Legs",
-//         level: "Intermediate",
-//         sets: 3,
-//         reps: "10 each leg",
-//         imageUrl: require("@/assets/images/placeholder.jpg"),
-//       },
-//       {
-//         id: "w17",
-//         name: "Leg Press",
-//         muscle: "Legs",
-//         level: "Intermediate",
-//         sets: 3,
-//         reps: "12-15",
-//         imageUrl: require("@/assets/images/placeholder.jpg"),
-//       },
-//       {
-//         id: "w18",
-//         name: "Calf Raises",
-//         muscle: "Legs",
-//         level: "Beginner",
-//         sets: 4,
-//         reps: "15-20",
-//         imageUrl: require("@/assets/images/placeholder.jpg"),
-//       },
-//     ],
-//   },
-//   {
-//     id: "t3",
-//     title: "Quick HIIT",
-//     workouts: [
-//       {
-//         id: "w19",
-//         name: "Burpees",
-//         muscle: "Full Body",
-//         level: "Advanced",
-//         sets: 4,
-//         reps: "45 sec",
-//         imageUrl: require("@/assets/images/placeholder.jpg"),
-//       },
-//       {
-//         id: "w20",
-//         name: "Mountain Climbers",
-//         muscle: "Core",
-//         level: "Intermediate",
-//         sets: 4,
-//         reps: "45 sec",
-//         imageUrl: require("@/assets/images/placeholder.jpg"),
-//       },
-//       {
-//         id: "w21",
-//         name: "Jumping Jacks",
-//         muscle: "Full Body",
-//         level: "Beginner",
-//         sets: 4,
-//         reps: "45 sec",
-//         imageUrl: require("@/assets/images/placeholder.jpg"),
-//       },
-//       {
-//         id: "w22",
-//         name: "High Knees",
-//         muscle: "Legs",
-//         level: "Intermediate",
-//         sets: 4,
-//         reps: "45 sec",
-//         imageUrl: require("@/assets/images/placeholder.jpg"),
-//       },
-//     ],
-//   },
-// ]
-
 const WorkoutHistoryScreen = () => {
   const { isDarkMode } = useTheme()
   const colors = isDarkMode ? darkTheme : lightTheme
@@ -307,7 +56,8 @@ const WorkoutHistoryScreen = () => {
 
   const [showNamePrompt, setShowNamePrompt] = useState(false);
   const [templateName, setTemplateName] = useState(""); // Add this line
-  
+  const [refreshing, setRefreshing] = useState(false)
+
 
 useEffect(() => {
   const load = async () => {
@@ -581,7 +331,20 @@ const handleStartWorkout = (workouts: Workout[]) => {
       </Animated.View>
     )
   }
-
+  const handleRefresh = async () => {
+    try {
+      setRefreshing(true)
+      const history = await fetchWorkoutHistory()
+      const templates = await fetchTemplates()
+      setWorkoutHistoryData(history)
+      setSavedTemplates(templates)
+    } catch (err: any) {
+      Alert.alert("Error", err.message || "Refresh failed")
+    } finally {
+      setRefreshing(false)
+    }
+  }
+  
   const renderTemplateItem = ({ item, index }: { item: WorkoutTemplate; index: number }) => {
     return (
       <Animated.View
@@ -917,22 +680,38 @@ const handleStartWorkout = (workouts: Workout[]) => {
     <Text style={{ textAlign: "center", marginTop: 32, color: colors.secondaryText }}>Loading...</Text>
   ) : (
     <FlatList
-      data={workoutHistoryData}
-      renderItem={renderHistoryItem}
-      keyExtractor={(item) => item.id}
-      contentContainerStyle={styles.listContent}
-      showsVerticalScrollIndicator={false}
+  data={workoutHistoryData}
+  renderItem={renderHistoryItem}
+  keyExtractor={(item) => item.id}
+  contentContainerStyle={styles.listContent}
+  showsVerticalScrollIndicator={false}
+  refreshControl={
+    <RefreshControl
+      refreshing={refreshing}
+      onRefresh={handleRefresh}
+      tintColor={isDarkMode ? "#FF9500" : "#6366F1"}
     />
+  }
+/>
+
   )
 ) : (
   <FlatList
-    data={savedTemplates}
-    renderItem={renderTemplateItem}
-    keyExtractor={(item) => item.id}
-    contentContainerStyle={styles.listContent}
-    ListHeaderComponent={renderCreateTemplateCard}
-    showsVerticalScrollIndicator={false}
-  />
+  data={savedTemplates}
+  renderItem={renderTemplateItem}
+  keyExtractor={(item) => item.id}
+  contentContainerStyle={styles.listContent}
+  ListHeaderComponent={renderCreateTemplateCard}
+  showsVerticalScrollIndicator={false}
+  refreshControl={
+    <RefreshControl
+      refreshing={refreshing}
+      onRefresh={handleRefresh}
+      tintColor={isDarkMode ? "#FF9500" : "#6366F1"}
+    />
+  }
+/>
+
 )}
 
 

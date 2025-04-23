@@ -23,6 +23,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useTheme, lightTheme, darkTheme } from "../context/ThemeContext";
 import { useWorkoutModalStore } from "@/src/stores/useWorkoutModalStore";
 import { useWorkoutStore } from "@/src/stores/useWorkoutStore";
+import { RefreshControl } from 'react-native';
 
 const { width } = Dimensions.get("window");
 

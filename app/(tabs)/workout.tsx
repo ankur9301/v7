@@ -28,6 +28,8 @@ import { useWorkoutDataStore } from '@/src/stores/useWorkoutDataStore';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback } from 'react';
 import { getNextCustomId } from '@/utils/customIdTracker';
+import { RefreshControl } from 'react-native';
+
 
 // Constants
 const TIMES = ['30 Min', '45 Min', '60 Min', '90 Min', '120 Min'];
@@ -455,9 +457,16 @@ const WorkoutScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={styles.contentContainer}
-        refreshing={isLoading}
-        onRefresh={syncFromSupabase}
-
+        // refreshing={isLoading}
+        // onRefresh={syncFromSupabase}
+        refreshControl={
+          <RefreshControl
+            refreshing={isLoading}
+            onRefresh={syncFromSupabase}
+            tintColor={isDarkMode ? "#FF9500" : "#6366F1"} // Optional: spinner color
+          />
+        }
+        
       />
       
       {/* Start Workout Button - Floating */}
