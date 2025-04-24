@@ -130,3 +130,17 @@ interface Exercise {
   
     if (error) throw new Error(error.message);
   };
+
+
+  // lib/exerciseLogService.ts
+  export const fetchLogsForExercise = async (exerciseName: string) => {
+    const { data, error } = await supabase
+      .from("exercise_logs")
+      .select("*")
+      .eq("name", exerciseName)
+      .order("logged_at", { ascending: false });
+  
+    if (error) throw error;
+    return data;
+  };
+  

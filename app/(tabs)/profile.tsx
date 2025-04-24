@@ -15,6 +15,8 @@ import { useTheme, lightTheme, darkTheme } from '../../context/ThemeContext';
 import { useUserStore } from '@/store/useUserStore';
 import { supabase } from '@/src/supabaseClient';
 import { useFocusEffect } from '@react-navigation/native';
+import { useStatsStore } from '@/src/stores/userStatsStore';
+import ConfettiCannon from 'react-native-confetti-cannon';
 
 
 
@@ -30,6 +32,8 @@ export default function ProfileScreen() {
   const [editing, setEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const { userStats, fetchStats } = useStatsStore();
+
 
   // Sync local state with user store whenever user changes
   useEffect(() => {
@@ -54,11 +58,12 @@ export default function ProfileScreen() {
     }
   };
 
-  useFocusEffect(
-    useCallback(() => {
-      fetchProfile();
-    }, [user?.id])
-  );
+useFocusEffect(
+  useCallback(() => {
+    fetchProfile();
+    if (user?.id) fetchStats(user.id);
+  }, [user?.id])
+);
 
   const pickImage = async () => {
     if (!editing) return;
@@ -211,7 +216,41 @@ export default function ProfileScreen() {
             )}
           </View>
 
-          <Text style={[styles.profileEmail, { color: colors.secondaryText }]}>{user?.email || 'Loading...'}</Text>
+      <Text style={[styles.profileEmail, { color: colors.secondaryText }]}>
+  {user?.email || 'Loading...'}
+</Text>
+
+{userStats.totalWorkouts >=5 && (
+  <View style={{
+    marginTop: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: isDarkMode ? '#292524' : '#F3F4F6',
+    borderRadius: 20,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderColor: isDarkMode ? '#FF9500' : '#6366F1',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2
+  }}>
+    <Ionicons name="trophy-outline" size={16} color={isDarkMode ? '#FF9500' : '#6366F1'} />
+    <Text style={{
+      fontSize: 13,
+      fontWeight: '600',
+      color: isDarkMode ? '#FF9500' : '#6366F1'
+    }}>
+      5+ Workouts Club
+    </Text>
+  </View>
+)}
+
+
 
           {editing && (
             <View style={styles.editButtons}>
@@ -239,10 +278,31 @@ export default function ProfileScreen() {
             </View>
           )}
         </View>
-
+     
         {/* Stats */}
         <View style={[styles.statsSection, { backgroundColor: colors.card }]}>
+          <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
           <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: colors.text }]}>{userStats.monthlyWorkouts}</Text>
+              <Text style={[styles.statLabel, { color: colors.secondaryText }]}>Workouts</Text>
+            </View>
+            <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: colors.text }]}>{userStats.totalCalories}</Text>
+              <Text style={[styles.statLabel, { color: colors.secondaryText }]}>KCAL Burned</Text>
+            </View>
+            <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: colors.text }]}>{userStats.totalMinutes}</Text>
+              <Text style={[styles.statLabel, { color: colors.secondaryText }]}>Minutes</Text>
+        </View>
+
+        
+
+
+
+
+          {/* <View style={styles.statItem}>
             <Text style={[styles.statValue, { color: colors.text }]}>24</Text>
             <Text style={[styles.statLabel, { color: colors.secondaryText }]}>Workouts</Text>
           </View>
@@ -255,7 +315,7 @@ export default function ProfileScreen() {
           <View style={styles.statItem}>
             <Text style={[styles.statValue, { color: colors.text }]}>30</Text>
             <Text style={[styles.statLabel, { color: colors.secondaryText }]}>Days Streak</Text>
-          </View>
+          </View> */}
         </View>
 
         {/* Account Section */}

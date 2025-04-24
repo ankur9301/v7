@@ -17,6 +17,8 @@ import { getWorkoutImage } from "../utils/imageHelper";
 import { Ionicons } from "@expo/vector-icons";
 import { LineChart } from "react-native-chart-kit";
 import { useTheme, lightTheme, darkTheme } from "../context/ThemeContext";
+import { fetchLogsForExercise } from "@/lib/exerciseService";
+import { LinearGradient } from "expo-linear-gradient";
 
 
 const { width } = Dimensions.get("window");
@@ -39,31 +41,151 @@ const WorkoutInfoModal: React.FC<WorkoutInfoProps> = ({ visible, workout, onClos
   const indicatorPosition = useRef(new Animated.Value(0)).current;
   const indicatorWidth = useRef(new Animated.Value(0)).current;
   
-  // Sample data for charts
+  const [exerciseLogs, setExerciseLogs] = useState<any[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(true);
+  const [groupedSessions, setGroupedSessions] = useState<Record<string, any[]>>({});
+  const [expandedSessions, setExpandedSessions] = useState<Record<string, boolean>>({});
+  
+  
+
+  useEffect(() => {
+    const loadLogs = async () => {
+      if (!workout?.name) return;
+      try {
+        setLoadingLogs(true);
+        const logs = await fetchLogsForExercise(workout.name);
+        setExerciseLogs(logs);
+        
+        const groupedBySession = logs.reduce((acc, log) => {
+          const sessionKey = log.session_id || "unknown_session";
+          if (!acc[sessionKey]) acc[sessionKey] = [];
+          acc[sessionKey].push(log);
+          return acc;
+        }, {} as Record<string, any[]>);
+        
+        setGroupedSessions(groupedBySession);
+        
+        
+      } catch (err) {
+        console.error("Log fetch error:", err);
+      } finally {
+        setLoadingLogs(false);
+      }
+    };
+  
+    loadLogs();
+  }, [workout]);
+  
+  // Sample data for 
+  const weights = exerciseLogs.map(log => log.weight || 0);
+  const reps = exerciseLogs.map(log => log.reps || 0);
+  const sets = exerciseLogs.map(log => log.sets || 0);
+  const dates = Array.from(
+    new Set(
+      exerciseLogs.map((log) =>
+        new Date(log.logged_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })
+      )
+    )
+  ).slice(-6); // only keep last 6
+
+  const sessionMap: Record<string, { logs: any[]; date: string }> = {};
+
+  exerciseLogs.forEach(log => {
+    const sessionId = log.session_id;
+    if (!sessionMap[sessionId]) {
+      sessionMap[sessionId] = { logs: [], date: log.logged_at };
+    }
+    sessionMap[sessionId].logs.push(log);
+  });
+  
+  // Sort sessions by date ASC (oldest first)
+  const sortedSessions = Object.entries(sessionMap).sort(
+    (a, b) => new Date(a[1].date).getTime() - new Date(b[1].date).getTime()
+  );
+  
+  // Extract labels and average weights
+  const sessionLabels = sortedSessions.map((_, i) => `S${i + 1}`);
+  const sessionWeights = sortedSessions.map(([_, session]) => {
+    const weights = session.logs.map(log => log.weight || 0);
+    const avg = weights.reduce((a, b) => a + b, 0) / weights.length;
+    return Math.round(avg);
+  });
+  
+  
+
+
+const prs = {
+  maxWeight: Math.max(...weights, 0),
+  maxReps: Math.max(...reps, 0),
+  maxSets: Math.max(...Object.values(groupedSessions).map(s => s.length), 0),
+};
+
+  
   const chartData = {
-    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+    labels: sessionLabels.slice(-6),
     datasets: [
       {
-        data: [20, 45, 28, 80, 99, 43],
-        color: (opacity = 1) => isDarkMode ? `rgba(255, 149, 0, ${opacity})` : `rgba(67, 97, 238, ${opacity})`,
-        strokeWidth: 2
-      }
-    ]
+        data: sessionWeights.slice(-6),
+        color: (opacity = 1) =>
+          isDarkMode ? `rgba(255, 149, 0, ${opacity})` : `rgba(67, 97, 238, ${opacity})`,
+        strokeWidth: 3,
+      },
+    ],
   };
   
+
+  <LineChart
+  data={chartData}
+  width={width - 64}
+  height={220}
+  chartConfig={{
+    backgroundColor: colors.card,
+    backgroundGradientFrom: colors.card,
+    backgroundGradientTo: colors.card,
+    decimalPlaces: 0,
+    color: (opacity = 1) =>
+      isDarkMode ? `rgba(255, 149, 0, ${opacity})` : `rgba(67, 97, 238, ${opacity})`,
+    labelColor: (opacity = 1) =>
+      isDarkMode ? `rgba(255,255,255,${opacity})` : `rgba(0,0,0,${opacity})`,
+    propsForDots: {
+      r: "4",
+      strokeWidth: "2",
+      stroke: isDarkMode ? "#FF9500" : "#4361ee",
+    },
+    propsForBackgroundLines: {
+      stroke: isDarkMode ? "#333" : "#ddd",
+      strokeDasharray: "", // solid line
+    },
+  }}
+  bezier
+  style={styles.chart}
+/>
+
+
+  // const chartData = {
+  //   labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+  //   datasets: [
+  //     {
+  //       data: [20, 45, 28, 80, 99, 43],
+  //       color: (opacity = 1) => isDarkMode ? `rgba(255, 149, 0, ${opacity})` : `rgba(67, 97, 238, ${opacity})`,
+  //       strokeWidth: 2
+  //     }
+  //   ]
+  // };
+  
   // Sample workout history data
-  const workoutHistory = [
-    { date: "2023-04-15", sets: 3, reps: 12, weight: 50 },
-    { date: "2023-04-08", sets: 3, reps: 10, weight: 45 },
-    { date: "2023-04-01", sets: 3, reps: 8, weight: 40 },
-  ];
+  // const workoutHistory = [
+  //   { date: "2023-04-15", sets: 3, reps: 12, weight: 50 },
+  //   { date: "2023-04-08", sets: 3, reps: 10, weight: 45 },
+  //   { date: "2023-04-01", sets: 3, reps: 8, weight: 40 },
+  // ];
   
   // Sample personal records
-  const personalRecords = [
-    { type: "Max Weight", value: "60 lbs", date: "2023-03-15" },
-    { type: "Max Reps", value: "15", date: "2023-02-22" },
-    { type: "Max Sets", value: "4", date: "2023-04-01" },
-  ];
+  // const personalRecords = [
+  //   { type: "Max Weight", value: "60 lbs", date: "2023-03-15" },
+  //   { type: "Max Reps", value: "15", date: "2023-02-22" },
+  //   { type: "Max Sets", value: "4", date: "2023-04-01" },
+  // ];
 
   useEffect(() => {
     if (activeTab && tabPositions[activeTab]) {
@@ -197,7 +319,7 @@ const WorkoutInfoModal: React.FC<WorkoutInfoProps> = ({ visible, workout, onClos
             ]}>
               <Text style={[styles.sectionHeader, { color: colors.text }]}>Workout History</Text>
               
-              {workoutHistory.map((session, index) => (
+              {/* {workoutHistory.map((session, index) => (
                 <View key={index} style={[
                   styles.historyItem,
                   { borderBottomColor: colors.border }
@@ -228,7 +350,121 @@ const WorkoutInfoModal: React.FC<WorkoutInfoProps> = ({ visible, workout, onClos
                     </View>
                   </View>
                 </View>
-              ))}
+              ))} */}
+
+{Object.entries(groupedSessions).map(([sessionId, sessionLogs], index) => {
+  const totalSets = sessionLogs.length;
+  const avgWeight =
+    sessionLogs.reduce((sum, s) => sum + (s.weight || 0), 0) / totalSets;
+  const isExpanded = expandedSessions[sessionId];
+  const sessionDate = new Date(sessionLogs[0].logged_at).toLocaleDateString();
+
+  return (
+    <TouchableOpacity
+      key={sessionId}
+      activeOpacity={0.9}
+      onPress={() =>
+        setExpandedSessions((prev) => ({
+          ...prev,
+          [sessionId]: !prev[sessionId],
+        }))
+      }
+      style={{
+        marginBottom: 16,
+        borderRadius: 16,
+        overflow: "hidden",
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 6,
+        elevation: 3,
+      }}
+    >
+      <LinearGradient
+        colors={
+          isDarkMode
+            ? ["rgba(255,149,0,0.08)", "rgba(255,85,0,0.04)"]
+            : ["rgba(99,102,241,0.08)", "rgba(139,92,246,0.03)"]
+        }
+        style={{ padding: 16, backgroundColor: colors.card }}
+      >
+        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+          <View>
+            <Text style={{ color: colors.secondaryText, fontSize: 13 }}>
+              Session Date
+            </Text>
+            <Text
+              style={{
+                color: colors.text,
+                fontSize: 16,
+                fontWeight: "600",
+                marginTop: 2,
+              }}
+            >
+              {sessionDate}
+            </Text>
+          </View>
+
+          <View style={{ alignItems: "flex-end" }}>
+            <Text style={{ color: colors.secondaryText, fontSize: 13 }}>
+              Total Sets
+            </Text>
+            <Text
+              style={{
+                color: isDarkMode ? "#FF9500" : "#6366F1",
+                fontSize: 16,
+                fontWeight: "700",
+                marginTop: 2,
+              }}
+            >
+              {totalSets}
+            </Text>
+          </View>
+        </View>
+
+        {/* Mini chart line */}
+        <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 12 }} />
+
+        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+          <Text style={{ color: colors.secondaryText, fontSize: 13 }}>Avg. Weight</Text>
+          <Text style={{ color: colors.text, fontWeight: "600" }}>{Math.round(avgWeight)} lbs</Text>
+        </View>
+
+        {/* Expandable details */}
+        {isExpanded && (
+          <View style={{ marginTop: 12 }}>
+            {sessionLogs.map((log, i) => (
+              <View
+                key={i}
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  marginBottom: 6,
+                  paddingVertical: 6,
+                  paddingHorizontal: 12,
+                  borderRadius: 12,
+                  backgroundColor: isDarkMode
+                    ? "rgba(255,149,0,0.06)"
+                    : "rgba(99,102,241,0.06)",
+                }}
+              >
+                <Text style={{ color: colors.secondaryText, fontSize: 13 }}>
+                  Set {i + 1}
+                </Text>
+                <Text style={{ color: colors.text, fontSize: 14 }}>
+                  {log.reps} reps @ {log.weight} lbs
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
+      </LinearGradient>
+    </TouchableOpacity>
+  );
+})}
+
+
+
               
               <TouchableOpacity style={styles.viewAllButton}>
                 <Text style={[
@@ -284,7 +520,7 @@ const WorkoutInfoModal: React.FC<WorkoutInfoProps> = ({ visible, workout, onClos
                 style={styles.chart}
               />
               
-              <View style={styles.statsRow}>
+              {/* <View style={styles.statsRow}>
                 <View style={styles.statItem}>
                   <Text style={[styles.statValue, { color: colors.text }]}>+15%</Text>
                   <Text style={[styles.statLabel, { color: colors.secondaryText }]}>Strength Gain</Text>
@@ -297,7 +533,24 @@ const WorkoutInfoModal: React.FC<WorkoutInfoProps> = ({ visible, workout, onClos
                   <Text style={[styles.statValue, { color: colors.text }]}>8</Text>
                   <Text style={[styles.statLabel, { color: colors.secondaryText }]}>Workouts</Text>
                 </View>
+              </View> */}
+              <View style={styles.statsRow}>
+                <View style={styles.statItem}>
+                  <Text style={[styles.statValue, { color: colors.text }]}>
+                    {((weights.at(-1) ?? 0) - (weights[0] ?? 0)) > 0 ? `+${((weights.at(-1) ?? 0) - (weights[0] ?? 0))} lbs` : "No Gain"}
+                  </Text>
+                  <Text style={[styles.statLabel, { color: colors.secondaryText }]}>Strength Gain</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Text style={[styles.statValue, { color: colors.text }]}>{prs.maxWeight} lbs</Text>
+                  <Text style={[styles.statLabel, { color: colors.secondaryText }]}>Max Weight</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Text style={[styles.statValue, { color: colors.text }]}>{exerciseLogs.length}</Text>
+                  <Text style={[styles.statLabel, { color: colors.secondaryText }]}>Workouts</Text>
+                </View>
               </View>
+
             </View>
           </View>
         );
@@ -314,7 +567,7 @@ const WorkoutInfoModal: React.FC<WorkoutInfoProps> = ({ visible, workout, onClos
             ]}>
               <Text style={[styles.sectionHeader, { color: colors.text }]}>Personal Records</Text>
               
-              {personalRecords.map((record, index) => (
+              {/* {personalRecords.map((record, index) => (
                 <View key={index} style={[
                   styles.prItem,
                   { borderBottomColor: colors.border }
@@ -331,7 +584,46 @@ const WorkoutInfoModal: React.FC<WorkoutInfoProps> = ({ visible, workout, onClos
                     { color: isDarkMode ? "#FF9500" : "#4361ee" }
                   ]}>{record.value}</Text>
                 </View>
-              ))}
+              ))} */}
+              <View style={[styles.prItem, { borderBottomColor: colors.border }]}>
+  <View style={styles.prBadge}>
+    <Ionicons name="trophy" size={20} color="#FFD700" />
+  </View>
+  <View style={styles.prInfo}>
+    <Text style={[styles.prType, { color: colors.text }]}>Max Weight</Text>
+    <Text style={[styles.prDate, { color: colors.secondaryText }]}>Based on your logs</Text>
+  </View>
+  <Text style={[styles.prValue, { color: isDarkMode ? "#FF9500" : "#4361ee" }]}>
+    {prs.maxWeight} lbs
+  </Text>
+</View>
+
+<View style={[styles.prItem, { borderBottomColor: colors.border }]}>
+  <View style={styles.prBadge}>
+    <Ionicons name="trophy" size={20} color="#FFD700" />
+  </View>
+  <View style={styles.prInfo}>
+    <Text style={[styles.prType, { color: colors.text }]}>Max Reps</Text>
+    <Text style={[styles.prDate, { color: colors.secondaryText }]}>Based on your logs</Text>
+  </View>
+  <Text style={[styles.prValue, { color: isDarkMode ? "#FF9500" : "#4361ee" }]}>
+    {prs.maxReps}
+  </Text>
+</View>
+
+<View style={[styles.prItem, { borderBottomColor: colors.border }]}>
+  <View style={styles.prBadge}>
+    <Ionicons name="trophy" size={20} color="#FFD700" />
+  </View>
+  <View style={styles.prInfo}>
+    <Text style={[styles.prType, { color: colors.text }]}>Max Sets</Text>
+    <Text style={[styles.prDate, { color: colors.secondaryText }]}>Based on your logs</Text>
+  </View>
+  <Text style={[styles.prValue, { color: isDarkMode ? "#FF9500" : "#4361ee" }]}>
+    {prs.maxSets}
+  </Text>
+</View>
+
               
               <TouchableOpacity style={[
                 styles.newPrButton,
@@ -606,9 +898,12 @@ const styles = StyleSheet.create({
     marginLeft: 6,
   },
   historyDetails: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
+  flexDirection: 'row',
+  alignItems: 'center',
+  marginTop: 4,
+  justifyContent: 'flex-start',
+},
+
   historyDetail: {
     alignItems: 'center',
   },
@@ -705,6 +1000,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginLeft: 6,
   },
+  
+  
 });
 
 export default WorkoutInfoModal;

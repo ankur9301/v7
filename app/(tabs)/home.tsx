@@ -21,6 +21,9 @@ import { useRouter } from 'expo-router';
 import { workouts } from '@/constants/data';
 import WorkoutDetailsModal from '@/components/WorkoutDetailsModal';
 import { useUserStore } from '@/store/useUserStore';
+import { supabase } from '@/src/supabaseClient';
+import { useStatsStore } from '@/src/stores/userStatsStore'
+
 
 
 const { width } = Dimensions.get('window');
@@ -130,53 +133,74 @@ const categories = [
 ];
 
 // Weekly activity data
-const weeklyActivity = [
-  { day: 'Mon', workouts: 2, calories: 450 },
-  { day: 'Tue', workouts: 1, calories: 320 },
-  { day: 'Wed', workouts: 3, calories: 680 },
-  { day: 'Thu', workouts: 0, calories: 0 },
-  { day: 'Fri', workouts: 2, calories: 520 },
-  { day: 'Sat', workouts: 1, calories: 380 },
-  { day: 'Sun', workouts: 0, calories: 0 },
-];
+// const [weeklyActivity, setWeeklyActivity] = useState(
+//   ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(day => ({
+//     day,
+//     workouts: 0,
+//     calories: 0
+//   }))
+// );
 
-// User stats
-const userStats = {
-  streakDays: 5,
-  monthlyWorkouts: 18,
-  totalCalories: 4250,
-  totalMinutes: 840,
-};
 
-const HomeScreen = () => {
-  const { isDarkMode } = useTheme();
-  const colors = isDarkMode ? darkTheme : lightTheme;
-  const router = useRouter();
-  const { user } = useUserStore();
+// // User stats
+// const userStats = {
+//   streakDays: 5,
+//   monthlyWorkouts: 18,
+//   totalCalories: 4250,
+//   totalMinutes: 840,
+// };
+
+
   
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [scrollY] = useState(new Animated.Value(0));
-  const [barHeights] = useState(weeklyActivity.map(() => new Animated.Value(0)));
+
+  const HomeScreen = () => {
+    const { isDarkMode } = useTheme();
+    const colors = isDarkMode ? darkTheme : lightTheme;
+    const router = useRouter();
+    const { user } = useUserStore();
+    const [selectedCategory, setSelectedCategory] = useState('All');
+    const [scrollY] = useState(new Animated.Value(0));
+    const [barHeights, setBarHeights] = useState<Animated.Value[]>([]);
   
-  // State for workout modal
-  const [modalVisible, setModalVisible] = useState(false);
-  const [selectedWorkout, setSelectedWorkout] = useState(null);
-  
-  // Animate the bar chart on mount
-  useEffect(() => {
-    const maxCalories = Math.max(...weeklyActivity.map(day => day.calories));
     
-    weeklyActivity.forEach((day, index) => {
-      const targetHeight = day.calories > 0 ? (day.calories / maxCalories) * 150 : 5;
-      
-      Animated.timing(barHeights[index], {
-        toValue: targetHeight,
-        duration: 800,
-        delay: index * 100,
-        useNativeDriver: false,
-      }).start();
-    });
-  }, []);
+    // State for workout modal
+    const [modalVisible, setModalVisible] = useState(false);
+    const [selectedWorkout, setSelectedWorkout] = useState(null);
+  
+  
+    const { fetchStats, weeklyActivity, userStats } = useStatsStore()
+  
+    useEffect(() => {
+      if (user?.id) {
+        fetchStats(user.id)
+      }
+    }, [user])
+    useEffect(() => {
+      if (!weeklyActivity || weeklyActivity.length === 0) return;
+    
+      const maxCalories = Math.max(...weeklyActivity.map(day => day.calories));
+      const newHeights: Animated.Value[] = [];
+    
+      weeklyActivity.forEach((day, index) => {
+        const animatedValue = new Animated.Value(0);
+        const targetHeight = day.calories > 0 ? (day.calories / maxCalories) * 150 : 5;
+    
+        Animated.timing(animatedValue, {
+          toValue: targetHeight,
+          duration: 800,
+          delay: index * 100,
+          useNativeDriver: false,
+        }).start();
+    
+        newHeights.push(animatedValue);
+      });
+    
+      setBarHeights(newHeights);
+    }, [weeklyActivity]);
+    
+    
+
+
   
   // Calculate header opacity based on scroll position
   const headerOpacity = scrollY.interpolate({
@@ -443,7 +467,85 @@ const HomeScreen = () => {
             </View>
             
             {/* Stats */}
-            <View style={styles.statsContainer}>
+         <View style={styles.statsContainer}>
+  {/* Day Streak */}
+  <View style={[
+    styles.statItem,
+    { 
+      backgroundColor: isDarkMode ? 'rgba(31, 41, 55, 0.5)' : '#f9fafb',
+      borderWidth: isDarkMode ? 1 : 0,
+      borderColor: colors.border
+    }
+  ]}>
+    <Ionicons 
+      name="flame" 
+      size={20} 
+      color={isDarkMode ? "#FF9500" : "#6366F1"} 
+      style={styles.statIcon} 
+    />
+    <Text style={[styles.statValue, { color: colors.text }]}>{userStats.streakDays}</Text>
+    <Text style={[styles.statLabel, { color: colors.secondaryText }]}>Day Streak</Text>
+  </View>
+
+  {/* Weekly Workouts */}
+  <View style={[
+    styles.statItem,
+    { 
+      backgroundColor: isDarkMode ? 'rgba(31, 41, 55, 0.5)' : '#f9fafb',
+      borderWidth: isDarkMode ? 1 : 0,
+      borderColor: colors.border
+    }
+  ]}>
+    <Ionicons 
+      name="barbell" 
+      size={20} 
+      color={isDarkMode ? "#FF9500" : "#6366F1"} 
+      style={styles.statIcon} 
+    />
+    <Text style={[styles.statValue, { color: colors.text }]}>{userStats.weeklyWorkouts}</Text>
+    <Text style={[styles.statLabel, { color: colors.secondaryText }]}>Workouts</Text>
+  </View>
+
+  {/* Weekly Minutes */}
+  <View style={[
+    styles.statItem,
+    { 
+      backgroundColor: isDarkMode ? 'rgba(31, 41, 55, 0.5)' : '#f9fafb',
+      borderWidth: isDarkMode ? 1 : 0,
+      borderColor: colors.border
+    }
+  ]}>
+    <Ionicons 
+      name="time" 
+      size={20} 
+      color={isDarkMode ? "#FF9500" : "#6366F1"} 
+      style={styles.statIcon} 
+    />
+    <Text style={[styles.statValue, { color: colors.text }]}>{userStats.totalMinutes}</Text>
+    <Text style={[styles.statLabel, { color: colors.secondaryText }]}>Minutes</Text>
+  </View>
+
+  {/* Weekly Calories */}
+  <View style={[
+    styles.statItem,
+    { 
+      backgroundColor: isDarkMode ? 'rgba(31, 41, 55, 0.5)' : '#f9fafb',
+      borderWidth: isDarkMode ? 1 : 0,
+      borderColor: colors.border
+    }
+  ]}>
+    <Ionicons 
+      name="flame-outline" 
+      size={20} 
+      color={isDarkMode ? "#FF9500" : "#6366F1"} 
+      style={styles.statIcon} 
+    />
+    <Text style={[styles.statValue, { color: colors.text }]}>{userStats.weeklyCalories}</Text>
+    <Text style={[styles.statLabel, { color: colors.secondaryText }]}>Calories</Text>
+  </View>
+</View>
+
+            {/* <View style={styles.statsContainer}>
               <View style={[
                 styles.statItem,
                 { 
@@ -462,22 +564,22 @@ const HomeScreen = () => {
                 <Text style={[styles.statLabel, { color: colors.secondaryText }]}>Day Streak</Text>
               </View>
               
-              <View style={[
-                styles.statItem,
-                { 
-                  backgroundColor: isDarkMode ? 'rgba(31, 41, 55, 0.5)' : '#f9fafb',
-                  borderWidth: isDarkMode ? 1 : 0,
-                  borderColor: colors.border
-                }
-              ]}>
-                <Ionicons 
-                  name="barbell" 
-                  size={20} 
-                  color={isDarkMode ? "#FF9500" : "#6366F1"} 
-                  style={styles.statIcon} 
-                />
-                <Text style={[styles.statValue, { color: colors.text }]}>{userStats.monthlyWorkouts}</Text>
-                <Text style={[styles.statLabel, { color: colors.secondaryText }]}>Workouts</Text>
+                <View style={[
+                  styles.statItem,
+                  { 
+                    backgroundColor: isDarkMode ? 'rgba(31, 41, 55, 0.5)' : '#f9fafb',
+                    borderWidth: isDarkMode ? 1 : 0,
+                    borderColor: colors.border
+                  }
+                ]}>
+                  <Ionicons 
+                    name="barbell" 
+                    size={20} 
+                    color={isDarkMode ? "#FF9500" : "#6366F1"} 
+                    style={styles.statIcon} 
+                  />
+                  <Text style={[styles.statValue, { color: colors.text }]}>{userStats.monthlyWorkouts}</Text>
+                  <Text style={[styles.statLabel, { color: colors.secondaryText }]}>Workouts</Text>
               </View>
               
               <View style={[
@@ -497,7 +599,7 @@ const HomeScreen = () => {
                 <Text style={[styles.statValue, { color: colors.text }]}>{userStats.totalMinutes}</Text>
                 <Text style={[styles.statLabel, { color: colors.secondaryText }]}>Minutes</Text>
               </View>
-            </View>
+            </View> */}
           </LinearGradient>
         </View>
 
