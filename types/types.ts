@@ -25,6 +25,7 @@ export interface WorkoutTemplate {
   id: string
   title: string
   workouts: Workout[]
+  isExample?: boolean;
 }
 
 export interface SetLog {
@@ -46,6 +47,9 @@ export interface WorkoutSession {
   loggedAt: string       // ISO timestamp when you hit “Log Workout”
   exerciseLogs: ExerciseLog[]
 }
+
+
+
 
 
 // // types/types.ts

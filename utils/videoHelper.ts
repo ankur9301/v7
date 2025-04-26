@@ -1,5 +1,6 @@
 const videoHelpers: { [key: string]: any } = {
     'arnold_press': require('../assets/workoutVideos/arnold_press.mp4'),
+    'ab_wheel_rollout': require('../assets/workoutVideos/ab-wheel-rollout.mp4'),
     'sample': require('../assets/workoutVideos/sample.mp4'),
     // Add more mappings as needed
   };
@@ -10,4 +11,5 @@ const videoHelpers: { [key: string]: any } = {
   };
   
 
+  
   

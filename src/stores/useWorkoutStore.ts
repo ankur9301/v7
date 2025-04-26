@@ -48,6 +48,8 @@ export const useWorkoutStore = create<WorkoutStore>()(
         set({ plan });
       },
 
+      
+
       logSet: (workoutId, setEntry) => {
         const prev = get().logs[workoutId] || [];
         const updated = [...prev, setEntry];
@@ -114,13 +116,15 @@ export const useWorkoutStore = create<WorkoutStore>()(
 
       },
 
-      addSet: (workoutId) => {
+      addSet: (workoutId: string, initial?: Partial<Omit<SetLog,'id'>>) => {
         const newSet: SetLog = {
           id: Date.now().toString(),
-          reps: '',
-          weight: '',
-          logged: false
+          reps: initial?.reps ?? '',
+          weight: initial?.weight ?? '',
+          logged: initial?.logged  ?? false,
+          timestamp: initial?.timestamp
         };
+     
         
         const prev = get().logs[workoutId] || [];
         const updated = [...prev, newSet];

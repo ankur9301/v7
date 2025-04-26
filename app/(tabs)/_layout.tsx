@@ -9,6 +9,8 @@ import { useTheme, lightTheme, darkTheme } from '../../context/ThemeContext';
 
 import { useAuth } from "@/context/AuthContext";
 import { Redirect, Stack } from "expo-router";
+import { FileClock } from 'lucide-react-native';
+
 
 
 export default function TabLayout() {
@@ -64,16 +66,13 @@ export default function TabLayout() {
       <Tabs.Screen
         name="history"
         options={{
-          title: 'History',
+          title: 'Routines', // or 'Library' / 'Planner' / whatever name you choose
           tabBarIcon: ({ color, size }) => (
-            <Image 
-              source={icons.history}
-              style={{ width: size, height: size, tintColor: color }}
-              resizeMode="contain"
-            />
+            <FileClock color={color} size={size} />
           ),
         }}
       />
+
       <Tabs.Screen
         name="nutrition"
         options={{

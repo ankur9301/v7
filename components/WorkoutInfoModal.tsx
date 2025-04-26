@@ -19,6 +19,7 @@ import { LineChart } from "react-native-chart-kit";
 import { useTheme, lightTheme, darkTheme } from "../context/ThemeContext";
 import { fetchLogsForExercise } from "@/lib/exerciseService";
 import { LinearGradient } from "expo-linear-gradient";
+import { Target } from "lucide-react-native";
 
 
 const { width } = Dimensions.get("window");
@@ -45,7 +46,8 @@ const WorkoutInfoModal: React.FC<WorkoutInfoProps> = ({ visible, workout, onClos
   const [loadingLogs, setLoadingLogs] = useState(true);
   const [groupedSessions, setGroupedSessions] = useState<Record<string, any[]>>({});
   const [expandedSessions, setExpandedSessions] = useState<Record<string, boolean>>({});
-  
+  const [targetModalVisible, setTargetModalVisible] = useState(false);
+
   
 
   useEffect(() => {
@@ -244,7 +246,26 @@ const prs = {
                 borderColor: colors.border
               }
             ]}>
-              <Text style={[styles.sectionHeader, { color: colors.text }]}>Instructions</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Text style={[styles.sectionHeader, { color: colors.text }]}>
+                  Instructions
+                </Text>
+
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: isDarkMode ? 'rgba(255,149,0,0.1)' : 'rgba(67,97,238,0.1)',
+                    borderRadius: 20,
+                    padding: 6,
+                  }}
+                  onPress={() => setTargetModalVisible(true)}
+                >
+                  <Target
+                    size={20} 
+                    color={isDarkMode ? "#FF9500" : "#4361ee"} 
+                  />
+                </TouchableOpacity>
+              </View>
+
               <Text style={[styles.sectionText, { color: colors.secondaryText }]}>
                 Perform this exercise with proper form. Focus on controlled movements and ensure you're engaging the targeted muscles. Always start with a light weight to avoid injury.
               </Text>
@@ -546,7 +567,7 @@ const prs = {
                   <Text style={[styles.statLabel, { color: colors.secondaryText }]}>Max Weight</Text>
                 </View>
                 <View style={styles.statItem}>
-                  <Text style={[styles.statValue, { color: colors.text }]}>{exerciseLogs.length}</Text>
+                  <Text style={[styles.statValue, { color: colors.text }]}>{Object.keys(groupedSessions).length}</Text>
                   <Text style={[styles.statLabel, { color: colors.secondaryText }]}>Workouts</Text>
                 </View>
               </View>
@@ -694,7 +715,7 @@ const prs = {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.tabScrollContent}
             >
-              {["About", "History", "Charts", "PRs"].map((tab) => (
+              {["About", "History", "Charts", "PRs",].map((tab) => (
                 <TouchableOpacity
                   key={tab}
                   style={styles.tab}
@@ -737,8 +758,59 @@ const prs = {
           </ScrollView>
         </View>
       </View>
+
+      <Modal
+  visible={targetModalVisible}
+  animationType="fade"
+  transparent={true}
+  onRequestClose={() => setTargetModalVisible(false)}
+>
+  <View style={{
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.92)', // darker background
+    justifyContent: 'center',
+    alignItems: 'center',
+  }}>
+    
+    {/* Image container */}
+    <View style={{
+      width: "95%",  // slightly wider
+      height: "85%", // slightly taller
+      justifyContent: 'center',
+      alignItems: 'center',
+      position: 'relative',
+    }}>
+      <Image 
+        source={workout ? getWorkoutImage(workout.name) : require('../assets/target_muscles/sample.png')}
+        style={{
+          width: "100%",
+          height: "100%",
+        }}
+        resizeMode="contain"
+      />
+
+      {/* Exit (X) Button */}
+      <TouchableOpacity
+        style={{
+          position: 'absolute',
+          top: 10,
+          right: 10,
+          backgroundColor: 'rgba(0,0,0,0.7)',
+          padding: 8,
+          borderRadius: 20,
+        }}
+        onPress={() => setTargetModalVisible(false)}
+      >
+        <Ionicons name="close" size={28} color="white" />
+      </TouchableOpacity>
+    </View>
+
+  </View>
+</Modal>
+
     </Modal>
   );
+  
 };
 
 const styles = StyleSheet.create({

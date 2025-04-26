@@ -1,10 +1,13 @@
 // utils/imageHelper.ts
 
 const imageHelpers: { [key: string]: any } = {
-  'ab_wheel_rollout': require('../assets/workout_images/ab_wheel_rollout.png'),
-  'arnold_press': require('../assets/workout_images/arnold_press.png'),
+  'ab_wheel_rollout': require('../assets/workout_images/ab-wheel-rollout.jpg'),
+  'arnold_press': require('../assets/workout_images/arnold-press.png'),
   'sample': require('../assets/workout_images/sample.png'),
   // Add more mappings as needed
+
+  //for the target muscles
+  'side_bend': require('../assets/target_muscles/side-bend-target.png'),
 };
 
 

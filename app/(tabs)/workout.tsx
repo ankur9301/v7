@@ -49,6 +49,7 @@ const WorkoutScreen: React.FC = () => {
   const windowWidth = Dimensions.get('window').width;
   const { userData } = useUserProfile();
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
 
 
   
@@ -261,17 +262,35 @@ const WorkoutScreen: React.FC = () => {
     applyFilters();
   }, [selectedMuscles, selectedEquipment, selectedTime, searchQuery, selectedLevel]);
 
+  // const handleStartWorkout = () => {
+  //   if (isNavigating) return;
+  //   if (currentWorkoutPlan.length > 0) {
+  //     // setTimeout(() => startTimer(), 500);
+  //     startTimer();
+  //     router.push('/subScreen/WorkingOut');
+      
+  //   } else {
+  //     Alert.alert('No Workout Plan', 'Please generate a workout plan before starting.');
+  //   }
+  // };
+
   const handleStartWorkout = () => {
+    if (isNavigating) return;
+    setIsNavigating(true);  // Prevent further clicks
+    
     if (currentWorkoutPlan.length > 0) {
-      // setTimeout(() => startTimer(), 500);
       startTimer();
       router.push('/subScreen/WorkingOut');
       
+      // Reset flag after a delay (for safety)
+      setTimeout(() => {
+        setIsNavigating(false);
+      }, 1000);
     } else {
       Alert.alert('No Workout Plan', 'Please generate a workout plan before starting.');
+      setIsNavigating(false);  // Reset immediately if showing alert
     }
   };
-
   const handleWorkoutPress = (workout: Workout) => {
     setSelectedWorkout(workout);
     setModalVisible(true);

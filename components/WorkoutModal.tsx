@@ -79,11 +79,37 @@ const WorkoutModal: React.FC<WorkoutModalProps> = ({ visible, workout, onClose, 
   };
 
   // Load saved state when modal opens
+  // useEffect(() => {
+  //   if (!workoutId) return;
+  
+  //   const existingSets = logs[workoutId];
+  //   if (!existingSets || existingSets.length === 0) {
+  //     const defaultSets = [
+  //       { reps: "12", weight: "10" },
+  //       { reps: "10", weight: "15" },
+  //       { reps: "8", weight: "20" },
+  //     ];
+  
+  //     defaultSets.forEach(() => {
+  //       useWorkoutStore.getState().addSet(String(workoutId));
+  //     });
+  //   }
+  
+  //   return () => {
+  //     if (timerInterval.current) {
+  //       clearInterval(timerInterval.current);
+  //     }
+  //   };
+  // }, [visible, workoutId]);
+
+  
   useEffect(() => {
     if (!workoutId) return;
   
-    const existingSets = logs[workoutId];
-    if (!existingSets || existingSets.length === 0) {
+    const existingSets = useWorkoutStore.getState().logs[workoutId];
+  
+    // ❗Only add default sets if NO entry for this workout exists in the store
+    if (existingSets === undefined) {
       const defaultSets = [
         { reps: "12", weight: "10" },
         { reps: "10", weight: "15" },
@@ -101,6 +127,8 @@ const WorkoutModal: React.FC<WorkoutModalProps> = ({ visible, workout, onClose, 
       }
     };
   }, [visible, workoutId]);
+  
+  
   
   useEffect(() => {
     if (outlineAnimations.current.length !== sets.length) {
@@ -551,8 +579,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   mediaContainer: {
-    height: 200,
+    height: 250,
     position: 'relative',
+    overflow: "hidden",
   },
   workoutVideo: {
     width: "100%",

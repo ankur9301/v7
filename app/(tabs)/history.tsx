@@ -57,6 +57,9 @@ const WorkoutHistoryScreen = () => {
   const [showNamePrompt, setShowNamePrompt] = useState(false);
   const [templateName, setTemplateName] = useState(""); // Add this line
   const [refreshing, setRefreshing] = useState(false)
+  // const [templateTab, setTemplateTab] = useState<"saved" | "example">("saved")
+  const [showTemplateDropdown, setShowTemplateDropdown] = useState(false)
+  const [templateTab, setTemplateTab] = useState<"saved" | "example">("saved")
 
 
 useEffect(() => {
@@ -344,6 +347,19 @@ const handleStartWorkout = (workouts: Workout[]) => {
       setRefreshing(false)
     }
   }
+  const exampleTemplates: WorkoutTemplate[] = [
+    {
+      id: "example-1",
+      title: "Full Body Starter",
+      workouts: [
+        { id: "1", name: "Jumping Jacks", muscle: "Cardio", level: "Beginner", sets: 2, reps: "30 sec" },
+        { id: "2", name: "Push Ups", muscle: "Chest", level: "Beginner", sets: 3, reps: "10-15" },
+        { id: "3", name: "Bodyweight Squats", muscle: "Legs", level: "Beginner", sets: 3, reps: "15" },
+      ],
+      isExample: true,
+    },
+  ];
+  
   
   const renderTemplateItem = ({ item, index }: { item: WorkoutTemplate; index: number }) => {
     return (
@@ -399,6 +415,7 @@ const handleStartWorkout = (workouts: Workout[]) => {
         {item.workouts.length} exercises
       </Text>
     </View>
+    {!item.isExample && (
     <TouchableOpacity 
       style={styles.deleteButton}
       onPress={() => {
@@ -423,6 +440,7 @@ const handleStartWorkout = (workouts: Workout[]) => {
     >
       <Ionicons name="trash-outline" size={16} color={isDarkMode ? "#ef4444" : "#dc2626"} />
     </TouchableOpacity>
+    )}
   </View>
 </View>
   
@@ -506,40 +524,39 @@ const handleStartWorkout = (workouts: Workout[]) => {
       }}
     >
       <TouchableOpacity
-        style={[
-          styles.createTemplateCard,
-          {
-            backgroundColor: isDarkMode ? "rgba(31, 41, 55, 0.5)" : "#F9FAFB",
-            borderWidth: 1,
-            borderStyle: "dashed",
-            borderColor: isDarkMode ? "rgba(255, 255, 255, 0.2)" : "rgba(99, 102, 241, 0.3)",
-          },
-        ]}
-        onPress={() => {
-          setAddExerciseModalVisible(true)
+  style={[
+    styles.createTemplateCard,
+    {
+      backgroundColor: isDarkMode ? "rgba(31, 41, 55, 0.3)" : "#F3F4F6",
+      borderColor: isDarkMode ? "rgba(255, 255, 255, 0.15)" : "#D1D5DB",
+    },
+  ]}
+  onPress={() => {
+    setAddExerciseModalVisible(true)
+    if (Platform.OS === "ios") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+    }
+  }}
+  activeOpacity={0.7}
+>
+  <View style={styles.createTemplateContent}>
+    <View
+      style={[
+        styles.createTemplateIconContainer,
+        {
+          backgroundColor: isDarkMode ? "rgba(255, 149, 0, 0.2)" : "rgba(99, 102, 241, 0.1)",
+        },
+      ]}
+    >
+      <Ionicons name="add" size={20} color={isDarkMode ? "#FF9500" : "#6366F1"} />
+    </View>
+    <View>
+      <Text style={[styles.createTemplateText, { color: colors.text }]}>Create New Template</Text>
+      <Text style={[styles.createTemplateSubtext, { color: colors.secondaryText }]}>Custom workout plan</Text>
+    </View>
+  </View>
+</TouchableOpacity>
 
-          // Provide haptic feedback
-          if (Platform.OS === "ios") {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-          }
-        }}
-        activeOpacity={0.7}
-      >
-        <View style={styles.createTemplateContent}>
-          <View
-            style={[
-              styles.createTemplateIconContainer,
-              { backgroundColor: isDarkMode ? "rgba(255, 149, 0, 0.2)" : "rgba(99, 102, 241, 0.1)" },
-            ]}
-          >
-            <Ionicons name="add" size={24} color={isDarkMode ? "#FF9500" : "#6366F1"} />
-          </View>
-          <Text style={[styles.createTemplateText, { color: colors.text }]}>Create New Template</Text>
-          <Text style={[styles.createTemplateSubtext, { color: colors.secondaryText }]}>
-            Build a custom workout routine
-          </Text>
-        </View>
-      </TouchableOpacity>
     </Animated.View>
   )
 
@@ -619,12 +636,51 @@ const handleStartWorkout = (workouts: Workout[]) => {
   
   {/* Section title with clear button */}
   <View style={styles.sectionTitleRow}>
-    <Text style={[styles.sectionTitle, { color: colors.text }]}>
+    {/* <Text style={[styles.sectionTitle, { color: colors.text }]}>
       {activeTab === "history" ? "Recent Workouts" : "Saved Templates"}
-    </Text>
+    </Text> */}
+    {activeTab === "history" ? (
+  <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Workouts</Text>
+) : (
+  <View style={styles.dropdownWrapper}>
+    <TouchableOpacity
+      style={styles.dropdownButton}
+      onPress={() => setShowTemplateDropdown(!showTemplateDropdown)}
+    >
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>
+        {templateTab === "saved" ? "Saved Templates" : "Example Templates"}
+      </Text>
+      <Ionicons name="chevron-down" size={16} color={colors.text} style={{ marginLeft: 4 }} />
+    </TouchableOpacity>
+
+    {showTemplateDropdown && (
+      <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <TouchableOpacity
+          style={styles.dropdownItem}
+          onPress={() => {
+            setTemplateTab("saved")
+            setShowTemplateDropdown(false)
+          }}
+        >
+          <Text style={{ color: colors.text }}>Saved Templates</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.dropdownItem}
+          onPress={() => {
+            setTemplateTab("example")
+            setShowTemplateDropdown(false)
+          }}
+        >
+          <Text style={{ color: colors.text }}>Example Templates</Text>
+        </TouchableOpacity>
+      </View>
+    )}
+  </View>
+)}
+
     
     {((activeTab === "history" && workoutHistoryData.length > 0) || 
-      (activeTab === "templates" && savedTemplates.length > 1)) && (
+      (activeTab === "templates" && templateTab === "saved" && savedTemplates.length > 1)) && (
         <TouchableOpacity
         style={styles.clearButton}
         onPress={() => {
@@ -696,21 +752,69 @@ const handleStartWorkout = (workouts: Workout[]) => {
 
   )
 ) : (
+//   <FlatList
+//   data={savedTemplates}
+//   renderItem={renderTemplateItem}
+//   keyExtractor={(item) => item.id}
+//   contentContainerStyle={styles.listContent}
+//   ListHeaderComponent={renderCreateTemplateCard}
+//   showsVerticalScrollIndicator={false}
+//   refreshControl={
+//     <RefreshControl
+//       refreshing={refreshing}
+//       onRefresh={handleRefresh}
+//       tintColor={isDarkMode ? "#FF9500" : "#6366F1"}
+//     />
+//   }
+// />
+
+
+// {/* <FlatList
+//   data={[...savedTemplates, ...exampleTemplates]}
+//   keyExtractor={(item) => `template-${item.id}`}
+//   renderItem={({ item, index }) => {
+//     if (index === 0 && savedTemplates.length > 0) {
+//       return (
+//         <>
+//           <Text style={[styles.sectionTitle, { color: colors.text }]}>Saved Templates</Text>
+//           {renderTemplateItem({ item, index })}
+//         </>
+//       );
+//     }
+//     if (index === savedTemplates.length && exampleTemplates.length > 0) {
+//       return (
+//         <>
+//           <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 24 }]}>Example Templates</Text>
+//           {renderTemplateItem({ item, index })}
+//         </>
+//       );
+//     }
+//     return renderTemplateItem({ item, index });
+//   }}
+//   ListHeaderComponent={renderCreateTemplateCard}
+//   contentContainerStyle={styles.listContent}
+// /> */}
+
+<>
+  {templateTab === "saved" && renderCreateTemplateCard()}
+
   <FlatList
-  data={savedTemplates}
-  renderItem={renderTemplateItem}
-  keyExtractor={(item) => item.id}
-  contentContainerStyle={styles.listContent}
-  ListHeaderComponent={renderCreateTemplateCard}
-  showsVerticalScrollIndicator={false}
-  refreshControl={
-    <RefreshControl
-      refreshing={refreshing}
-      onRefresh={handleRefresh}
-      tintColor={isDarkMode ? "#FF9500" : "#6366F1"}
-    />
-  }
-/>
+    data={templateTab === "saved" ? savedTemplates : exampleTemplates}
+    keyExtractor={(item) => `template-${item.id}`}
+    renderItem={({ item, index }) => renderTemplateItem({ item, index })}
+    contentContainerStyle={styles.listContent}
+    showsVerticalScrollIndicator={false}
+    refreshControl={
+      <RefreshControl
+        refreshing={refreshing}
+        onRefresh={handleRefresh}
+        tintColor={isDarkMode ? "#FF9500" : "#6366F1"}
+      />
+    }
+  />
+</>
+
+
 
 )}
 
@@ -1002,18 +1106,17 @@ tabContainer: {
   flexDirection: "row",
   paddingHorizontal: 20,
   marginVertical: 16,
-  alignItems: "center", // Make sure tabs are vertically centered
 },
 
-// Update the tab style
 tab: {
+  flex: 1, // 👈 this makes each tab take 50% of the row
   flexDirection: "row",
-  alignItems: "center", // Center icon and text vertically
-  paddingVertical: 8,
-  paddingHorizontal: 16,
+  alignItems: "center",
+  justifyContent: "center", // 👈 center icon + text horizontally
+  paddingVertical: 12,
   borderRadius: 20,
-  marginRight: 12,
 },
+
 
 // Update tabText to align properly with icon
 tabText: {
@@ -1183,29 +1286,40 @@ tabText: {
   createTemplateCard: {
     borderRadius: 16,
     marginBottom: 16,
-    height: 120,
+    height: 88,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "transparent", // Will be set inline for theme
+    borderWidth: 1,
+    borderStyle: "dashed",
   },
+  
   createTemplateContent: {
+    flexDirection: "row",
     alignItems: "center",
+    paddingHorizontal: 16,
   },
+  
   createTemplateIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 8,
+    marginRight: 12,
   },
+  
   createTemplateText: {
-    fontSize: 16,
-    fontWeight: "700",
-    marginBottom: 4,
+    fontSize: 15,
+    fontWeight: "600",
+    marginBottom: 2,
   },
+  
   createTemplateSubtext: {
-    fontSize: 14,
+    fontSize: 12,
+    color: "#9CA3AF", // Use theme secondaryText dynamically
   },
+  
   modalOverlay: {
     flex: 1,
     justifyContent: "center",
@@ -1445,6 +1559,44 @@ tabText: {
     alignItems: "center",
     marginHorizontal: 4,
   },
+  dropdownWrapper: {
+  position: "relative",
+},
+
+dropdownButton: {
+  flexDirection: "row",
+  alignItems: "center",
+  paddingHorizontal: 8,
+  paddingVertical: 4,
+  borderRadius: 8,
+},
+
+dropdownMenu: {
+  position: "absolute",
+  top: 40,
+  left: 0,
+  width: 180,
+  backgroundColor: "#fff", // overridden dynamically
+  borderRadius: 16,
+  paddingVertical: 6,
+  borderWidth: 1,
+  borderColor: "rgba(0,0,0,0.05)", // softened border
+  shadowColor: "#000",
+  shadowOffset: { width: 0, height: 6 },
+  shadowOpacity: 0.12,
+  shadowRadius: 10,
+  elevation: 6,
+  zIndex: 999,
+},
+dropdownItem: {
+  paddingVertical: 12,
+  paddingHorizontal: 16,
+  borderRadius: 10,
+},
+
+
+
+  
   
 })
 
