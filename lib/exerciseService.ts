@@ -2,6 +2,8 @@ import { supabase } from "@/src/supabaseClient";
 import { Workout } from "@/types/types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useUserStore } from "@/store/useUserStore"
+import type { SetLog } from '@/src/stores/useWorkoutStore'
+import { workouts as allWorkouts } from "@/constants/data"; 
 
 export async function saveCustomExerciseLocally(exercise: Exercise) {
   try {
@@ -143,4 +145,43 @@ interface Exercise {
     if (error) throw error;
     return data;
   };
+  
+
+
+  
+  export async function fetchLastSessionForExercise(
+    exerciseId: string
+  ): Promise<SetLog[]> {
+    // 🧠 First find the exercise name from constants
+    const found = allWorkouts.find(w => String(w.id) === String(exerciseId));
+    if (!found) {
+      console.warn("⚠️ No workout found for id", exerciseId);
+      return [];
+    }
+  
+    const { data, error } = await supabase
+      .from("exercise_logs")
+      .select("*")
+      .eq("name", found.name) // ✅ match by exercise NAME not id
+      .order("logged_at", { ascending: false })
+      .limit(10); // get last 10
+  
+    if (error) throw error;
+    if (!data || data.length === 0) return [];
+  
+    // Group by session_id
+    const bySession: Record<string, typeof data> = {};
+    data.forEach(log => {
+      (bySession[log.session_id] ||= []).push(log);
+    });
+  
+    // Find the session with the newest timestamp
+    let latestId = '', latestTs = 0;
+    for (const [sid, logs] of Object.entries(bySession)) {
+      const maxTs = Math.max(...logs.map(l => new Date(l.logged_at).getTime()));
+      if (maxTs > latestTs) { latestTs = maxTs; latestId = sid; }
+    }
+  
+    return bySession[latestId] || [];
+  }
   

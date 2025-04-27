@@ -3,9 +3,39 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Workout } from '@/types/types';
+import { fetchLastSessionForExercise } from '@/lib/exerciseService'
+
+const randomId = () => Date.now().toString() + Math.random().toString().slice(2);
+
+// function generateDefaultSets(count: number, reps = '10', weight = '10') {
+//   return Array.from({ length: count }).map(() => ({
+//     id: randomId(),
+//     reps,
+//     weight,
+//     logged: false,
+//     timestamp: undefined,
+//   }));
+// }
+
+function generateDefaultSets() {
+  const preset = [
+    { reps: '12', weight: '10' },
+    { reps: '10', weight: '12' },
+    { reps: '8', weight: '15' }
+  ];
+
+  return preset.map(p => ({
+    id: randomId(),
+    reps: p.reps,
+    weight: p.weight,
+    logged: false,
+    timestamp: undefined,
+  }));
+}
+
 
 // Enhanced SetLog type with the required properties
-interface SetLog {
+export interface SetLog {
   id: string;
   weight: string;
   reps: string;
@@ -33,9 +63,11 @@ type WorkoutStore = {
   startTimer: () => void;   // <-- new
   stopTimer: () => void;    // <-- new
   intervalId?: NodeJS.Timeout | null; // Add intervalId to the WorkoutStore type
+  seedSession: (workoutId: string, defaultCount?: number) => Promise<void>
 };
 
 export const useWorkoutStore = create<WorkoutStore>()(
+  
   persist(
     (set, get) => ({
       plan: [],
@@ -165,7 +197,58 @@ export const useWorkoutStore = create<WorkoutStore>()(
       resetSession: () => {
         console.log('[WorkoutStore] resetSession');
         set({ plan: [], logs: {}, elapsed: 0, calories: 0 });
+      },
+      seedSession: async (workoutId, defaultCount = 3) => {
+        const defaults = generateDefaultSets();
+
+        try {
+          const lastSets = await fetchLastSessionForExercise(workoutId);
+        
+          if (lastSets.length > 0) {
+            console.log("🌟 Preloading from previous session");
+        
+            const preloaded = lastSets.map(set => ({
+              id: randomId(),
+              reps: String(set.reps ?? ''),
+              weight: String(set.weight ?? ''),
+              logged: false,
+              timestamp: undefined,
+            }));
+        
+            set(state => ({
+              logs: {
+                ...state.logs,
+                [workoutId]: preloaded
+              }
+            }));
+        
+          } else {
+            console.log("🆕 No previous session found, loading default varied sets");
+        
+            const defaults = generateDefaultSets(); // <--- new call
+        
+            set(state => ({
+              logs: {
+                ...state.logs,
+                [workoutId]: defaults
+              }
+            }));
+          }
+        } catch (error) {
+          console.error("❌ Error seeding session:", error);
+        
+          const defaults = generateDefaultSets(); // <--- also here fallback
+        
+          set(state => ({
+            logs: {
+              ...state.logs,
+              [workoutId]: defaults
+            }
+          }));
+        }
+        
       }
+      
     }),
     {
       name: 'workout-store',
@@ -184,6 +267,10 @@ export const useWorkoutStore = create<WorkoutStore>()(
     }
   )
 );
+
+
+
+
 
 
 // // stores/useWorkoutStore.ts

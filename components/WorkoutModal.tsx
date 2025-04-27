@@ -61,6 +61,8 @@ const WorkoutModal: React.FC<WorkoutModalProps> = ({ visible, workout, onClose, 
   const [showNotes, setShowNotes] = useState<boolean>(false);
   const [restTimer, setRestTimer] = useState<number>(0);
   const [isTimerRunning, setIsTimerRunning] = useState<boolean>(false);
+  const [isLoadingSets, setIsLoadingSets] = useState(true);
+
   
   const videoRef = useRef<Video | null>(null);
   const swipeableRefs = useRef<Record<string, Swipeable | null>>({});
@@ -103,28 +105,63 @@ const WorkoutModal: React.FC<WorkoutModalProps> = ({ visible, workout, onClose, 
   // }, [visible, workoutId]);
 
   
+  // useEffect(() => {
+  //   if (!workoutId) return;
+  
+  //   const existingSets = useWorkoutStore.getState().logs[workoutId];
+  
+  //   // ❗Only add default sets if NO entry for this workout exists in the store
+  //   if (existingSets === undefined) {
+  //     const defaultSets = [
+  //       { reps: "12", weight: "10" },
+  //       { reps: "10", weight: "15" },
+  //       { reps: "8", weight: "20" },
+  //     ];
+  
+  //     defaultSets.forEach(() => {
+  //       useWorkoutStore.getState().addSet(String(workoutId));
+  //     });
+  //   }
+  
+  //   return () => {
+  //     if (timerInterval.current) {
+  //       clearInterval(timerInterval.current);
+  //     }
+  //   };
+  // }, [visible, workoutId]);
+  
+  // useEffect(() => {
+  //   if (!workoutId || !visible) return
+  //   // fetch last session (or blank), seed logs[workoutId]
+  //   useWorkoutStore.getState()
+  //     .seedSession(String(workoutId), 3)
+  //     .catch(console.warn)
+  
+  //   // cleanup your timer as before…
+  //   return () => {
+  //     if (timerInterval.current) clearInterval(timerInterval.current)
+  //   }
+  // }, [visible, workoutId])
+  
   useEffect(() => {
-    if (!workoutId) return;
+    if (!workoutId || !visible) return;
   
     const existingSets = useWorkoutStore.getState().logs[workoutId];
-  
-    // ❗Only add default sets if NO entry for this workout exists in the store
-    if (existingSets === undefined) {
-      const defaultSets = [
-        { reps: "12", weight: "10" },
-        { reps: "10", weight: "15" },
-        { reps: "8", weight: "20" },
-      ];
-  
-      defaultSets.forEach(() => {
-        useWorkoutStore.getState().addSet(String(workoutId));
-      });
+    
+    if (!existingSets || existingSets.length === 0) {
+      // Only seed if nothing exists
+      setIsLoadingSets(true);
+      useWorkoutStore.getState()
+        .seedSession(String(workoutId), 3)
+        .catch(console.warn)
+        .finally(() => setIsLoadingSets(false));
+    } else {
+      // Already have sets, no need to re-seed
+      setIsLoadingSets(false);
     }
   
     return () => {
-      if (timerInterval.current) {
-        clearInterval(timerInterval.current);
-      }
+      if (timerInterval.current) clearInterval(timerInterval.current);
     };
   }, [visible, workoutId]);
   
