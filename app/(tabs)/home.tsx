@@ -23,7 +23,8 @@ import WorkoutDetailsModal from '@/components/WorkoutDetailsModal';
 import { useUserStore } from '@/store/useUserStore';
 import { supabase } from '@/src/supabaseClient';
 import { useStatsStore } from '@/src/stores/userStatsStore'
-
+import { Footprints, GlassWater } from 'lucide-react-native';
+import WaterModal from '@/components/WaterModal';
 
 
 const { width } = Dimensions.get('window');
@@ -161,7 +162,7 @@ const categories = [
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [scrollY] = useState(new Animated.Value(0));
     const [barHeights, setBarHeights] = useState<Animated.Value[]>([]);
-  
+    const [waterModalVisible, setWaterModalVisible] = useState(false);
     
     // State for workout modal
     const [modalVisible, setModalVisible] = useState(false);
@@ -394,18 +395,27 @@ const categories = [
             <Text style={[styles.userStatus, { color: colors.secondaryText }]}>Get Ready 🔥</Text>
           </View>
         </View>
-        <TouchableOpacity 
-          style={[
-            styles.menuButton,
-            { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(99, 102, 241, 0.1)' }
-          ]}
-        >
-          <Ionicons 
-            name="notifications-outline" 
-            size={24} 
-            color={isDarkMode ? "#fff" : "#6366F1"} 
-          />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: 12 }}>
+  <TouchableOpacity 
+    style={[
+      styles.menuButton,
+      { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(99, 102, 241, 0.1)' }
+    ]}
+  >
+    <Footprints
+      size={24}
+      color={isDarkMode ? "#fff" : "#6366F1"}
+    />
+  </TouchableOpacity>
+
+  <TouchableOpacity
+  style={styles.menuButton}
+  onPress={() => setWaterModalVisible(true)}
+>
+  <GlassWater size={24} color={isDarkMode ? "#fff" : "#6366F1"} />
+</TouchableOpacity>
+</View>
+
       </View>
       
       <Animated.ScrollView 
@@ -673,6 +683,7 @@ const categories = [
         onClose={() => setModalVisible(false)}
         workout={selectedWorkout}
       />
+      <WaterModal visible={waterModalVisible} onClose={() => setWaterModalVisible(false)} />
     </SafeAreaView>
   );
 };
