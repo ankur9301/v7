@@ -409,11 +409,11 @@ const categories = [
   </TouchableOpacity>
 
   <TouchableOpacity
-  style={styles.menuButton}
-  onPress={() => setWaterModalVisible(true)}
->
-  <GlassWater size={24} color={isDarkMode ? "#fff" : "#6366F1"} />
-</TouchableOpacity>
+   style={styles.menuButton}
+    onPress={() => router.push('/subScreen/hydrationTrackerScreen')}
+  >
+     <GlassWater size={24} color={isDarkMode ? "#fff" : "#6366F1"} />
+  </TouchableOpacity>
 </View>
 
       </View>
