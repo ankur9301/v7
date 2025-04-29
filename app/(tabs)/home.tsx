@@ -24,7 +24,7 @@ import { useUserStore } from '@/store/useUserStore';
 import { supabase } from '@/src/supabaseClient';
 import { useStatsStore } from '@/src/stores/userStatsStore'
 import { Footprints, GlassWater } from 'lucide-react-native';
-import WaterModal from '@/components/WaterModal';
+// import WaterModal from '@/components/WaterModal';
 
 
 const { width } = Dimensions.get('window');
@@ -683,7 +683,7 @@ const categories = [
         onClose={() => setModalVisible(false)}
         workout={selectedWorkout}
       />
-      <WaterModal visible={waterModalVisible} onClose={() => setWaterModalVisible(false)} />
+      {/* <WaterModal visible={waterModalVisible} onClose={() => setWaterModalVisible(false)} /> */}
     </SafeAreaView>
   );
 };

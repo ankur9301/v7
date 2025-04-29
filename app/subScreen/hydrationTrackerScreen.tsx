@@ -18,6 +18,7 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   Modal,
+  RefreshControl,
 } from "react-native"
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons"
 import { LinearGradient } from "expo-linear-gradient"
@@ -26,6 +27,14 @@ import { useTheme, lightTheme, darkTheme } from "@/context/ThemeContext"
 import * as Haptics from "expo-haptics"
 import { useNavigation } from "@react-navigation/native"
 import { SafeAreaView } from "react-native-safe-area-context"
+import { useHydrationStore } from "@/src/stores/useHydrationStore";
+import { getTodayDateString } from '@/utils/dateHelper'
+import { supabase } from "@/src/supabaseClient"
+import { useUserStore } from "@/store/useUserStore";
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
+import HydrationChartModal from '@/components/hydrationChart';
+import { Alert } from 'react-native'
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window")
 
@@ -43,6 +52,58 @@ const HydrationTrackerScreen: React.FC = () => {
   const navigation = useNavigation()
   const { isDarkMode } = useTheme()
   const colors = isDarkMode ? darkTheme : lightTheme
+  const { user } = useUserStore(); // get the logged-in user
+  const [isLoading, setIsLoading] = useState(false);
+  const [isChartModalVisible, setIsChartModalVisible] = useState(false);
+
+  const fetchHydrationData = async () => {
+    if (!user || !user.id) {
+      console.log("No user yet, skipping hydration fetch...");
+      return;
+    }
+  
+    setIsLoading(true);
+  
+    const todayDate = getTodayDateString();
+  
+    const { data, error } = await supabase
+      .from("hydration_logs")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("date", todayDate);
+  
+    if (error) {
+      console.error("Error fetching hydration logs:", error);
+      setIsLoading(false);
+      return;
+    }
+  
+    if (data && data.length > 0) {
+      const totalAmount = data.reduce((sum, log) => sum + (log.amount_ml ?? 0), 0);
+      setWaterAmount(totalAmount);
+      setWaterGoal(data[0].goal_ml ?? 2000);
+    } else {
+      resetHydration();
+    }
+  
+    setIsLoading(false);
+  };
+  
+  
+ 
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!user || !user.id) return;
+  
+      const timeout = setTimeout(() => {
+        fetchHydrationData();
+      }, 300); // wait 300ms
+  
+      return () => clearTimeout(timeout);
+    }, [user])
+  );
+  
 
   const glassOptions: GlassOption[] = [
     { id: "small", name: "Small", icon: "cup", ml: 150, oz: 5 },
@@ -55,9 +116,20 @@ const HydrationTrackerScreen: React.FC = () => {
   const [glassQuantity, setGlassQuantity] = useState(1)
   const [quantityInputValue, setQuantityInputValue] = useState("1")
   const [isEditingQuantity, setIsEditingQuantity] = useState(false)
-  const [waterAmount, setWaterAmount] = useState(0)
-  const [unitType, setUnitType] = useState<UnitType>("ml")
-  const [waterGoal, setWaterGoal] = useState(2000)
+  // const [waterAmount, setWaterAmount] = useState(0)
+  // const [unitType, setUnitType] = useState<UnitType>("ml")
+  // const [waterGoal, setWaterGoal] = useState(2000)
+  const {
+    waterAmount,
+    waterGoal,
+    unitType,
+    setWaterAmount,
+    addWater,
+    setWaterGoal,
+    setUnitType,
+    resetHydration,
+  } = useHydrationStore();
+  
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [showWaterAddedIndicator, setShowWaterAddedIndicator] = useState(false)
   const [lastAddedAmount, setLastAddedAmount] = useState(0)
@@ -334,37 +406,65 @@ const HydrationTrackerScreen: React.FC = () => {
     setIsSettingsOpen(false)
   }
 
-  const handleAdd = () => {
-    const selectedGlass = glassOptions[selectedGlassIndex]
+
+  const handleAdd = async () => {
+    const selectedGlass = glassOptions[selectedGlassIndex];
     const addAmount =
-      unitType === "ml" ? selectedGlass.ml : unitType === "oz" ? selectedGlass.oz : selectedGlass.ml / 250
-    const mlEquivalent = unitType === "ml" ? addAmount : unitType === "oz" ? addAmount * 29.574 : addAmount * 250
-    const amountToAdd = mlEquivalent * glassQuantity
+      unitType === "ml" ? selectedGlass.ml : unitType === "oz" ? selectedGlass.oz : selectedGlass.ml / 250;
+    const mlEquivalent = unitType === "ml" ? addAmount : unitType === "oz" ? addAmount * 29.574 : addAmount * 250;
+    const amountToAdd = mlEquivalent * glassQuantity;
+  
+    addWater(amountToAdd); 
+    setLastAddedAmount(amountToAdd);
+    triggerWaterRipple();
+    animateAddButton();
+    showAddedWaterIndicator();
+    animateParticles();
+  
+    try {
+      const todayDate = getTodayDateString();
+      const { error } = await supabase
+        .from("hydration_logs")
+        .insert({
+          user_id: user?.id ?? "",
+          date: todayDate,
+          amount_ml: Math.round(amountToAdd),
+          goal_ml: waterGoal,
+          unit: unitType,
+          added_at: new Date().toISOString(), // Add timestamp when log was created
+        });
+  
+      if (error) console.error("Error inserting hydration log:", error);
+    } catch (err) {
+      console.error("Unexpected error adding water:", err);
+    }
+  };
+    
 
-    setWaterAmount((prev) => prev + amountToAdd)
-    setLastAddedAmount(amountToAdd)
-    triggerWaterRipple()
-    animateAddButton()
-    showAddedWaterIndicator()
-    animateParticles()
+  const updateHydrationLog = async (fieldsToUpdate: Partial<{ goal_ml: number; amount_ml: number }>) => {
 
-    // Animate emoji on add
-    Animated.sequence([
-      Animated.timing(emojiScaleAnim, {
-        toValue: 1.5,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-      Animated.spring(emojiScaleAnim, {
-        toValue: 1 + getProgressPercentage() / 200,
-        friction: 3,
-        tension: 40,
-        useNativeDriver: false,
-      }),
-    ]).start()
-
-    if (Platform.OS === "ios") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy)
-  }
+    try {
+      const todayDate = getTodayDateString();
+      const { data, error } = await supabase
+        .from("hydration_logs")
+        .select("*")
+        .eq("user_id", user?.id ?? "")
+        .eq("date", todayDate)
+        .single();
+  
+      if (data) {
+        const { error: updateError } = await supabase
+          .from("hydration_logs")
+          .update(fieldsToUpdate)
+          .eq("id", data.id);
+  
+        if (updateError) console.error("Error updating hydration log:", updateError);
+      }
+    } catch (err) {
+      console.error("Unexpected error updating hydration log:", err);
+    }
+  };
+  
 
   const showAddedWaterIndicator = () => {
     setShowWaterAddedIndicator(true)
@@ -434,31 +534,65 @@ const HydrationTrackerScreen: React.FC = () => {
     })
   }
 
-  const handleReset = () => {
-    // Reset water amount animation
-    Animated.sequence([
-      Animated.timing(resetButtonAnim, { toValue: 0.8, duration: 150, useNativeDriver: false }),
-      Animated.spring(resetButtonAnim, { toValue: 1, tension: 300, friction: 10, useNativeDriver: false }),
-    ]).start()
 
-    // Animate water level going down
-    Animated.timing(progressAnim, {
-      toValue: 0,
-      duration: 600,
-      useNativeDriver: false,
-      easing: Easing.out(Easing.bezier(0.4, 0, 0.2, 1)),
-    }).start(() => {
-      setWaterAmount(0)
-      if (Platform.OS === "ios") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-    })
 
-    // Reset emoji scale
-    Animated.timing(emojiScaleAnim, {
-      toValue: 1,
-      duration: 300,
-      useNativeDriver: false,
-    }).start()
-  }
+
+const handleReset = () => {
+  Alert.alert(
+    "Reset Today's Data?",
+    "This will clear all hydration logs for today. Are you sure?",
+    [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Yes, Reset",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            const todayDate = getTodayDateString();
+            const { error } = await supabase
+              .from("hydration_logs")
+              .delete()
+              .eq("user_id", user?.id ?? "")
+              .eq("date", todayDate);
+
+            if (error) {
+              console.error("Error deleting hydration logs:", error);
+            }
+          } catch (err) {
+            console.error("Unexpected error resetting hydration logs:", err);
+          }
+
+          Animated.sequence([
+            Animated.timing(resetButtonAnim, { toValue: 0.8, duration: 150, useNativeDriver: false }),
+            Animated.spring(resetButtonAnim, { toValue: 1, tension: 300, friction: 10, useNativeDriver: false }),
+          ]).start();
+
+          Animated.timing(progressAnim, {
+            toValue: 0,
+            duration: 600,
+            useNativeDriver: false,
+            easing: Easing.out(Easing.bezier(0.4, 0, 0.2, 1)),
+          }).start(() => {
+            resetHydration();
+            if (Platform.OS === "ios") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          });
+
+          Animated.timing(emojiScaleAnim, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: false,
+          }).start();
+        },
+      },
+    ],
+    { cancelable: true }
+  );
+};
+
+  
 
   const triggerWaterRipple = () => {
     waterRippleAnim.setValue(0)
@@ -510,29 +644,31 @@ const HydrationTrackerScreen: React.FC = () => {
     setGoalInputValue(numericValue)
   }
 
-  const handleGoalInputBlur = () => {
-    setIsEditingGoal(false)
-    const numValue = Number.parseFloat(goalInputValue)
+
+
+  const handleGoalInputBlur = async () => {
+    setIsEditingGoal(false);
+    const numValue = Number.parseFloat(goalInputValue);
     if (!isNaN(numValue) && numValue > 0) {
-      // Convert to ml for internal storage
-      let mlValue = numValue
+      let mlValue = numValue;
       if (unitType === "oz") {
-        mlValue = numValue * 29.574
+        mlValue = numValue * 29.574;
       } else if (unitType === "cups") {
-        mlValue = numValue * 250
+        mlValue = numValue * 250;
       }
-      setWaterGoal(Math.round(mlValue))
+      setWaterGoal(Math.round(mlValue));
+      await updateHydrationLog({ goal_ml: Math.round(mlValue) }); // ✅ ADD this line
     } else {
       setGoalInputValue(
         unitType === "ml"
           ? waterGoal.toString()
           : unitType === "oz"
-            ? (waterGoal / 29.574).toFixed(1)
-            : (waterGoal / 250).toFixed(1),
-      )
+          ? (waterGoal / 29.574).toFixed(1)
+          : (waterGoal / 250).toFixed(1)
+      );
     }
-  }
-
+  };
+  
   // Enhanced ripple effect with better animation
   const rippleScale = waterRippleAnim.interpolate({
     inputRange: [0, 0.4, 1],
@@ -664,6 +800,13 @@ const HydrationTrackerScreen: React.FC = () => {
               style={styles.scrollView}
               contentContainerStyle={[styles.scrollContent, { paddingTop: 50 }]}
               showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={isLoading}
+                  onRefresh={fetchHydrationData} // <-- reload hydration
+                  tintColor={isDarkMode ? "#FF9500" : "#6366F1"}
+                />
+              }
             >
               <View style={styles.mainContent}>
                 <View style={styles.waterVisualizationContainer}>
@@ -1135,7 +1278,7 @@ const HydrationTrackerScreen: React.FC = () => {
 
               {/* Today's Summary */}
               <View style={styles.summaryContainer}>
-                <Text
+                {/* <Text
                   style={[
                     styles.sectionTitle,
                     {
@@ -1146,6 +1289,53 @@ const HydrationTrackerScreen: React.FC = () => {
                 >
                   Today's Summary
                 </Text>
+                <TouchableOpacity
+                        style={[
+                          styles.historyButton,
+                          {
+                            backgroundColor: isDarkMode ? "rgba(255, 149, 0, 0.2)" : "rgba(99, 102, 241, 0.1)",
+                          },
+                        ]}
+                        onPress={() => setIsChartModalVisible(true)}
+                      >
+                        <Ionicons name="analytics-outline" size={18} color={isDarkMode ? "#FF9500" : "#6366F1"} />
+                        <Text
+                          style={[
+                            styles.historyButtonText,
+                            {
+                              color: isDarkMode ? "#FF9500" : "#6366F1",
+                            },
+                          ]}
+                        >
+                          History
+                        </Text>
+                      </TouchableOpacity> */}
+                      <View style={[styles.summaryHeader]}>
+  <Text
+    style={[
+      styles.sectionTitle,
+      {
+        color: isDarkMode ? "#F3F4F6" : "#111827",
+      },
+    ]}
+  >
+    Today's Summary
+  </Text>
+
+  <TouchableOpacity
+    style={[
+      styles.historyIconButton,
+      {
+        backgroundColor: isDarkMode ? "rgba(255, 149, 0, 0.2)" : "rgba(99, 102, 241, 0.1)",
+      },
+    ]}
+    onPress={() => setIsChartModalVisible(true)}
+  >
+    <Ionicons name="analytics-outline" size={20} color={isDarkMode ? "#FF9500" : "#6366F1"} />
+  </TouchableOpacity>
+</View>
+
+
                 <View style={styles.summaryCards}>
                   <View
                     style={[
@@ -1211,6 +1401,7 @@ const HydrationTrackerScreen: React.FC = () => {
                   </View>
                 </View>
               </View>
+      
             </ScrollView>
 
             {/* Add Water Button */}
@@ -1322,10 +1513,19 @@ const HydrationTrackerScreen: React.FC = () => {
                                         : "rgba(0, 0, 0, 0.05)",
                                 },
                               ]}
-                              onPress={() => {
-                                setUnitType(unit)
-                                if (Platform.OS === "ios") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+                              onPress={async () => {
+                                const newUnit = unit;
+                                setUnitType(newUnit);
+                              
+                      
+                              
+                                if (Platform.OS === "ios") {
+                                  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                }
                               }}
+                              
+                              
+                              
                             >
                               <Text
                                 style={[
@@ -1546,6 +1746,11 @@ const HydrationTrackerScreen: React.FC = () => {
                 </View>
               </TouchableWithoutFeedback>
             </Modal>
+            <HydrationChartModal
+  isVisible={isChartModalVisible}
+  onClose={() => setIsChartModalVisible(false)}
+  initialView="daily"
+/>
           </View>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
@@ -1752,13 +1957,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
   },
-  // glassScrollContainer: {
-  //   paddingVertical: 12,
-  //   paddingHorizontal: 4,
-  //   flexDirection: "row",
-  //   justifyContent: "space-around", 
-  //   alignItems: "center",
-  //   },
+
   glassScrollContainer: {
     flexDirection: "row",
     justifyContent: "space-around", // ✅ even spacing between all items
@@ -2055,6 +2254,36 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 18,
     fontWeight: "700",
+  },
+  historyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.05)',
+  },
+  historyButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  summaryHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  
+  historyIconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.05)',
   },
 })
 
