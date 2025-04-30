@@ -108,42 +108,94 @@ const HydrationChartModal: React.FC<HydrationChartModalProps> = ({
   };
 
   // Process data for daily view (hourly breakdown)
+  // const getDailyChartData = () => {
+  //   const hourlyData = Array(24).fill(0);
+  //   const labels = [];
+    
+  //   // Create labels for every 3 hours
+  //   for (let i = 0; i < 24; i += 3) {
+  //     labels.push(`${i}:00`);
+  //   }
+    
+  //   // Aggregate data by hour
+  //   hydrationData.forEach(log => {
+  //     const date = parseISO(log.added_at);
+  //     const hour = date.getHours();
+  //     hourlyData[hour] += log.amount_ml;
+  //   });
+    
+  //   // Compress data to match labels (every 3 hours)
+  //   const compressedData = [];
+  //   for (let i = 0; i < 24; i += 3) {
+  //     compressedData.push(
+  //       hourlyData[i] + 
+  //       (hourlyData[i+1] || 0) + 
+  //       (hourlyData[i+2] || 0)
+  //     );
+  //   }
+    
+  //   return {
+  //     labels,
+  //     datasets: [
+  //       {
+  //         data: compressedData,
+  //         color: () => isDarkMode ? '#FF9500' : '#6366F1',
+  //       }
+  //     ],
+  //   };
+  // };
+
   const getDailyChartData = () => {
-    const hourlyData = Array(24).fill(0);
-    const labels = [];
-    
-    // Create labels for every 3 hours
-    for (let i = 0; i < 24; i += 3) {
-      labels.push(`${i}:00`);
+    const intervalCount = 48; // 24 hours × 2 (half-hourly)
+    const halfHourlyData = Array(intervalCount).fill(0);
+    const labels: string[] = [];
+  
+    // Build full 48-label array
+    for (let i = 0; i < 24; i++) {
+      labels.push(`${i.toString().padStart(2, '0')}:00`);
+      labels.push(`${i.toString().padStart(2, '0')}:30`);
     }
-    
-    // Aggregate data by hour
+  
+    // Fill data into 48 buckets
     hydrationData.forEach(log => {
       const date = parseISO(log.added_at);
       const hour = date.getHours();
-      hourlyData[hour] += log.amount_ml;
+      const minute = date.getMinutes();
+      const index = hour * 2 + (minute >= 30 ? 1 : 0);
+      halfHourlyData[index] += log.amount_ml;
     });
-    
-    // Compress data to match labels (every 3 hours)
-    const compressedData = [];
-    for (let i = 0; i < 24; i += 3) {
-      compressedData.push(
-        hourlyData[i] + 
-        (hourlyData[i+1] || 0) + 
-        (hourlyData[i+2] || 0)
-      );
+  
+    // Find first non-zero data index
+    const firstIndex = halfHourlyData.findIndex(amount => amount > 0);
+    if (firstIndex === -1) {
+      // no data at all
+      return {
+        labels,
+        datasets: [
+          {
+            data: halfHourlyData,
+            color: () => isDarkMode ? '#FF9500' : '#6366F1',
+          },
+        ],
+      };
     }
-    
+  
+    // Start 2 buckets (1 hour) earlier, but not below 0
+    const displayStartIndex = Math.max(0, firstIndex - 2);
+    const trimmedLabels = labels.slice(displayStartIndex);
+    const trimmedData = halfHourlyData.slice(displayStartIndex);
+  
     return {
-      labels,
+      labels: trimmedLabels,
       datasets: [
         {
-          data: compressedData,
+          data: trimmedData,
           color: () => isDarkMode ? '#FF9500' : '#6366F1',
-        }
+        },
       ],
     };
   };
+  
   
   // Process data for weekly view
   const getWeeklyChartData = () => {

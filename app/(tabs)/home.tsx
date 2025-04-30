@@ -401,11 +401,13 @@ const categories = [
       styles.menuButton,
       { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(99, 102, 241, 0.1)' }
     ]}
+    onPress={() => router.push('/subScreen/JogTracker')}
   >
     <Footprints
       size={24}
       color={isDarkMode ? "#fff" : "#6366F1"}
     />
+    
   </TouchableOpacity>
 
   <TouchableOpacity

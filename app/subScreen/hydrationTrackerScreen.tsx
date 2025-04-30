@@ -35,6 +35,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useCallback } from 'react';
 import HydrationChartModal from '@/components/hydrationChart';
 import { Alert } from 'react-native'
+import AsyncStorage from "@react-native-async-storage/async-storage"
+
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window")
 
@@ -81,7 +83,7 @@ const HydrationTrackerScreen: React.FC = () => {
     if (data && data.length > 0) {
       const totalAmount = data.reduce((sum, log) => sum + (log.amount_ml ?? 0), 0);
       setWaterAmount(totalAmount);
-      setWaterGoal(data[0].goal_ml ?? 2000);
+      setWaterGoal(data[0].goal_ml ?? 3000);
     } else {
       resetHydration();
     }
@@ -92,18 +94,40 @@ const HydrationTrackerScreen: React.FC = () => {
   
  
 
+  // useFocusEffect(
+  //   useCallback(() => {
+  //     if (!user || !user.id) return;
+  
+  //     const timeout = setTimeout(() => {
+  //       fetchHydrationData();
+  //     }, 300); // wait 300ms
+  
+  //     return () => clearTimeout(timeout);
+  //   }, [user])
+  // );
   useFocusEffect(
     useCallback(() => {
-      if (!user || !user.id) return;
+      const checkAndResetHydrationIfNewDay = async () => {
+        if (!user || !user.id) return;
   
-      const timeout = setTimeout(() => {
-        fetchHydrationData();
-      }, 300); // wait 300ms
+        const today = getTodayDateString();
+        const lastHydrationDate = await AsyncStorage.getItem("lastHydrationDate");
   
-      return () => clearTimeout(timeout);
+        if (lastHydrationDate !== today) {
+          resetHydration(); // Clear local hydration state
+          await AsyncStorage.setItem("lastHydrationDate", today);
+        }
+  
+        fetchHydrationData(); // Sync with Supabase
+      };
+  
+      checkAndResetHydrationIfNewDay();
+  
+      return () => {};
     }, [user])
   );
   
+
 
   const glassOptions: GlassOption[] = [
     { id: "small", name: "Small", icon: "cup", ml: 150, oz: 5 },
@@ -427,7 +451,7 @@ const HydrationTrackerScreen: React.FC = () => {
         .from("hydration_logs")
         .insert({
           user_id: user?.id ?? "",
-          date: todayDate,
+          date: getTodayDateString(),
           amount_ml: Math.round(amountToAdd),
           goal_ml: waterGoal,
           unit: unitType,
@@ -450,13 +474,15 @@ const HydrationTrackerScreen: React.FC = () => {
         .select("*")
         .eq("user_id", user?.id ?? "")
         .eq("date", todayDate)
-        .single();
+        .order("added_at", { ascending: false })
+        .limit(1);
   
-      if (data) {
+        if (data && data.length > 0) {
         const { error: updateError } = await supabase
           .from("hydration_logs")
           .update(fieldsToUpdate)
-          .eq("id", data.id);
+          .eq("id", data[0].id);
+
   
         if (updateError) console.error("Error updating hydration log:", updateError);
       }

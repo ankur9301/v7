@@ -1,3 +1,4 @@
+
 {
   "expo": {
     "name": "v7",
@@ -38,6 +39,7 @@
     },
     "plugins": [
       "expo-router",
+   
       [
         "expo-splash-screen",
         {
