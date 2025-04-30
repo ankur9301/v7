@@ -39,6 +39,17 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "@react-native-mapbox-gl/maps",
+        {
+          "ios": {
+            "accessToken": "pk.your_mapbox_public_token_here"
+          },
+          "android": {
+            "accessToken": "pk.your_mapbox_public_token_here"
+          }
+        }
+      ],
    
       [
         "expo-splash-screen",
