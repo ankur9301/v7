@@ -33,6 +33,8 @@ export default function ProfileScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const { userStats, fetchStats } = useStatsStore();
+  const { totalWorkouts, totalCalories, totalMinutes } = userStats;
+
 
 
   // Sync local state with user store whenever user changes
@@ -58,10 +60,30 @@ export default function ProfileScreen() {
     }
   };
 
+// useFocusEffect(
+//   useCallback(() => {
+//     fetchProfile();
+//     // if (user?.id) fetchStats(user.id);
+// //     if (user?.id) {
+// //   fetchStats(user.id); // now it works with updated function
+// // }
+
+//   }, [user?.id])
+// );
+
 useFocusEffect(
   useCallback(() => {
     fetchProfile();
-    if (user?.id) fetchStats(user.id);
+
+    if (user?.id) {
+      // build a 7-day window so fetchStats can parse it:
+      const today    = new Date();
+      const weekAgo  = new Date(today);
+      weekAgo.setDate(today.getDate() - 6);
+      // const payload = `${user.id}:${weekAgo.toISOString()}:${today.toISOString()}`;
+      const payload = `${user.id}|${weekAgo.toISOString()}|${today.toISOString()}`;
+      fetchStats(payload);
+    }
   }, [user?.id])
 );
 
@@ -280,43 +302,43 @@ useFocusEffect(
         </View>
      
         {/* Stats */}
-        <View style={[styles.statsSection, { backgroundColor: colors.card }]}>
-          <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-          <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: colors.text }]}>{userStats.monthlyWorkouts}</Text>
-              <Text style={[styles.statLabel, { color: colors.secondaryText }]}>Workouts</Text>
-            </View>
-            <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-            <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: colors.text }]}>{userStats.totalCalories}</Text>
-              <Text style={[styles.statLabel, { color: colors.secondaryText }]}>KCAL Burned</Text>
-            </View>
-            <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-            <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: colors.text }]}>{userStats.totalMinutes}</Text>
-              <Text style={[styles.statLabel, { color: colors.secondaryText }]}>Minutes</Text>
-        </View>
+        {/* Stats (all-time totals) */}
+<View style={[styles.statsSection, { backgroundColor: colors.card }]}>
+  <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
 
-        
+  <View style={styles.statItem}>
+    <Text style={[styles.statValue, { color: colors.text }]}>
+      {totalWorkouts}
+    </Text>
+    <Text style={[styles.statLabel, { color: colors.secondaryText }]}>
+      Workouts
+    </Text>
+  </View>
 
+  <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
 
+  <View style={styles.statItem}>
+    <Text style={[styles.statValue, { color: colors.text }]}>
+      {totalCalories}
+    </Text>
+    <Text style={[styles.statLabel, { color: colors.secondaryText }]}>
+      KCAL Burned
+    </Text>
+  </View>
 
+  <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
 
-          {/* <View style={styles.statItem}>
-            <Text style={[styles.statValue, { color: colors.text }]}>24</Text>
-            <Text style={[styles.statLabel, { color: colors.secondaryText }]}>Workouts</Text>
-          </View>
-          <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-          <View style={styles.statItem}>
-            <Text style={[styles.statValue, { color: colors.text }]}>12,500</Text>
-            <Text style={[styles.statLabel, { color: colors.secondaryText }]}>KCAL</Text>
-          </View>
-          <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-          <View style={styles.statItem}>
-            <Text style={[styles.statValue, { color: colors.text }]}>30</Text>
-            <Text style={[styles.statLabel, { color: colors.secondaryText }]}>Days Streak</Text>
-          </View> */}
-        </View>
+  <View style={styles.statItem}>
+    <Text style={[styles.statValue, { color: colors.text }]}>
+      {totalMinutes}
+    </Text>
+    <Text style={[styles.statLabel, { color: colors.secondaryText }]}>
+      Minutes
+    </Text>
+  </View>
+</View>
+
+     
 
         {/* Account Section */}
         <View style={[styles.section, { backgroundColor: colors.card }]}>

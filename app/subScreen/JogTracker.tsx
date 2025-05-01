@@ -15,10 +15,12 @@ import {
 } from "react-native"
 import MapView, { Polyline, PROVIDER_DEFAULT } from "react-native-maps"
 import * as Location from "expo-location"
-import { Pedometer } from "expo-sensors"
 import { Ionicons, MaterialIcons } from "@expo/vector-icons"
 import { useTheme, lightTheme, darkTheme } from "@/context/ThemeContext"
 import { useRouter } from "expo-router"
+import { useRunStore } from "@/src/stores/useRunStore"
+
+
 const { width, height } = Dimensions.get("window")
 
 // Custom map style
@@ -492,16 +494,23 @@ function kmToMiles(km: number) {
 }
 
 // Calculate calories burned based on steps and distance
-function calculateCalories(steps: number, distanceKm: number): number {
-  // Basic formula: ~100 calories per mile at moderate pace
-  const caloriesFromDistance = distanceKm * 0.621371 * 100
-
-  // Add calories from steps (rough estimate)
-  const caloriesFromSteps = steps * 0.04
-
-  // Average the two methods for a more balanced estimate
-  return Math.round((caloriesFromDistance + caloriesFromSteps) / 2)
-}
+function calculateCaloriesFromRun(distanceKm: number, elapsedMs: number): number {
+    const minutes = elapsedMs / 60000
+    if (minutes < 0.5 || distanceKm < 0.05) return 0
+  
+    const miles = kmToMiles(distanceKm)
+    const pace = minutes / miles // min per mile
+  
+    let MET = 7 // default jog
+    if (pace < 12) MET = 9 // faster run
+    if (pace > 15) MET = 6 // slow jog
+    if (pace > 18) MET = 4.5 // walk
+  
+    const weightKg = 70 // ⚠️ You can make this user-configurable
+    const calories = (MET * 3.5 * weightKg * minutes) / 200
+    return Math.round(calories)
+  }
+  
 
 export default function JogTracker() {
   const { isDarkMode } = useTheme()
@@ -509,7 +518,7 @@ export default function JogTracker() {
   const mapRef = useRef<MapView | null>(null)
   const [route, setRoute] = useState<{ latitude: number; longitude: number; altitude: number }[]>([])
   const [watcher, setWatcher] = useState<Location.LocationSubscription | null>(null)
-  const [steps, setSteps] = useState(0)
+//   const [steps, setSteps] = useState(0)
   const [startTime, setStartTime] = useState<number | null>(null)
   const [elapsed, setElapsed] = useState(0)
   const [tracking, setTracking] = useState(false)
@@ -533,6 +542,13 @@ export default function JogTracker() {
   const fadeAnim = useRef(new Animated.Value(0)).current
   const slideAnim = useRef(new Animated.Value(100)).current
 
+//   const [initialStepCount, setInitialStepCount] = useState<number | null>(null)
+  const addRun = useRunStore((s) => s.addRun)
+  const [hasMoved, setHasMoved] = useState(false)
+
+
+  
+
   // Timer
   useEffect(() => {
     let timer: NodeJS.Timeout | null = null
@@ -540,6 +556,11 @@ export default function JogTracker() {
       timer = setInterval(() => {
         const newElapsed = Date.now() - startTime
         setElapsed(newElapsed)
+        if (hasMoved  && distance < 0.01) {
+            setPaused(true)
+            return
+          }
+          
 
         // Update pace every second
         if (distance > 0) {
@@ -551,7 +572,11 @@ export default function JogTracker() {
 
         // Update calories
         const timeMinutes = newElapsed / 60000
-        setCalories(calculateCalories(steps, distance))
+        // setCalories(calculateCalories(steps, distance))
+        // setCalories(calculateCalories(steps, distance, newElapsed))
+        setCalories(calculateCaloriesFromRun(distance, newElapsed))
+
+
       }, 1000)
     }
     return () => {
@@ -559,16 +584,10 @@ export default function JogTracker() {
         clearInterval(timer)
       }
     }
-  }, [tracking, paused, startTime, distance, steps])
+  }, [tracking, paused, startTime, distance])
 
-  // Step counter
-  useEffect(() => {
-    const sub = Pedometer.watchStepCount((r) => {
-      if (tracking && !paused) setSteps((s) => s + r.steps)
-    })
-    return () => sub.remove()
-  }, [tracking, paused])
 
+  
   // Initial location & center
   useEffect(() => {
     ;(async () => {
@@ -611,6 +630,20 @@ export default function JogTracker() {
     })()
   }, [])
 
+  const [countdown, setCountdown] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (countdown === null) return
+    if (countdown === 0) {
+      setCountdown(null)
+      start() // Use the existing start function logic
+      return
+    }
+  
+    const timer = setTimeout(() => setCountdown((prev) => (prev !== null ? prev - 1 : null)), 1000)
+    return () => clearTimeout(timer)
+  }, [countdown])
+  
   // Animate UI elements on mount
   useEffect(() => {
     Animated.parallel([
@@ -627,79 +660,87 @@ export default function JogTracker() {
     ]).start()
   }, [])
 
-  const start = async () => {
+//   setInitialStepCount(null)
+const start = async () => {
     if (tracking && !paused) return
-
+  
     if (paused) {
       // Resume from pause
       setStartTime(Date.now() - elapsed)
       setPaused(false)
       return
     }
-
+  
+    // ✅ Reset step baseline
+    // setInitialStepCount(null)
+  
     const { status } = await Location.requestForegroundPermissionsAsync()
     if (status !== "granted") {
       Alert.alert("Permission needed", "Location access is required for tracking your jog.")
       return
     }
-
+  
     try {
       const loc = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.BestForNavigation,
       })
-
+  
       const p = {
         latitude: loc.coords.latitude,
         longitude: loc.coords.longitude,
         altitude: loc.coords.altitude || 0,
       }
-
+  
       setCurrentLocation(p)
       setRoute([p])
       setStartTime(Date.now())
       setElapsed(0)
-      setSteps(0)
+    //   setSteps(0)
       setDistance(0)
       setCalories(0)
       setPace("--:--")
-      setElevation(Math.round(p.altitude * 3.28084)) // Convert meters to feet
+      setElevation(Math.round(p.altitude * 3.28084)) // meters to feet
       setTracking(true)
       setPaused(false)
-
+  
       const sub = await Location.watchPositionAsync(
+        
         {
           accuracy: Location.Accuracy.BestForNavigation,
           distanceInterval: 1,
           timeInterval: 1000,
         },
+        
         (l) => {
           if (paused) return
-
+  
           const pt = {
             latitude: l.coords.latitude,
             longitude: l.coords.longitude,
             altitude: l.coords.altitude || 0,
           }
-
+          
+  
           setCurrentLocation(pt)
-          setElevation(Math.round(pt.altitude * 3.28084)) // Convert meters to feet
-
+          setElevation(Math.round(pt.altitude * 3.28084))
+  
           setRoute((r) => {
             const newRoute = [...r, pt]
-
-            // Calculate new distance
+  
             if (r.length > 0) {
               const lastPoint = r[r.length - 1]
               const segmentDistance = haversine(lastPoint, pt)
-              setDistance((prevDistance) => {
-                const newDistance = prevDistance + segmentDistance
-                return newDistance
-              })
+              setDistance((prevDistance) => prevDistance + segmentDistance)
             }
-
+  
             return newRoute
           })
 
+          if (!hasMoved && distance >= 0.05) {
+            setHasMoved(true)
+          }
+          
+  
           if (mapRef.current) {
             mapRef.current.animateCamera(
               {
@@ -711,40 +752,20 @@ export default function JogTracker() {
           }
         },
       )
-
+  
       setWatcher(sub)
     } catch (error) {
       Alert.alert("Error", "Failed to start tracking. Please try again.")
       console.error(error)
     }
   }
+  
 
   const pause = () => {
     setPaused(true)
   }
 
-//   const stop = () => {
-//     Alert.alert(
-//       "End Workout",
-//       "Are you sure you want to end this workout?",
-//       [
-//         {
-//           text: "Cancel",
-//           style: "cancel",
-//         },
-//         {
-//           text: "End Workout",
-//           style: "destructive",
-//           onPress: () => {
-//             if (watcher) watcher.remove()
-//             setTracking(false)
-//             setPaused(false)
-//           },
-//         },
-//       ],
-//       { cancelable: true },
-//     )
-//   }
+
 const stop = () => {
     if (watcher) watcher.remove()
     setTracking(false)
@@ -763,6 +784,22 @@ const stop = () => {
           style: "destructive",
           onPress: () => {
             stop()        // stop watching and reset
+                       // persist this run
+           addRun({
+            duration: elapsed,
+            distanceKm: distance,
+            distanceMi: parseFloat(distanceMiles),
+            pace,
+            calories,
+            // steps,
+            elevationFt: elevation,
+            path: route.map((pt) => ({
+              latitude: pt.latitude,
+              longitude: pt.longitude,
+              altitude: pt.altitude,
+              timestamp: Date.now(),
+            })),
+          })
             router.back() // navigate back
           },
         },
@@ -804,6 +841,17 @@ const stop = () => {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
+      <TouchableOpacity
+  style={[
+    styles.exitButton,
+    { backgroundColor: isDarkMode ? "rgba(0,0,0,0.6)" : "rgba(255,255,255,0.9)" },
+  ]}
+
+  onPress={handleExit}
+>
+  <Ionicons name="close" size={24} color={isDarkMode ? "#FF9500" : "#6366F1"} />
+</TouchableOpacity>
+
 
       {/* Map View */}
       {initialRegion && (
@@ -922,10 +970,7 @@ const stop = () => {
                 <Text style={[styles.statLabel, { color: colors.secondaryText }]}>Elevation</Text>
               </View>
 
-              <View style={styles.statItem}>
-                <Text style={[styles.statValue, { color: colors.text }]}>{steps}</Text>
-                <Text style={[styles.statLabel, { color: colors.secondaryText }]}>Steps</Text>
-              </View>
+            
             </View>
           </View>
         )}
@@ -933,15 +978,7 @@ const stop = () => {
         {currentPage === 2 && (
           <View style={styles.statsGrid}>
             <View style={styles.statsRow}>
-              <View style={styles.statItem}>
-                <Text style={[styles.statValue, { color: colors.text }]}>{steps}</Text>
-                <Text style={[styles.statLabel, { color: colors.secondaryText }]}>Steps</Text>
-              </View>
-
-              <View style={styles.statItem}>
-                <Text style={[styles.statValue, { color: colors.text }]}>{Math.round(steps / (elapsed / 60000))}</Text>
-                <Text style={[styles.statLabel, { color: colors.secondaryText }]}>Steps/min</Text>
-              </View>
+           
             </View>
 
             <View style={styles.statsRow}>
@@ -989,12 +1026,15 @@ const stop = () => {
         {/* Control Buttons */}
         <View style={styles.controlButtons}>
           {!tracking ? (
-            <TouchableOpacity
-              style={[styles.startButton, { backgroundColor: isDarkMode ? "#FF9500" : "#10B981" }]}
-              onPress={start}
-            >
-              <Ionicons name="play" size={32} color="#fff" />
-            </TouchableOpacity>
+           <TouchableOpacity
+           style={[styles.startButton, { backgroundColor: isDarkMode ? "#FF9500" : "#10B981" }]}
+           onPress={start}
+         >
+           <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 18 }}>
+             {tracking ? "Run" : "Start"}
+           </Text>
+         </TouchableOpacity>
+         
           ) : (
             <>
               <TouchableOpacity style={[styles.controlButton, { backgroundColor: "#000" }]} onPress={stop}>
@@ -1016,12 +1056,12 @@ const stop = () => {
                   <Ionicons name="pause" size={32} color="#fff" />
                 </TouchableOpacity>
               )}
-              <TouchableOpacity
+              {/* <TouchableOpacity
               style={styles.controlButton}
               onPress={handleExit}
             >
               <Ionicons name="close" size={24} color="#fff" />
-            </TouchableOpacity>
+            </TouchableOpacity> */}
             </>
           )}
         </View>
@@ -1034,6 +1074,23 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  exitButton: {
+    position: "absolute",
+    top: Platform.OS === "ios" ? 60 : 40,
+    left: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255,255,255,0.9)",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+    zIndex: 10,
+  },  
   map: {
     ...StyleSheet.absoluteFillObject,
   },
@@ -1179,6 +1236,14 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
 })
+
+
+
+
+
+
+
+
 
 
 // // jog-tracker.tsx

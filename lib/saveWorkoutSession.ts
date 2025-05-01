@@ -36,18 +36,6 @@ export const saveWorkoutToSupabase = async (workoutName: string) => {
     throw new Error(sessionError?.message || "Failed to create session");
   }
 
-  // 2. Save session exercises
-//   const sessionExercises = plan.map((exercise) => {
-//     const sets = logs[exercise.id] || [];
-//     return {
-//       session_id: session.id,
-//       exercise_name: exercise.name,
-//       sets: sets.length,
-//       reps: sets.map((s) => s.reps).join("-"),
-//       weight: sets.map((s) => s.weight).join("-"),
-//     };
-//   });
-
 
 const sessionExercises = Object.entries(logs)
   .flatMap(([workoutId, sets]) =>

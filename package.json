@@ -66,6 +66,7 @@
     "react-native-circular-progress": "^1.4.1",
     "react-native-confetti-cannon": "^1.5.2",
     "react-native-gesture-handler": "~2.20.2",
+    "react-native-get-random-values": "^1.11.0",
     "react-native-maps": "1.18.0",
     "react-native-modal": "^13.0.1",
     "react-native-reanimated": "^3.16.7",
@@ -77,6 +78,7 @@
     "react-native-voice": "^0.3.0",
     "react-native-web": "~0.19.13",
     "react-native-webview": "13.12.5",
+    "uuid": "^11.1.0",
     "zustand": "^5.0.3"
   },
   "devDependencies": {

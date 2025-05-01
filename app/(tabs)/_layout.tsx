@@ -10,6 +10,7 @@ import { useTheme, lightTheme, darkTheme } from '../../context/ThemeContext';
 import { useAuth } from "@/context/AuthContext";
 import { Redirect, Stack } from "expo-router";
 import { FileClock } from 'lucide-react-native';
+import 'react-native-get-random-values'
 
 
 
