@@ -393,44 +393,27 @@ function getWeekNumberInMonth(date: Date): number {
   }
 
   
-// const handleMonthSelect = async (monthData: any) => {
-//     setIsLoading(true); // Start loading
-//     const selectedDate = new Date(monthData.year, monthData.month, 1);
-//     const startOfMonth = new Date(selectedDate);
-//     const endOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
-//     endOfMonth.setHours(23, 59, 59, 999);
-  
-//     if (user?.id) {
-//       const input = `${user.id}|${startOfMonth.toISOString()}|${endOfMonth.toISOString()}`;
-//       try {
-//         const sessions = await fetchStats(input);
-//         const categorized = calculateMuscleDistribution(sessions);
-//         setMuscleSummary(categorized);
-//       } finally {
-//         setIsLoading(false); // End loading
-//       }
-//     }
-  
-//     setSelectedMonth(() => monthData.month);
-//     setShowMonthDetails(true);
-//   };
 
-const handleMonthSelect = async ({ month, year }: { month: number; year: number }) => {
+  const handleMonthSelect = async ({ month, year }: { month: number; year: number }) => {
     setIsLoading(true)
     try {
       const startOfMonth = new Date(year, month, 1)
-      const endOfMonth   = new Date(year, month+1, 0, 23,59,59,999)
+      const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999)
   
-      // 1️⃣ fetchStats will `set({... monthlyActivity, userStats})`
+      // 🧹 Clear stale monthly activity BEFORE fetch to prevent showing wrong data
+      useStatsStore.setState({ monthlyActivity: [], userStats: { ...useStatsStore.getState().userStats, monthlyWorkouts: 0, totalCalories: 0, totalMinutes: 0 } })
+  
       if (user) {
+        // 1️⃣ Always re-fetch, even if selecting same month again
         await fetchStats(`${user.id}|${startOfMonth.toISOString()}|${endOfMonth.toISOString()}`)
-      } else {
-        console.error("User is null");
-      }
   
-      // 2️⃣ only once the store is updated, update your local modal state
-      setSelectedMonth(() => month)
-      setShowMonthDetails(true)
+        // 2️⃣ Forcefully update selected month/year after data is fetched
+        setSelectedMonth(() => month)
+        setSelectedYear(() => year)
+        setShowMonthDetails(true)
+      } else {
+        console.error("User is null")
+      }
     } catch (err) {
       console.error(err)
     } finally {
