@@ -8,7 +8,8 @@ import Svg, { Path, Circle, Defs, LinearGradient as SvgGradient, Stop, Rect, Lin
 import { useUserStore } from "@/store/useUserStore"
 import { useStatsStore } from "@/src/stores/userStatsStore"
 import WeeklyGraph from '@/components/WeeklyGraph'
-
+import { fetchMuscleExercises } from '@/lib/fetchCategoryExercise'
+import { calculateMuscleDistribution } from '@/utils/calculateMuscleDistribution'
 
 const { width } = Dimensions.get("window")
 
@@ -58,6 +59,7 @@ type UserStats = {
 }
 
 type WorkoutSession = {
+    id: string // Unique identifier for the workout session
     muscles: string[] // like ['Back', 'Biceps']
     date: string
     calories?: number
@@ -68,55 +70,55 @@ type WorkoutSession = {
 
 
 
-const muscleCategoryMap: Record<string, "Push" | "Pull" | "Legs" | "Core" | null> = {
-    Chest: "Push",
-    Shoulders: "Push",
-    Triceps: "Push",
-    Back: "Pull",
-    Biceps: "Pull",
-    Legs: "Legs",
-    Hamstrings: "Legs",
-    Core: "Core",
-    Abs: "Core",
-  }
+// const muscleCategoryMap: Record<string, "Push" | "Pull" | "Legs" | "Core" | null> = {
+//     Chest: "Push",
+//     Shoulders: "Push",
+//     Triceps: "Push",
+//     Back: "Pull",
+//     Biceps: "Pull",
+//     Legs: "Legs",
+//     Hamstrings: "Legs",
+//     Core: "Core",
+//     Abs: "Core",
+//   }
   
 
 
-  const calculateMuscleDistribution = (sessions: { muscles: string[] }[]) => {
-    const categoryCount: Record<"Push" | "Pull" | "Legs" | "Core", number> = {
-      Push: 0,
-      Pull: 0,
-      Legs: 0,
-      Core: 0,
-    }
+//   const calculateMuscleDistribution = (sessions: { muscles: string[] }[]) => {
+//     const categoryCount: Record<"Push" | "Pull" | "Legs" | "Core", number> = {
+//       Push: 0,
+//       Pull: 0,
+//       Legs: 0,
+//       Core: 0,
+//     }
   
-    sessions.forEach((session) => {
-      const uniqueCategories = new Set<string>()
-      session.muscles.forEach((muscle) => {
-        const category = muscleCategoryMap[muscle]
-        if (category) uniqueCategories.add(category)
-      })
+//     sessions.forEach((session) => {
+//       const uniqueCategories = new Set<string>()
+//       session.muscles.forEach((muscle) => {
+//         const category = muscleCategoryMap[muscle]
+//         if (category) uniqueCategories.add(category)
+//       })
   
-      uniqueCategories.forEach((cat) => {
-        categoryCount[cat as keyof typeof categoryCount] += 1
-      })
-    })
+//       uniqueCategories.forEach((cat) => {
+//         categoryCount[cat as keyof typeof categoryCount] += 1
+//       })
+//     })
   
-    const total = Object.values(categoryCount).reduce((sum, val) => sum + val, 0)
+//     const total = Object.values(categoryCount).reduce((sum, val) => sum + val, 0)
   
-    return Object.entries(categoryCount).map(([type, count]) => ({
-      type,
-      percentage: total > 0 ? Math.round((count / total) * 100) : 0,
-      color:
-        type === "Push"
-          ? "#6366F1"
-          : type === "Pull"
-          ? "#10B981"
-          : type === "Legs"
-          ? "#F59E0B"
-          : "#8B5CF6",
-    }))
-  }
+//     return Object.entries(categoryCount).map(([type, count]) => ({
+//       type,
+//       percentage: total > 0 ? Math.round((count / total) * 100) : 0,
+//       color:
+//         type === "Push"
+//           ? "#6366F1"
+//           : type === "Pull"
+//           ? "#10B981"
+//           : type === "Legs"
+//           ? "#F59E0B"
+//           : "#8B5CF6",
+//     }))
+//   }
   
 
   
@@ -406,6 +408,17 @@ function getWeekNumberInMonth(date: Date): number {
       if (user) {
         // 1️⃣ Always re-fetch, even if selecting same month again
         await fetchStats(`${user.id}|${startOfMonth.toISOString()}|${endOfMonth.toISOString()}`)
+        const fetchedSessions = await fetchStats(`${user.id}|${startOfMonth.toISOString()}|${endOfMonth.toISOString()}`)
+
+// Get session IDs from sessions returned by fetchStats
+const sessionIds = fetchedSessions.map((s) => s.id) // Make sure fetchStats returns `id`!
+
+// Fetch and calculate muscle data
+const enrichedExercises = await fetchMuscleExercises(sessionIds)
+const summary = calculateMuscleDistribution(enrichedExercises)
+
+setMuscleSummary(summary)
+
   
         // 2️⃣ Forcefully update selected month/year after data is fetched
         setSelectedMonth(() => month)

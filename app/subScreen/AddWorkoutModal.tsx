@@ -15,6 +15,8 @@ import { Workout } from "../../types/types";
 import { getWorkoutVideo } from "../../utils/videoHelper";
 import { Ionicons } from "@expo/vector-icons";
 
+
+
 interface WorkoutModalProps {
   visible: boolean;
   workout: Workout | null;
@@ -37,6 +39,9 @@ const WorkoutModal: React.FC<WorkoutModalProps> = ({ visible, workout, onClose }
   const videoRef = useRef<Video | null>(null);
   const swipeableRefs = useRef<(Swipeable | null)[]>([]);
   const outlineAnimations = useRef<Animated.Value[]>([]);
+  const [muscleSummary, setMuscleSummary] = useState<
+  { type: string; percentage: number; color: string }[]
+>([])
 
   // Initialize animations for each set
   React.useEffect(() => {

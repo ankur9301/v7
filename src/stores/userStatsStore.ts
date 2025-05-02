@@ -4,6 +4,7 @@ import { supabase } from '@/src/supabaseClient'
 
 export type ActivityDay = { day: string; workouts: number; calories: number }
 export type WorkoutSession = {
+  id: string
   muscles: string[]    // placeholder for later enrichment
   date:    string
   calories?: number
@@ -59,7 +60,7 @@ export const useStatsStore = create<StatsState>((set, get) => ({
 
     const { data: sessions, error } = await supabase
       .from('workout_sessions')
-      .select('calories_burned, logged_at, duration_sec')
+      .select('id, calories_burned, logged_at, duration_sec')
       .eq('user_id', userId)
       .gte('logged_at', start.toISOString())
       .lte('logged_at', end.toISOString())
@@ -194,6 +195,7 @@ export const useStatsStore = create<StatsState>((set, get) => ({
 
     // Return minimal sessions for your muscle‐distribution, etc.
     return sessions.map((s) => ({
+      id: s.id,
       muscles:  [],
       date:     s.logged_at,
       calories: s.calories_burned,
