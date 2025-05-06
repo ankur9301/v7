@@ -32,9 +32,9 @@ export default function ProfileScreen() {
   const [editing, setEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const { userStats, fetchStats } = useStatsStore();
-  const { totalWorkouts, totalCalories, totalMinutes } = userStats;
-
+  const { allTimeStats, fetchStats } = useStatsStore();
+  const { totalWorkouts, totalCalories, totalMinutes } = allTimeStats;
+  
 
 
   // Sync local state with user store whenever user changes
@@ -73,19 +73,15 @@ export default function ProfileScreen() {
 
 useFocusEffect(
   useCallback(() => {
-    fetchProfile();
+    fetchProfile()
 
     if (user?.id) {
-      // build a 7-day window so fetchStats can parse it:
-      const today    = new Date();
-      const weekAgo  = new Date(today);
-      weekAgo.setDate(today.getDate() - 6);
-      // const payload = `${user.id}:${weekAgo.toISOString()}:${today.toISOString()}`;
-      const payload = `${user.id}|${weekAgo.toISOString()}|${today.toISOString()}`;
-      fetchStats(payload);
+      const payload = `${user.id}|ALL|ALL`
+      fetchStats(payload)
     }
   }, [user?.id])
-);
+)
+
 
   const pickImage = async () => {
     if (!editing) return;
@@ -242,7 +238,7 @@ useFocusEffect(
   {user?.email || 'Loading...'}
 </Text>
 
-{userStats.totalWorkouts >=5 && (
+{allTimeStats.totalWorkouts >=5 && (
   <View style={{
     marginTop: 10,
     paddingVertical: 6,

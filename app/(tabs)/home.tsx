@@ -369,6 +369,7 @@ const HomeScreen = () => {
       </BlurView>
     </TouchableOpacity>
   )
+  
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["top"]}>

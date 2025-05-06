@@ -1,12 +1,11 @@
-// src/stores/userStatsStore.ts
 import { create } from 'zustand'
 import { supabase } from '@/src/supabaseClient'
 
 export type ActivityDay = { day: string; workouts: number; calories: number }
 export type WorkoutSession = {
   id: string
-  muscles: string[]    // placeholder for later enrichment
-  date:    string
+  muscles: string[]
+  date: string
   calories?: number
 }
 
@@ -19,90 +18,130 @@ const utcToLocalDateKey = (dateString: string) => {
 }
 
 interface StatsState {
-  weeklyActivity:   ActivityDay[]
-  monthlyActivity:  ActivityDay[]
+  weeklyActivity: ActivityDay[]
+  monthlyActivity: ActivityDay[]
   userStats: {
-    streakDays:      number
+    streakDays: number
     monthlyWorkouts: number
-    totalCalories:   number
-    totalMinutes:    number
-    weeklyCalories:  number
-    weeklyWorkouts:  number
-    totalWorkouts:   number
+    totalCalories: number
+    totalMinutes: number
+    weeklyCalories: number
+    weeklyWorkouts: number
+    totalWorkouts: number
+  },
+  allTimeStats: {
+    streakDays: number
+    monthlyWorkouts: number
+    totalCalories: number
+    totalMinutes: number
+    weeklyCalories: number
+    weeklyWorkouts: number
+    totalWorkouts: number
   }
+  
+  
+  
+  
   fetchStats: (input: string) => Promise<WorkoutSession[]>
 }
 
 export const useStatsStore = create<StatsState>((set, get) => ({
-  weeklyActivity:  [],
+  weeklyActivity: [],
   monthlyActivity: [],
   userStats: {
-    streakDays:      0,
+    streakDays: 0,
     monthlyWorkouts: 0,
-    totalCalories:   0,
-    totalMinutes:    0,
-    weeklyCalories:  0,
-    weeklyWorkouts:  0,
-    totalWorkouts:   0,
+    totalCalories: 0,
+    totalMinutes: 0,
+    weeklyCalories: 0,
+    weeklyWorkouts: 0,
+    totalWorkouts: 0,
   },
+  allTimeStats: {
+    streakDays: 0,
+    monthlyWorkouts: 0,
+    totalCalories: 0,
+    totalMinutes: 0,
+    weeklyCalories: 0,
+    weeklyWorkouts: 0,
+    totalWorkouts: 0,
+  },
+  
+
 
   fetchStats: async (input) => {
     const [userId, startStr, endStr] = input.split('|')
-    const start = new Date(startStr)
-    const end   = new Date(endStr)
+    const isAllTime = startStr === 'ALL'
 
-    // Are we looking at a 7-day window (weekly) or a full month?
-    const isWeeklyView = (end.getTime() - start.getTime()) <= 7 * 24 * 60 * 60 * 1_000
-    const month        = start.getMonth()
-    const year         = start.getFullYear()
+    let start: Date | null = null
+    let end: Date | null = null
+    if (!isAllTime) {
+      start = new Date(startStr)
+      end = new Date(endStr)
+    }
 
-    console.log(`📅 Fetch range: ${start.toISOString()} → ${end.toISOString()}`)
+    const isWeeklyView = !isAllTime && (end!.getTime() - start!.getTime()) <= 7 * 24 * 60 * 60 * 1_000
+    const month = isAllTime ? 0 : start!.getMonth()
+    const year = isAllTime ? 0 : start!.getFullYear()
 
-    const { data: sessions, error } = await supabase
+    console.log(`📅 Fetch range: ${startStr} → ${endStr}`)
+
+    let sessionQuery = supabase
       .from('workout_sessions')
       .select('id, calories_burned, logged_at, duration_sec')
       .eq('user_id', userId)
-      .gte('logged_at', start.toISOString())
-      .lte('logged_at', end.toISOString())
+
+    if (!isAllTime) {
+      sessionQuery = sessionQuery
+        .gte('logged_at', startStr)
+        .lte('logged_at', endStr)
+    } else {
+      sessionQuery = sessionQuery.lte('logged_at', new Date().toISOString())
+    }
+
+    const { data: sessions, error } = await sessionQuery
 
     if (error) {
       console.error('Supabase error:', error)
       throw error
     }
 
-    // If no data, zero‐out only that slice (weekly vs. monthly)
+    // if (!sessions || sessions.length === 0) {
+    //   set({
+    //     weeklyActivity: [],
+    //     monthlyActivity: [],
+    //     userStats: {
+    //       ...get().userStats,
+    //       weeklyCalories: 0,
+    //       weeklyWorkouts: 0,
+    //       monthlyWorkouts: 0,
+    //       totalCalories: 0,
+    //       totalMinutes: 0,
+    //       totalWorkouts: 0,
+    //       streakDays: 0,
+    //     },
+    //   })
+    //   return []
+    // }
     if (!sessions || sessions.length === 0) {
       if (isWeeklyView) {
-        set({
-          weeklyActivity: [],
-          userStats: {
-            ...get().userStats,
-            weeklyCalories: 0,
-            weeklyWorkouts: 0,
-          },
-        })
+        set({ weeklyActivity: [] })
       } else {
-        set({
-          monthlyActivity: [],
-          userStats: {
-            ...get().userStats,
-            monthlyWorkouts: 0,
-            totalCalories:   0,
-            totalMinutes:    0,
-          },
-        })
+        set({ monthlyActivity: [] })
       }
       return []
     }
+    
 
-    //
-    // 1️⃣ BUILD WEEKLY ACTIVITY
-    //
+
+
     const weekMap: Record<string, { workouts: number; calories: number }> = {}
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(start)
-      d.setDate(d.getDate() + i)
-      weekMap[d.toISOString().slice(0, 10)] = { workouts: 0, calories: 0 }
+    if (!isAllTime && start) {
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(start)
+        d.setDate(d.getDate() + i)
+        weekMap[d.toISOString().slice(0, 10)] = { workouts: 0, calories: 0 }
+      }
     }
     let weeklyCalories = 0
     let weeklyWorkouts = 0
@@ -117,26 +156,26 @@ export const useStatsStore = create<StatsState>((set, get) => ({
       }
     })
 
-    const weeklyActivity: ActivityDay[] = Object
+    const weeklyActivity: ActivityDay[] = isAllTime ? [] : Object
       .entries(weekMap)
       .map(([iso, bin]) => ({
-        day:      new Date(iso).toLocaleDateString('en-US', { weekday: 'short' }),
+        day: new Date(iso).toLocaleDateString('en-US', { weekday: 'short' }),
         workouts: bin.workouts,
         calories: bin.calories,
       }))
 
-    //
-    // 2️⃣ BUILD MONTHLY ACTIVITY
-    //
-    const daysInMonth = new Date(year, month + 1, 0).getDate()
     const monthMap: Record<string, { workouts: number; calories: number }> = {}
-    for (let d = 1; d <= daysInMonth; d++) {
-      const iso = new Date(year, month, d).toISOString().slice(0, 10)
-      monthMap[iso] = { workouts: 0, calories: 0 }
+    if (!isAllTime) {
+      const daysInMonth = new Date(year, month + 1, 0).getDate()
+      for (let d = 1; d <= daysInMonth; d++) {
+        const iso = new Date(year, month, d).toISOString().slice(0, 10)
+        monthMap[iso] = { workouts: 0, calories: 0 }
+      }
     }
+
     let monthlyWorkouts = 0
     let monthlyCalories = 0
-    let monthlyMinutes  = 0
+    let monthlyMinutes = 0
     const recentDates: string[] = []
 
     sessions.forEach((s) => {
@@ -146,12 +185,12 @@ export const useStatsStore = create<StatsState>((set, get) => ({
         monthMap[key].calories += s.calories_burned || 0
         monthlyWorkouts++
         monthlyCalories += s.calories_burned || 0
-        monthlyMinutes  += Math.round((s.duration_sec || 0) / 60)
+        monthlyMinutes += Math.round((s.duration_sec || 0) / 60)
       }
       recentDates.push(new Date(s.logged_at).toDateString())
     })
 
-    const monthlyActivity: ActivityDay[] = Object
+    const monthlyActivity: ActivityDay[] = isAllTime ? [] : Object
       .entries(monthMap)
       .map(([day, bin]) => ({
         day,
@@ -159,9 +198,6 @@ export const useStatsStore = create<StatsState>((set, get) => ({
         calories: bin.calories,
       }))
 
-    //
-    // 3️⃣ CALCULATE STREAK
-    //
     const calculateStreak = (dates: string[]) => {
       const unique = Array.from(new Set(dates))
       let streak = 0
@@ -176,32 +212,305 @@ export const useStatsStore = create<StatsState>((set, get) => ({
       return streak
     }
 
-    //
-    // WRITE BACK
-    //
-    set({
-      weeklyActivity,
-      monthlyActivity,
-      userStats: {
-        streakDays:      calculateStreak(recentDates),
-        monthlyWorkouts,
-        totalCalories:   monthlyCalories,
-        totalMinutes:    monthlyMinutes,
-        weeklyCalories,
-        weeklyWorkouts,
-        totalWorkouts:   sessions.length,
-      },
-    })
+    // set({
+    //   weeklyActivity,
+    //   monthlyActivity,
+    //   userStats: {
+    //     streakDays: calculateStreak(recentDates),
+    //     monthlyWorkouts: isAllTime ? 0 : monthlyWorkouts,
+    //     totalCalories: sessions.reduce((sum, s) => sum + (s.calories_burned || 0), 0),
+    //     totalMinutes: sessions.reduce((sum, s) => sum + Math.round((s.duration_sec || 0) / 60), 0),
+    //     weeklyCalories,
+    //     weeklyWorkouts,
+    //     totalWorkouts: sessions.length,
+    //   },
+    // })
+    if (isAllTime) {
+      set({
+        allTimeStats: {
+          streakDays: calculateStreak(recentDates),
+          monthlyWorkouts: 0,
+          totalCalories: sessions.reduce((sum, s) => sum + (s.calories_burned || 0), 0),
+          totalMinutes: sessions.reduce((sum, s) => sum + Math.round((s.duration_sec || 0) / 60), 0),
+          weeklyCalories: 0,
+          weeklyWorkouts: 0,
+          totalWorkouts: sessions.length,
+        },
+      })
+    } else {
+      set({
+        weeklyActivity,
+        monthlyActivity,
+        userStats: {
+          streakDays: calculateStreak(recentDates),
+          monthlyWorkouts: isAllTime ? 0 : monthlyWorkouts,
+          totalCalories: sessions.reduce((sum, s) => sum + (s.calories_burned || 0), 0),
+          totalMinutes: sessions.reduce((sum, s) => sum + Math.round((s.duration_sec || 0) / 60), 0),
+          weeklyCalories,
+          weeklyWorkouts,
+          totalWorkouts: sessions.length,
+        },
+      })
+    }
+    
 
-    // Return minimal sessions for your muscle‐distribution, etc.
     return sessions.map((s) => ({
       id: s.id,
-      muscles:  [],
-      date:     s.logged_at,
+      muscles: [],
+      date: s.logged_at,
       calories: s.calories_burned,
     }))
   },
 }))
+
+
+// // src/stores/userStatsStore.ts
+// import { create } from 'zustand'
+// import { supabase } from '@/src/supabaseClient'
+
+// export type ActivityDay = { day: string; workouts: number; calories: number }
+// export type WorkoutSession = {
+//   id: string
+//   muscles: string[]    // placeholder for later enrichment
+//   date:    string
+//   calories?: number
+// }
+
+// // Convert a UTC timestamp string to local “YYYY-MM-DD”
+// const utcToLocalDateKey = (dateString: string) => {
+//   const d = new Date(dateString)
+//   return new Date(d.getFullYear(), d.getMonth(), d.getDate())
+//     .toISOString()
+//     .split('T')[0]
+// }
+
+// interface StatsState {
+//   weeklyActivity:   ActivityDay[]
+//   monthlyActivity:  ActivityDay[]
+//   userStats: {
+//     streakDays:      number
+//     monthlyWorkouts: number
+//     totalCalories:   number
+//     totalMinutes:    number
+//     weeklyCalories:  number
+//     weeklyWorkouts:  number
+//     totalWorkouts:   number
+//   }
+//   fetchStats: (input: string) => Promise<WorkoutSession[]>
+// }
+
+// export const useStatsStore = create<StatsState>((set, get) => ({
+//   weeklyActivity:  [],
+//   monthlyActivity: [],
+//   userStats: {
+//     streakDays:      0,
+//     monthlyWorkouts: 0,
+//     totalCalories:   0,
+//     totalMinutes:    0,
+//     weeklyCalories:  0,
+//     weeklyWorkouts:  0,
+//     totalWorkouts:   0,
+//   },
+
+//   fetchStats: async (input) => {
+//     // const [userId, startStr, endStr] = input.split('|')
+//     const [userId, startStr, endStr] = input.split('|')
+//     const isAllTime = startStr === 'ALL'
+
+//     const start = new Date(startStr)
+//     const end   = new Date(endStr)
+
+//     // Are we looking at a 7-day window (weekly) or a full month?
+//     const isWeeklyView = (end.getTime() - start.getTime()) <= 7 * 24 * 60 * 60 * 1_000
+//     const month        = start.getMonth()
+//     const year         = start.getFullYear()
+
+//     console.log(`📅 Fetch range: ${start.toISOString()} → ${end.toISOString()}`)
+
+//     // const { data: sessions, error } = await supabase
+//     //   .from('workout_sessions')
+//     //   .select('id, calories_burned, logged_at, duration_sec')
+//     //   .eq('user_id', userId)
+//     //   .gte('logged_at', start.toISOString())
+//     //   .lte('logged_at', end.toISOString())
+
+//     let sessionQuery = supabase
+//   .from('workout_sessions')
+//   .select('id, calories_burned, logged_at, duration_sec')
+//   .eq('user_id', userId)
+
+// if (!isAllTime) {
+//   sessionQuery = sessionQuery
+//     .gte('logged_at', startStr)
+//     .lte('logged_at', endStr)
+// }
+
+// const { data: sessions, error } = await sessionQuery
+
+//     if (error) {
+//       console.error('Supabase error:', error)
+//       throw error
+//     }
+
+//     // If no data, zero‐out only that slice (weekly vs. monthly)
+//     // if (!sessions || sessions.length === 0) {
+//     //   if (isWeeklyView) {
+//     //     set({
+//     //       weeklyActivity: [],
+//     //       userStats: {
+//     //         ...get().userStats,
+//     //         weeklyCalories: 0,
+//     //         weeklyWorkouts: 0,
+//     //       },
+//     //     })
+//     //   } else {
+//     //     set({
+//     //       monthlyActivity: [],
+//     //       userStats: {
+//     //         ...get().userStats,
+//     //         monthlyWorkouts: 0,
+//     //         totalCalories:   0,
+//     //         totalMinutes:    0,
+//     //       },
+//     //     })
+//     //   }
+//     //   return []
+//     // }
+//     if (!sessions || sessions.length === 0) {
+//       set({
+//         weeklyActivity: [],
+//         monthlyActivity: [],
+//         userStats: {
+//           ...get().userStats,
+//           weeklyCalories: 0,
+//           weeklyWorkouts: 0,
+//           monthlyWorkouts: 0,
+//           totalCalories:   0,
+//           totalMinutes:    0,
+//           totalWorkouts:   0,
+//           streakDays:      0,
+//         },
+//       })
+//       return []
+//     }
+    
+
+//     //
+//     // 1️⃣ BUILD WEEKLY ACTIVITY
+//     //
+//     const weekMap: Record<string, { workouts: number; calories: number }> = {}
+//     for (let i = 0; i < 7; i++) {
+//       const d = new Date(start)
+//       d.setDate(d.getDate() + i)
+//       weekMap[d.toISOString().slice(0, 10)] = { workouts: 0, calories: 0 }
+//     }
+//     let weeklyCalories = 0
+//     let weeklyWorkouts = 0
+
+//     sessions.forEach((s) => {
+//       const key = utcToLocalDateKey(s.logged_at)
+//       if (weekMap[key]) {
+//         weekMap[key].workouts++
+//         weekMap[key].calories += s.calories_burned || 0
+//         weeklyWorkouts++
+//         weeklyCalories += s.calories_burned || 0
+//       }
+//     })
+
+//     const weeklyActivity: ActivityDay[] = Object
+//       .entries(weekMap)
+//       .map(([iso, bin]) => ({
+//         day:      new Date(iso).toLocaleDateString('en-US', { weekday: 'short' }),
+//         workouts: bin.workouts,
+//         calories: bin.calories,
+//       }))
+
+//     //
+//     // 2️⃣ BUILD MONTHLY ACTIVITY
+//     //
+//     const daysInMonth = new Date(year, month + 1, 0).getDate()
+//     const monthMap: Record<string, { workouts: number; calories: number }> = {}
+//     for (let d = 1; d <= daysInMonth; d++) {
+//       const iso = new Date(year, month, d).toISOString().slice(0, 10)
+//       monthMap[iso] = { workouts: 0, calories: 0 }
+//     }
+//     let monthlyWorkouts = 0
+//     let monthlyCalories = 0
+//     let monthlyMinutes  = 0
+//     const recentDates: string[] = []
+
+//     sessions.forEach((s) => {
+//       const key = utcToLocalDateKey(s.logged_at)
+//       if (monthMap[key]) {
+//         monthMap[key].workouts++
+//         monthMap[key].calories += s.calories_burned || 0
+//         monthlyWorkouts++
+//         monthlyCalories += s.calories_burned || 0
+//         monthlyMinutes  += Math.round((s.duration_sec || 0) / 60)
+//       }
+//       recentDates.push(new Date(s.logged_at).toDateString())
+//     })
+
+//     const monthlyActivity: ActivityDay[] = Object
+//       .entries(monthMap)
+//       .map(([day, bin]) => ({
+//         day,
+//         workouts: bin.workouts,
+//         calories: bin.calories,
+//       }))
+
+//     //
+//     // 3️⃣ CALCULATE STREAK
+//     //
+//     const calculateStreak = (dates: string[]) => {
+//       const unique = Array.from(new Set(dates))
+//       let streak = 0
+//       const today = new Date()
+//       today.setHours(0, 0, 0, 0)
+//       for (let i = 0; i < 30; i++) {
+//         const d = new Date(today)
+//         d.setDate(d.getDate() - i)
+//         if (unique.includes(d.toDateString())) streak++
+//         else break
+//       }
+//       return streak
+//     }
+
+//     //
+//     // WRITE BACK
+//     //
+//     set({
+//       weeklyActivity,
+//       monthlyActivity,
+//       // userStats: {
+//       //   streakDays:      calculateStreak(recentDates),
+//       //   monthlyWorkouts,
+//       //   totalCalories:   monthlyCalories,
+//       //   totalMinutes:    monthlyMinutes,
+//       //   weeklyCalories,
+//       //   weeklyWorkouts,
+//       //   totalWorkouts:   sessions.length,
+//       // },
+//       userStats: {
+//         streakDays:      calculateStreak(recentDates),
+//         monthlyWorkouts: isAllTime ? 0 : monthlyWorkouts,
+//         totalCalories:   sessions.reduce((sum, s) => sum + (s.calories_burned || 0), 0),
+//         totalMinutes:    sessions.reduce((sum, s) => sum + Math.round((s.duration_sec || 0) / 60), 0),
+//         weeklyCalories,
+//         weeklyWorkouts,
+//         totalWorkouts:   sessions.length,
+//       },      
+//     })
+
+//     // Return minimal sessions for your muscle‐distribution, etc.
+//     return sessions.map((s) => ({
+//       id: s.id,
+//       muscles:  [],
+//       date:     s.logged_at,
+//       calories: s.calories_burned,
+//     }))
+//   },
+// }))
 
 // // src/stores/userStatsStore.ts
 // import { create } from 'zustand'
