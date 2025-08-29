@@ -8,8 +8,9 @@ import Svg, { Path, Circle, Defs, LinearGradient as SvgGradient, Stop, Rect, Lin
 import { useUserStore } from "@/store/useUserStore"
 import { useStatsStore } from "@/src/stores/userStatsStore"
 import WeeklyGraph from '@/components/WeeklyGraph'
+import ModernMonthlyGraph from '@/components/ModernMonthlyGraph'
 import { fetchMuscleExercises } from '@/lib/fetchCategoryExercise'
-import { calculateMuscleDistribution } from '@/utils/calculateMuscleDistribution'
+import { calculateMuscleDistribution, muscleCategoryMap } from '@/utils/calculateMuscleDistribution'
 
 const { width } = Dimensions.get("window")
 
@@ -43,10 +44,10 @@ type ActivityDay = {
 }
 
 const defaultActivityDay: ActivityDay = {
-    day: '',
-    workouts: 0,
-    calories: 0
-  };
+  day: '',
+  workouts: 0,
+  calories: 0
+};
 
 type UserStats = {
   streakDays: number
@@ -59,88 +60,16 @@ type UserStats = {
 }
 
 type WorkoutSession = {
-    id: string // Unique identifier for the workout session
-    muscles: string[] // like ['Back', 'Biceps']
-    date: string
-    calories?: number
-  }
-  
-
-
-
-
-
-// const muscleCategoryMap: Record<string, "Push" | "Pull" | "Legs" | "Core" | null> = {
-//     Chest: "Push",
-//     Shoulders: "Push",
-//     Triceps: "Push",
-//     Back: "Pull",
-//     Biceps: "Pull",
-//     Legs: "Legs",
-//     Hamstrings: "Legs",
-//     Core: "Core",
-//     Abs: "Core",
-//   }
-  
-
-
-//   const calculateMuscleDistribution = (sessions: { muscles: string[] }[]) => {
-//     const categoryCount: Record<"Push" | "Pull" | "Legs" | "Core", number> = {
-//       Push: 0,
-//       Pull: 0,
-//       Legs: 0,
-//       Core: 0,
-//     }
-  
-//     sessions.forEach((session) => {
-//       const uniqueCategories = new Set<string>()
-//       session.muscles.forEach((muscle) => {
-//         const category = muscleCategoryMap[muscle]
-//         if (category) uniqueCategories.add(category)
-//       })
-  
-//       uniqueCategories.forEach((cat) => {
-//         categoryCount[cat as keyof typeof categoryCount] += 1
-//       })
-//     })
-  
-//     const total = Object.values(categoryCount).reduce((sum, val) => sum + val, 0)
-  
-//     return Object.entries(categoryCount).map(([type, count]) => ({
-//       type,
-//       percentage: total > 0 ? Math.round((count / total) * 100) : 0,
-//       color:
-//         type === "Push"
-//           ? "#6366F1"
-//           : type === "Pull"
-//           ? "#10B981"
-//           : type === "Legs"
-//           ? "#F59E0B"
-//           : "#8B5CF6",
-//     }))
-//   }
-  
-
-  
-// Mock data for month-to-month comparison
-// In a real app, this would come from your API
-const yearlyActivityData = [
-  { month: 0, name: "Jan", workouts: 12, calories: 4500, minutes: 360 },
-  { month: 1, name: "Feb", workouts: 15, calories: 5200, minutes: 420 },
-  { month: 2, name: "Mar", workouts: 10, calories: 3800, minutes: 300 },
-  { month: 3, name: "Apr", workouts: 18, calories: 6100, minutes: 480 },
-  { month: 4, name: "May", workouts: 20, calories: 7200, minutes: 540 },
-  { month: 5, name: "Jun", workouts: 16, calories: 5800, minutes: 420 },
-  { month: 6, name: "Jul", workouts: 22, calories: 8000, minutes: 600 },
-  { month: 7, name: "Aug", workouts: 18, calories: 6500, minutes: 480 },
-  { month: 8, name: "Sep", workouts: 14, calories: 5000, minutes: 360 },
-  { month: 9, name: "Oct", workouts: 16, calories: 5800, minutes: 420 },
-  { month: 10, name: "Nov", workouts: 12, calories: 4200, minutes: 300 },
-  { month: 11, name: "Dec", workouts: 8, calories: 3000, minutes: 240 },
-]
-
-// Mock data for workout trends within a month
-
+  id: string // Unique identifier for the workout session
+  muscles: string[] // like ['Back', 'Biceps']
+  date: string
+  calories?: number
+  exercises?: Array<{
+    sets: number
+    reps: number
+    muscle_group: string | null
+  }>
+}
 
 interface CompactActivityChartProps {
   isDarkMode: boolean
@@ -179,15 +108,14 @@ const CompactActivityChart: React.FC<CompactActivityChartProps> = ({
   userStats,
   getCurrentMonthYear,
 }) => {
-    
 
-    const validWeeklyData = weeklyActivity.filter(d => 
-        d && typeof d.calories === 'number' && !isNaN(d.calories)
-      ) || [defaultActivityDay];
-    
-      const validMonthlyData = monthlyActivity.filter(d =>
-        d && typeof d.calories === 'number' && !isNaN(d.calories)
-      ) || [defaultActivityDay];
+  const validWeeklyData = weeklyActivity.filter(d =>
+    d && typeof d.calories === 'number' && !isNaN(d.calories)
+  ) || [defaultActivityDay];
+
+  const validMonthlyData = monthlyActivity.filter(d =>
+    d && typeof d.calories === 'number' && !isNaN(d.calories)
+  ) || [defaultActivityDay];
 
   // Animation values
   const opacityAnimation = useRef(new Animated.Value(0)).current
@@ -196,19 +124,17 @@ const CompactActivityChart: React.FC<CompactActivityChartProps> = ({
   // State for calendar visibility and month details
   const [showCalendar, setShowCalendar] = useState(false)
   const [showMonthDetails, setShowMonthDetails] = useState(false)
-//   const [selectedMonthData, setSelectedMonthData] = useState<any>(null)
+  //   const [selectedMonthData, setSelectedMonthData] = useState<any>(null)
   const [yearOffset, setYearOffset] = useState(0)
   const [viewingYear, setViewingYear] = useState(new Date().getFullYear())
 
   const user = useUserStore((state) => state.user)
-const fetchStats = useStatsStore((state) => state.fetchStats)
-const [muscleSummary, setMuscleSummary] = useState<
-  { type: string; percentage: number; color: string }[]
->([])
+  const fetchStats = useStatsStore((state) => state.fetchStats)
+  const [muscleSummary, setMuscleSummary] = useState<
+    { type: string; percentage: number; color: string }[]
+  >([])
 
-const [isLoading, setIsLoading] = useState(false);
-
-
+  const [isLoading, setIsLoading] = useState(false);
 
   // Animate chart on mount and when data changes
 
@@ -217,7 +143,7 @@ const [isLoading, setIsLoading] = useState(false);
     if (isLoading || (weeklyActivity.length === 0 && monthlyActivity.length === 0)) {
       return;
     }
-  
+
     Animated.parallel([
       Animated.timing(opacityAnimation, {
         toValue: 1,
@@ -233,118 +159,185 @@ const [isLoading, setIsLoading] = useState(false);
     ]).start();
   }, [weeklyActivity, monthlyActivity, chartView, isLoading]);
 
-  // Update viewing year when year offset changes
+  useEffect(() => {
+    if (chartView === "monthly") {
+      // Sync the year from yearOffset to selectedYear
+      setSelectedYear(() => new Date().getFullYear() + yearOffset);
+    }
+  }, [chartView, yearOffset]);
+
   useEffect(() => {
     setViewingYear(new Date().getFullYear() + yearOffset)
   }, [yearOffset])
+
+  // Handle month navigation
+  useEffect(() => {
+    if (chartView === "monthly") {
+      // Fetch data when month or year changes in monthly view
+      const fetchMonthData = async () => {
+        setIsLoading(true);
+        try {
+          const startOfMonth = new Date(selectedYear, selectedMonth, 1);
+          const endOfMonth = new Date(selectedYear, selectedMonth + 1, 0, 23, 59, 59, 999);
+
+          // Clear stale monthly activity BEFORE fetch to prevent showing wrong data
+          useStatsStore.setState({ 
+            monthlyActivity: [], 
+            userStats: { 
+              ...useStatsStore.getState().userStats, 
+              monthlyWorkouts: 0, 
+              totalCalories: 0, 
+              totalMinutes: 0 
+            } 
+          });
+
+          if (user) {
+            // Always re-fetch when month/year changes
+            const fetchedSessions = await fetchStats(`${user.id}|${startOfMonth.toISOString()}|${endOfMonth.toISOString()}`);
+
+            // Get session IDs from sessions returned by fetchStats
+            const sessionIds = fetchedSessions.map((s) => s.id);
+
+            try {
+              // Fetch and calculate muscle data
+              const enrichedExercises = await fetchMuscleExercises(sessionIds);
+              const exercisesForDistribution = enrichedExercises.map(exercise => ({
+                sets: exercise.sets || 0,
+                reps: exercise.reps || 0,
+                muscle_group: exercise.muscle_group || null
+              }));
+              
+              if (exercisesForDistribution.length > 0) {
+                const summary = calculateMuscleDistribution(exercisesForDistribution);
+                setMuscleSummary(summary);
+              } else {
+                setMuscleSummary([]);
+              }
+            } catch (error) {
+              console.error("Error fetching muscle exercises:", error);
+              setMuscleSummary([]);
+            }
+          }
+        } catch (err) {
+          console.error(err);
+          setMuscleSummary([]);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      fetchMonthData();
+    }
+  }, [selectedMonth, selectedYear, chartView, user]);
 
   // Updated generateAreaPath function
   function generateAreaPath(data: ActivityDay[]) {
     const w = width - 60;
     const h = 120;
-  
+
     // Default empty path (flat line at bottom)
     if (!data || data.length === 0) {
       return `M 0 ${h} L ${w} ${h} Z`;
     }
-  
+
     // Filter and validate data
     const validData = data
       .filter(d => d && typeof d.calories === 'number' && !isNaN(d.calories))
       .map(d => ({ ...d, calories: Math.max(0, d.calories) }));
-  
+
     if (validData.length === 0) {
       return `M 0 ${h} L ${w} ${h} Z`;
     }
-  
+
     // Calculate max with fallback
     const maxCal = Math.max(100, ...validData.map(d => d.calories));
-  
+
     let path = `M 0 ${h}`;
-    
+
     validData.forEach((d, i) => {
       const x = (w / Math.max(1, validData.length - 1)) * i;
       const y = h - (d.calories / maxCal) * h;
       path += ` L ${x} ${y}`;
     });
-  
+
     path += ` L ${w} ${h} Z`;
     return path;
   }
-// Fixed function for calculating weekly progress in a month
-function calculateWeeklyProgressInMonth(
+
+  // Fixed function for calculating weekly progress in a month
+  function calculateWeeklyProgressInMonth(
     dailyStats: ActivityDay[],
     year: number,
     month: number
   ) {
-    const weeks: Record<number,{workouts:number,calories:number}> = {}
-  
+    const weeks: Record<number, { workouts: number, calories: number }> = {}
+
     dailyStats.forEach(({ day, workouts, calories }) => {
       // parse as local
-      const [Y,M,D] = day.split("-").map(Number)
-      const dt = new Date(Y, M-1, D)
-  
+      const [Y, M, D] = day.split("-").map(Number)
+      const dt = new Date(Y, M - 1, D)
+
       const w = getWeekNumberInMonth(dt)
       if (!weeks[w]) weeks[w] = { workouts: 0, calories: 0 }
-      weeks[w].workouts  += workouts
-      weeks[w].calories  += calories
+      weeks[w].workouts += workouts
+      weeks[w].calories += calories
     })
-  
+
     return Object.entries(weeks)
-      .sort(([a],[b]) => +a - +b)
-      .map(([week,{workouts,calories}]) => ({
+      .sort(([a], [b]) => +a - +b)
+      .map(([week, { workouts, calories }]) => ({
         week: `Week ${week}`,
         workouts,
         calories
       }))
   }
-  
+
   // Helper function to get week number in month
-/**
- * Given a Date, returns 1-based week number within its month,
- * taking into account which weekday the month started on.
- */
-function getWeekNumberInMonth(date: Date): number {
+  /**
+   * Given a Date, returns 1-based week number within its month,
+   * taking into account which weekday the month started on.
+   */
+  function getWeekNumberInMonth(date: Date): number {
     // Day-of-week of the first of the month: 0=Sun…6=Sat
     const firstDow = new Date(date.getFullYear(), date.getMonth(), 1).getDay()
-  
+
     // Offset the day of month by that, then integer-divide by 7
     // +1 to make it 1-based
     return Math.floor((date.getDate() + firstDow - 1) / 7) + 1
   }
-  
+
   // Generate path for the line chart (weekly view)
   function generateLinePath(data: ActivityDay[]) {
     const w = width - 60;
     const h = 120;
-  
+
     if (!data || data.length === 0) {
       return `M 0 ${h} L ${w} ${h}`;
     }
-  
+
     // Filter out any invalid entries
-    const validData = data.filter(d => 
+    const validData = data.filter(d =>
       d && typeof d.calories === 'number' && !isNaN(d.calories)
     );
-    
+
     // If no valid data remains, return a flat line
     if (validData.length === 0) {
       return `M 0 ${h} L ${w} ${h}`;
     }
-  
+
     // Calculate max safely
     const caloriesValues = validData.map(d => Math.max(0, d.calories || 0));
     const maxCal = Math.max(100, ...caloriesValues);
-  
+
     let path = "";
-    
+
     validData.forEach((d, i) => {
       const x = (w / Math.max(1, validData.length - 1)) * i;
       // Ensure we handle potential null/undefined values
       const calorieValue = Math.max(0, d.calories || 0);
       const rawY = h - (calorieValue / maxCal) * h;
       const y = Math.max(0, Math.min(h, rawY));
-      
+
       // Use M for the first point, L for subsequent points
       if (i === 0) {
         path = `M ${x} ${y}`;
@@ -352,75 +345,83 @@ function getWeekNumberInMonth(date: Date): number {
         path += ` L ${x} ${y}`;
       }
     });
-  
+
     // If there was only one point, create a small horizontal line
     if (validData.length === 1) {
       const x = w / 2;
       const y = h - (validData[0].calories / maxCal) * h;
       path += ` L ${x + 1} ${y}`;
     }
-    
+
     return path;
   }
-  
 
   // Generate data points for the line chart (weekly view)
   const generateDataPoints = (data: ActivityDay[]) => {
     if (!data || data.length === 0) return [];
-  
+
     // Filter out any invalid entries
-    const validData = data.filter(d => 
+    const validData = data.filter(d =>
       d && typeof d.calories === 'number' && !isNaN(d.calories)
     );
-    
+
     if (validData.length === 0) return [];
-  
+
     const caloriesValues = validData.map(d => Math.max(0, d.calories || 0));
     const maxCalories = Math.max(...caloriesValues, 100);
     const chartWidth = width - 60;
     const chartHeight = 120;
     const pointWidth = chartWidth / Math.max(1, validData.length - 1);
-  
+
     return validData.map((day, index) => {
       const x = index * pointWidth;
       const calorieValue = Math.max(0, day.calories || 0);
       const y = chartHeight - (calorieValue / maxCalories) * chartHeight;
-      return { 
-        x, 
-        y, 
-        value: calorieValue, 
-        workouts: day.workouts || 0 
+      return {
+        x,
+        y,
+        value: calorieValue,
+        workouts: day.workouts || 0
       };
     });
   }
-
-  
 
   const handleMonthSelect = async ({ month, year }: { month: number; year: number }) => {
     setIsLoading(true)
     try {
       const startOfMonth = new Date(year, month, 1)
       const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999)
-  
-      // 🧹 Clear stale monthly activity BEFORE fetch to prevent showing wrong data
+
+      // Clear stale monthly activity BEFORE fetch to prevent showing wrong data
       useStatsStore.setState({ monthlyActivity: [], userStats: { ...useStatsStore.getState().userStats, monthlyWorkouts: 0, totalCalories: 0, totalMinutes: 0 } })
-  
+
       if (user) {
-        // 1️⃣ Always re-fetch, even if selecting same month again
-        await fetchStats(`${user.id}|${startOfMonth.toISOString()}|${endOfMonth.toISOString()}`)
+        // Always re-fetch, even if selecting same month again
         const fetchedSessions = await fetchStats(`${user.id}|${startOfMonth.toISOString()}|${endOfMonth.toISOString()}`)
 
-// Get session IDs from sessions returned by fetchStats
-const sessionIds = fetchedSessions.map((s) => s.id) // Make sure fetchStats returns `id`!
+        // Get session IDs from sessions returned by fetchStats
+        const sessionIds = fetchedSessions.map((s) => s.id)
 
-// Fetch and calculate muscle data
-const enrichedExercises = await fetchMuscleExercises(sessionIds)
-const summary = calculateMuscleDistribution(enrichedExercises)
+        try {
+          // Fetch and calculate muscle data
+          const enrichedExercises = await fetchMuscleExercises(sessionIds)
+          const exercisesForDistribution = enrichedExercises.map(exercise => ({
+            sets: exercise.sets || 0,
+            reps: exercise.reps || 0,
+            muscle_group: exercise.muscle_group || null
+          }));
+          if (exercisesForDistribution.length > 0) {
+            const summary = calculateMuscleDistribution(exercisesForDistribution)
+            setMuscleSummary(summary)
+          } else {
+            setMuscleSummary([])
+          }
+        } catch (error) {
+          console.error("Error fetching muscle exercises:", error)
+          setMuscleSummary([])
+        }
 
-setMuscleSummary(summary)
-
-  
-        // 2️⃣ Forcefully update selected month/year after data is fetched
+        // Forcefully update selected month/year after data is fetched
         setSelectedMonth(() => month)
         setSelectedYear(() => year)
         setShowMonthDetails(true)
@@ -429,154 +430,213 @@ setMuscleSummary(summary)
       }
     } catch (err) {
       console.error(err)
+      setMuscleSummary([])
     } finally {
       setIsLoading(false)
     }
   }
-  
-  
-  
 
-  // Render weekly chart with modern 
-
-  // Add this AFTER all your hooks but BEFORE renderWeeklyChart
   useEffect(() => {
     console.log('Valid weekly data:', validWeeklyData);
     console.log('Valid monthly data:', validMonthlyData);
   }, [validWeeklyData, validMonthlyData]);
 
-  // Early return for empty data
-  if (!validWeeklyData.length && !validMonthlyData.length) {
+  if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text style={{ color: colors.text }}>
-          {isLoading ? 'Loading...' : 'No activity data available'}
-        </Text>
-        {isLoading && <ActivityIndicator color={isDarkMode ? "#FF9500" : "#6366F1"} />}
+      <View style={styles.container}>
+        <View style={styles.chartHeader}>
+          <View style={styles.dateSelector}>
+            <TouchableOpacity
+              style={styles.arrowButton}
+              onPress={() => {
+                if (chartView === "weekly") {
+                  setWeekOffset((prev) => prev - 1)
+                } else {
+                  setSelectedMonth((prev) => {
+                    if (prev === 0) {
+                      setSelectedYear((y) => y - 1)
+                      return 11
+                    }
+                    return prev - 1
+                  })
+                }
+              }}
+            >
+              <ChevronLeft size={20} color={isDarkMode ? "#FF9500" : "#6366F1"} />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.dateText} onPress={() => setShowCalendar(true)}>
+              <Text style={[styles.currentDate, { color: colors.text }]}>{getCurrentMonthYear()}</Text>
+              <Calendar size={16} color={isDarkMode ? "#FF9500" : "#6366F1"} style={{ marginLeft: 6 }} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.arrowButton}
+              onPress={() => {
+                if (chartView === "weekly") {
+                  setWeekOffset((prev) => prev + 1)
+                } else {
+                  setSelectedMonth((prev) => {
+                    if (prev === 11) {
+                      setSelectedYear((y) => y + 1)
+                      return 0
+                    }
+                    return prev + 1
+                  })
+                }
+              }}
+            >
+              <ChevronRight size={20} color={isDarkMode ? "#FF9500" : "#6366F1"} />
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity
+            style={styles.viewSelectorButton}
+            onPress={() => setShowViewSelector(!showViewSelector)}
+          >
+            {chartView === "weekly" ? (
+              <BarChart2 size={20} color={isDarkMode ? "#FF9500" : "#6366F1"} />
+            ) : (
+              <TrendingUp size={20} color={isDarkMode ? "#FF9500" : "#6366F1"} />
+            )}
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={isDarkMode ? "#FF9500" : "#6366F1"} />
+          <Text style={{ color: colors.text, marginTop: 10 }}>Loading activity data...</Text>
+        </View>
       </View>
     );
   }
 
+  if (!validWeeklyData.length && !validMonthlyData.length) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.chartHeader}>
+          <View style={styles.dateSelector}>
+            <TouchableOpacity
+              style={styles.arrowButton}
+              onPress={() => {
+                if (chartView === "weekly") {
+                  setWeekOffset((prev) => prev - 1)
+                } else {
+                  setSelectedMonth((prev) => {
+                    if (prev === 0) {
+                      setSelectedYear((y) => y - 1)
+                      return 11
+                    }
+                    return prev - 1
+                  })
+                }
+              }}
+            >
+              <ChevronLeft size={20} color={isDarkMode ? "#FF9500" : "#6366F1"} />
+            </TouchableOpacity>
 
-const renderWeeklyChart = () => (
-  <Animated.View
-    style={[
-      styles.chartWrapper,
-      { opacity: opacityAnimation, transform: [{ scale: scaleAnimation }] },
-    ]}
-  >
-    <WeeklyGraph
-      weeklyActivity={validWeeklyData}
-      isDarkMode={isDarkMode}
-      colors={colors}
-    />
-  </Animated.View>
-)
+            <TouchableOpacity style={styles.dateText} onPress={() => setShowCalendar(true)}>
+              <Text style={[styles.currentDate, { color: colors.text }]}>{getCurrentMonthYear()}</Text>
+              <Calendar size={16} color={isDarkMode ? "#FF9500" : "#6366F1"} style={{ marginLeft: 6 }} />
+            </TouchableOpacity>
 
+            <TouchableOpacity
+              style={styles.arrowButton}
+              onPress={() => {
+                if (chartView === "weekly") {
+                  setWeekOffset((prev) => prev + 1)
+                } else {
+                  setSelectedMonth((prev) => {
+                    if (prev === 11) {
+                      setSelectedYear((y) => y + 1)
+                      return 0
+                    }
+                    return prev + 1
+                  })
+                }
+              }}
+            >
+              <ChevronRight size={20} color={isDarkMode ? "#FF9500" : "#6366F1"} />
+            </TouchableOpacity>
+          </View>
 
-  // Render monthly chart with year view (showing all months)
-  const renderMonthlyChart = () => {
-    // Filter data for current viewing year
-    const yearData = yearlyActivityData.map((month) => ({
-      ...month,
-      // Simulate different data for different years
-      workouts: month.workouts * (1 + yearOffset * 0.2),
-      calories: month.calories * (1 + yearOffset * 0.2),
-      minutes: month.minutes * (1 + yearOffset * 0.2),
-    }))
+          <TouchableOpacity
+            style={styles.viewSelectorButton}
+            onPress={() => setShowViewSelector(!showViewSelector)}
+          >
+            {chartView === "weekly" ? (
+              <BarChart2 size={20} color={isDarkMode ? "#FF9500" : "#6366F1"} />
+            ) : (
+              <TrendingUp size={20} color={isDarkMode ? "#FF9500" : "#6366F1"} />
+            )}
+          </TouchableOpacity>
+        </View>
 
-    const maxCalories = Math.max(...yearData.map((month) => month.calories), 100)
-    const maxWorkouts = Math.max(...yearData.map((month) => month.workouts), 5)
+        <View style={styles.noDataMessage}>
+          <Text style={{ color: colors.text, textAlign: 'center', marginVertical: 10 }}>
+            No activity data available for this period
+          </Text>
+        </View>
 
-    const barWidth = 20
-    const barGap = 8
-    const chartWidth = width - 60
-    const chartHeight = 120
-    const monthWidth = chartWidth / 12
+        <View style={styles.statsContainer}>
+          <View style={styles.statItem}>
+            <Text style={[styles.statValue, { color: colors.text }]}>0</Text>
+            <Text style={[styles.statLabel, { color: colors.secondaryText }]}>Workouts</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={[styles.statValue, { color: colors.text }]}>0</Text>
+            <Text style={[styles.statLabel, { color: colors.secondaryText }]}>Calories</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={[styles.statValue, { color: colors.text }]}>0</Text>
+            <Text style={[styles.statLabel, { color: colors.secondaryText }]}>Minutes</Text>
+          </View>
+        </View>
+      </View>
+    );
+  }
 
+  const renderWeeklyChart = () => {
     return (
       <Animated.View
         style={[
           styles.chartWrapper,
-          {
-            opacity: opacityAnimation,
-            transform: [{ scale: scaleAnimation }],
-          },
+          { opacity: opacityAnimation, transform: [{ scale: scaleAnimation }] },
         ]}
       >
-        
-
-        <ScrollView
-  horizontal={false} // turn off horizontal scroll
-  contentContainerStyle={{ paddingBottom: 4 }}
-  showsHorizontalScrollIndicator={false}
->
-
-          
-
-          {/* Month labels */}
-          <View style={styles.monthGrid}>
-  {yearData.map((month, index) => {
-    const isSelected = selectedMonth === month.month
-
-    return (
-      <TouchableOpacity
-        key={index}
-        style={[
-          styles.monthCell,
-          isSelected && {
-            backgroundColor: isDarkMode ? "rgba(255, 149, 0, 0.2)" : "rgba(99, 102, 241, 0.1)",
-            borderRadius: 10,
-          },
-        ]}
-        onPress={() => {
-            setSelectedMonth(() => month.month)
-            setSelectedYear(() => viewingYear)
-            handleMonthSelect({ ...month, year: viewingYear })
-          }}
-          
-      >
-        <Text
-          style={[
-            styles.monthText,
-            {
-              color:
-                month.month === new Date().getMonth() && viewingYear === new Date().getFullYear()
-                  ? isDarkMode
-                    ? "#FF9500"
-                    : "#6366F1"
-                  : colors.secondaryText,
-              fontWeight: isSelected ? "600" : "400",
-            },
-          ]}
-        >
-          {month.name.slice(0, 3)}
-        </Text>
-        {month.workouts > 0 && (
-          <View style={[styles.workoutDot, { backgroundColor: isDarkMode ? "#FF9500" : "#6366F1" }]} />
-        )}
-      </TouchableOpacity>
-    )
-  })}
-</View>
-
-        </ScrollView>
-
-     
+        <WeeklyGraph
+          weeklyActivity={validWeeklyData}
+          isDarkMode={isDarkMode}
+          colors={colors}
+        />
       </Animated.View>
-    )
+    );
   }
 
-  // Render month details modal
+  const renderMonthlyChart = () => {
+    return (
+      <Animated.View
+        style={[
+          styles.chartWrapper,
+          { opacity: opacityAnimation, transform: [{ scale: scaleAnimation }] },
+        ]}
+      >
+        <ModernMonthlyGraph
+          monthlyActivity={monthlyActivity}
+          isDarkMode={isDarkMode}
+          colors={colors}
+          selectedMonth={selectedMonth}
+          setSelectedMonth={setSelectedMonth}
+          selectedYear={selectedYear}
+          setSelectedYear={setSelectedYear}
+        />
+      </Animated.View>
+    );
+  }
+
   const renderMonthDetailsModal = () => {
-    console.log("🔄 Rendering month details for:", monthNames[selectedMonth], selectedYear);
-    console.log("📊 Monthly activity data:", monthlyActivity);
-    console.log("📈 User stats:", userStats);
-  
-    // if (!selectedMonthData) return null
-
     const monthName = monthNames[selectedMonth]
-
 
     return (
       <Modal
@@ -596,9 +656,9 @@ const renderWeeklyChart = () => (
             ]}
           >
             <View style={styles.monthDetailsHeader}>
-            <Text style={[styles.monthDetailsTitle, { color: colors.text }]}>
-  {monthNames[selectedMonth]} {selectedYear}
-</Text>
+              <Text style={[styles.monthDetailsTitle, { color: colors.text }]}>
+                {monthNames[selectedMonth]} {selectedYear}
+              </Text>
 
               <TouchableOpacity style={styles.closeButton} onPress={() => setShowMonthDetails(false)}>
                 <Ionicons name="close" size={24} color={colors.text} />
@@ -606,7 +666,6 @@ const renderWeeklyChart = () => (
             </View>
 
             <ScrollView style={styles.monthDetailsContent}>
-              {/* Month Summary */}
               <View style={styles.monthSummary}>
                 <View
                   style={[
@@ -618,8 +677,8 @@ const renderWeeklyChart = () => (
                 >
                   <Ionicons name="barbell" size={20} color={isDarkMode ? "#FF9500" : "#6366F1"} />
                   <Text style={[styles.summaryValue, { color: colors.text }]}>
-  {userStats.monthlyWorkouts}
-</Text>
+                    {userStats.monthlyWorkouts || 0}
+                  </Text>
                   <Text style={[styles.summaryLabel, { color: colors.secondaryText }]}>Workouts</Text>
                 </View>
 
@@ -633,8 +692,8 @@ const renderWeeklyChart = () => (
                 >
                   <Ionicons name="flame" size={20} color={isDarkMode ? "#FF9500" : "#6366F1"} />
                   <Text style={[styles.summaryValue, { color: colors.text }]}>
-  {userStats.totalCalories}
-</Text>
+                    {userStats.totalCalories || 0}
+                  </Text>
                   <Text style={[styles.summaryLabel, { color: colors.secondaryText }]}>Calories</Text>
                 </View>
 
@@ -648,93 +707,93 @@ const renderWeeklyChart = () => (
                 >
                   <Ionicons name="time" size={20} color={isDarkMode ? "#FF9500" : "#6366F1"} />
                   <Text style={[styles.summaryValue, { color: colors.text }]}>
-  {userStats.totalMinutes}
-</Text>
+                    {userStats.totalMinutes || 0}
+                  </Text>
                   <Text style={[styles.summaryLabel, { color: colors.secondaryText }]}>Minutes</Text>
                 </View>
               </View>
 
-              {/* Workout Types */}
               <View style={styles.sectionContainer}>
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>Workout Types</Text>
                 <View style={styles.workoutTypesContainer}>
-            
-                  {muscleSummary.map((type, index) => (
-  <View key={index} style={styles.workoutTypeItem}>
-    <View style={styles.workoutTypeHeader}>
-      <View style={[styles.workoutTypeColor, { backgroundColor: type.color }]} />
-      <Text style={[styles.workoutTypeName, { color: colors.text }]}>{type.type}</Text>
-      <Text style={[styles.workoutTypePercentage, { color: colors.secondaryText }]}>{type.percentage}%</Text>
-    </View>
-    <View style={styles.workoutTypeProgressContainer}>
-      <View
-        style={[
-          styles.workoutTypeProgressBg,
-          { backgroundColor: isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)" },
-        ]}
-      >
-        <View
-          style={[
-            styles.workoutTypeProgress,
-            { width: `${type.percentage}%`, backgroundColor: type.color },
-          ]}
-        />
-      </View>
-    </View>
-  </View>
-))}
-
+                  {muscleSummary && muscleSummary.length > 0 ? (
+                    muscleSummary.map((type, index) => (
+                      <View key={index} style={styles.workoutTypeItem}>
+                        <View style={styles.workoutTypeHeader}>
+                          <View style={[styles.workoutTypeColor, { backgroundColor: type.color }]} />
+                          <Text style={[styles.workoutTypeName, { color: colors.text }]}>{type.type}</Text>
+                          <Text style={[styles.workoutTypePercentage, { color: colors.secondaryText }]}>{type.percentage}%</Text>
+                        </View>
+                        <View style={styles.workoutTypeProgressContainer}>
+                          <View
+                            style={[
+                              styles.workoutTypeProgressBg,
+                              { backgroundColor: isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)" },
+                            ]}
+                          >
+                            <View
+                              style={[
+                                styles.workoutTypeProgress,
+                                { width: `${type.percentage}%`, backgroundColor: type.color },
+                              ]}
+                            />
+                          </View>
+                        </View>
+                      </View>
+                    ))
+                  ) : (
+                    <Text style={{ color: colors.secondaryText, textAlign: 'center', padding: 10 }}>
+                      No workout type data available
+                    </Text>
+                  )}
                 </View>
               </View>
 
-              {/* Weekly Progress */}
               <View style={styles.sectionContainer}>
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>Weekly Progress</Text>
                 <View style={styles.weeklyProgressContainer}>
-                {calculateWeeklyProgressInMonth(monthlyActivity, selectedYear, selectedMonth).map((week, index) => (
-  <View
-    key={index}
-    style={[
-      styles.weeklyProgressItem,
-      {
-        backgroundColor: isDarkMode
-          ? "rgba(255, 255, 255, 0.05)"
-          : "rgba(0, 0, 0, 0.02)",
-      },
-    ]}
-  >
-    <Text style={[styles.weeklyProgressWeek, { color: colors.text }]}>
-      {week.week}
-    </Text>
-    <View style={styles.weeklyProgressStats}>
-      <View style={styles.weeklyProgressStat}>
-        <Ionicons
-          name="barbell"
-          size={16}
-          color={isDarkMode ? "#FF9500" : "#6366F1"}
-        />
-        <Text style={[styles.weeklyProgressValue, { color: colors.text }]}>
-          {week.workouts}
-        </Text>
-      </View>
-      <View style={styles.weeklyProgressStat}>
-        <Ionicons
-          name="flame"
-          size={16}
-          color={isDarkMode ? "#FF9500" : "#6366F1"}
-        />
-        <Text style={[styles.weeklyProgressValue, { color: colors.text }]}>
-          {week.calories}
-        </Text>
-      </View>
-    </View>
-  </View>
-))}
-
+                  {calculateWeeklyProgressInMonth(monthlyActivity, selectedYear, selectedMonth).map((week, index) => (
+                    <View
+                      key={index}
+                      style={[
+                        styles.weeklyProgressItem,
+                        {
+                          backgroundColor: isDarkMode
+                            ? "rgba(255, 255, 255, 0.05)"
+                            : "rgba(0, 0, 0, 0.02)",
+                        },
+                      ]}
+                    >
+                      <Text style={[styles.weeklyProgressWeek, { color: colors.text }]}>
+                        {week.week}
+                      </Text>
+                      <View style={styles.weeklyProgressStats}>
+                        <View style={styles.weeklyProgressStat}>
+                          <Ionicons
+                            name="barbell"
+                            size={16}
+                            color={isDarkMode ? "#FF9500" : "#6366F1"}
+                          />
+                          <Text style={[styles.weeklyProgressValue, { color: colors.text }]}>
+                            {week.workouts}
+                          </Text>
+                        </View>
+                        <View style={styles.weeklyProgressStat}>
+                          <Ionicons
+                            name="flame"
+                            size={16}
+                            color={isDarkMode ? "#FF9500" : "#6366F1"}
+                          />
+                          <Text style={[styles.weeklyProgressValue, { color: colors.text }]}>
+                            {week.calories}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  ))}
                 </View>
               </View>
 
-              {/* Achievements */}
               <View style={styles.sectionContainer}>
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>Achievements</Text>
                 <View style={styles.achievementsContainer}>
@@ -749,7 +808,7 @@ const renderWeeklyChart = () => (
                     <Ionicons name="trophy" size={24} color={isDarkMode ? "#FF9500" : "#6366F1"} />
                     <Text style={[styles.achievementTitle, { color: colors.text }]}>Most Active Month</Text>
                     <Text style={[styles.achievementDesc, { color: colors.secondaryText }]}>
-                    {userStats.monthlyWorkouts > 15 ? "You crushed it!" : "Keep pushing!"}
+                      {userStats.monthlyWorkouts > 15 ? "You crushed it!" : "Keep pushing!"}
 
                     </Text>
                   </View>
@@ -765,7 +824,7 @@ const renderWeeklyChart = () => (
                     <Ionicons name="trending-up" size={24} color={isDarkMode ? "#FF9500" : "#6366F1"} />
                     <Text style={[styles.achievementTitle, { color: colors.text }]}>Consistency</Text>
                     <Text style={[styles.achievementDesc, { color: colors.secondaryText }]}>
-                    {userStats.monthlyWorkouts > 12 ? "Great consistency!" : "Work on consistency"}
+                      {userStats.monthlyWorkouts > 12 ? "Great consistency!" : "Work on consistency"}
 
                     </Text>
                   </View>
@@ -785,7 +844,6 @@ const renderWeeklyChart = () => (
     )
   }
 
-  // Render month selector modal
   const renderMonthSelector = () => {
     return (
       <Modal
@@ -879,12 +937,10 @@ const renderWeeklyChart = () => (
 
   return (
     <View>
-      {/* Compact Header with View Selector */}
       <View style={styles.chartHeader}>
         <View style={styles.chartTitleRow}>
           <Text style={[styles.chartTitle, { color: colors.text }]}>Activity</Text>
 
-          {/* View Selector */}
           <View style={styles.viewSelectorContainer}>
             <TouchableOpacity
               style={[
@@ -927,7 +983,6 @@ const renderWeeklyChart = () => (
           </View>
         </View>
 
-        {/* Date Navigation */}
         <View style={styles.dateNavigation}>
           <TouchableOpacity
             style={styles.dateNavigationButton}
@@ -935,19 +990,31 @@ const renderWeeklyChart = () => (
               if (chartView === "weekly") {
                 setWeekOffset((w) => w - 1)
               } else {
-                setYearOffset((y) => y - 1)
+                // In monthly view, go to previous month
+                setSelectedMonth(prev => {
+                  if (prev === 0) {
+                    setSelectedYear(y => y - 1);
+                    return 11;
+                  }
+                  return prev - 1;
+                });
               }
             }}
           >
             <ChevronLeft size={16} color={isDarkMode ? "#FF9500" : "#6366F1"} />
           </TouchableOpacity>
 
-          <View style={styles.currentPeriod}>
+          <TouchableOpacity 
+            style={styles.currentPeriod}
+            onPress={() => setShowCalendar(true)}
+          >
             <Text style={[styles.currentPeriodText, { color: colors.text }]}>
-                {chartView === "weekly" ? getCurrentMonthYear() : viewingYear}
+              {chartView === "weekly" 
+                ? getCurrentMonthYear() 
+                : `${monthNames[selectedMonth]} ${selectedYear}`}
             </Text>
-            </View>
-
+            <Calendar size={14} color={isDarkMode ? "#FF9500" : "#6366F1"} style={{ marginLeft: 4 }} />
+          </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.dateNavigationButton}
@@ -955,17 +1022,33 @@ const renderWeeklyChart = () => (
               if (chartView === "weekly") {
                 setWeekOffset((w) => w + 1)
               } else {
-                if (viewingYear < new Date().getFullYear()) {
-                  setYearOffset((y) => y + 1)
-                }
+                // In monthly view, go to next month if not in future
+                const currentDate = new Date();
+                const isCurrentYearAndMonth = 
+                  selectedYear === currentDate.getFullYear() && 
+                  selectedMonth === currentDate.getMonth();
+                  
+                if (isCurrentYearAndMonth) return; // Don't allow going to future months
+                
+                setSelectedMonth(prev => {
+                  if (prev === 11) {
+                    setSelectedYear(y => y + 1);
+                    return 0;
+                  }
+                  return prev + 1;
+                });
               }
             }}
-            disabled={chartView === "monthly" && viewingYear >= new Date().getFullYear()}
+            disabled={chartView === "monthly" && 
+              selectedYear === new Date().getFullYear() && 
+              selectedMonth === new Date().getMonth()}
           >
             <ChevronRight
               size={16}
               color={
-                chartView === "monthly" && viewingYear >= new Date().getFullYear()
+                (chartView === "monthly" && 
+                selectedYear === new Date().getFullYear() && 
+                selectedMonth === new Date().getMonth())
                   ? isDarkMode
                     ? "rgba(255, 149, 0, 0.3)"
                     : "rgba(99, 102, 241, 0.3)"
@@ -978,19 +1061,15 @@ const renderWeeklyChart = () => (
         </View>
       </View>
 
-      {/* Chart Visualization */}
-      {/* <View style={styles.chartContainer}>{chartView === "weekly" ? renderWeeklyChart() : renderMonthlyChart()}</View> */}
       <View style={styles.chartContainer}>
-  {isLoading ? (
-    <View style={styles.loadingContainer}>
-      <ActivityIndicator size="small" color={isDarkMode ? "#FF9500" : "#6366F1"} />
-    </View>
-  ) : chartView === "weekly" ? renderWeeklyChart() : renderMonthlyChart()}
-</View>
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="small" color={isDarkMode ? "#FF9500" : "#6366F1"} />
+          </View>
+        ) : chartView === "weekly" ? renderWeeklyChart() : renderMonthlyChart()}
+      </View>
 
-      {/* Compact Stats Row */}
       <View style={styles.statsRow}>
-        {/* Streak */}
         <View
           style={[
             styles.statItem,
@@ -1008,7 +1087,6 @@ const renderWeeklyChart = () => (
           </View>
         </View>
 
-        {/* Workouts */}
         <View
           style={[
             styles.statItem,
@@ -1028,7 +1106,6 @@ const renderWeeklyChart = () => (
           </View>
         </View>
 
-        {/* Calories */}
         <View
           style={[
             styles.statItem,
@@ -1048,7 +1125,6 @@ const renderWeeklyChart = () => (
           </View>
         </View>
 
-        {/* Minutes */}
         <View
           style={[
             styles.statItem,
@@ -1067,10 +1143,8 @@ const renderWeeklyChart = () => (
         </View>
       </View>
 
-      {/* Month Selector Modal */}
       {renderMonthSelector()}
 
-      {/* Month Details Modal */}
       {renderMonthDetailsModal()}
     </View>
   )
@@ -1287,7 +1361,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
-  // Month details modal styles
   monthDetailsOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -1337,7 +1410,6 @@ const styles = StyleSheet.create({
   summaryValue: {
     fontSize: 18,
     fontWeight: "700",
-    marginVertical: 4,
   },
   summaryLabel: {
     fontSize: 12,
@@ -1348,7 +1420,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: "600",
-    marginBottom: 12,
   },
   workoutTypesContainer: {
     gap: 12,
@@ -1364,7 +1435,6 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-    marginRight: 8,
   },
   workoutTypeName: {
     flex: 1,
@@ -1426,13 +1496,9 @@ const styles = StyleSheet.create({
   achievementTitle: {
     fontSize: 14,
     fontWeight: "600",
-    marginTop: 8,
-    marginBottom: 4,
-    textAlign: "center",
   },
   achievementDesc: {
     fontSize: 12,
-    textAlign: "center",
   },
   closeMonthDetailsButton: {
     margin: 16,
@@ -1466,1898 +1532,44 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-
+  arrowButton: {
+    padding: 8,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  container: {
+    padding: 16,
+    borderRadius: 12,
+  },
+  dateSelector: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  dateText: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  currentDate: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  noDataMessage: {
+    alignItems: "center",
+    justifyContent: "center",
+    height: 120,
+  },
+  statDivider: {
+    width: 1,
+    height: "70%",
+    backgroundColor: "rgba(0,0,0,0.1)",
+  },
+  statsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 8,
+  }
 })
-
 export default CompactActivityChart
-
-
-
-// "use client"
-
-// import React, { useEffect, useRef, useState } from "react"
-// import {
-//   View,
-//   Text,
-//   StyleSheet,
-//   TouchableOpacity,
-//   ScrollView,
-//   Dimensions,
-//   Animated,
-//   type ViewStyle,
-// } from "react-native"
-// import { Ionicons } from "@expo/vector-icons"
-// import { Calendar, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react-native"
-// import Svg, { Path, Circle, Defs, LinearGradient as SvgGradient, Stop, Rect } from "react-native-svg"
-
-// const { width } = Dimensions.get("window")
-
-// // Full day names for reference
-// const fullDayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
-
-// // Month names
-// const monthNames = [
-//   "January",
-//   "February",
-//   "March",
-//   "April",
-//   "May",
-//   "June",
-//   "July",
-//   "August",
-//   "September",
-//   "October",
-//   "November",
-//   "December",
-// ]
-
-// type ActivityDay = {
-//   day: string
-//   workouts: number
-//   calories: number
-// }
-
-// type UserStats = {
-//   streakDays: number
-//   monthlyWorkouts: number
-//   totalCalories: number
-//   totalMinutes: number
-//   weeklyCalories: number
-//   weeklyWorkouts: number
-//   totalWorkouts: number
-// }
-
-// interface EnhancedActivityChartProps {
-//   isDarkMode: boolean
-//   colors: any
-//   chartView: "weekly" | "monthly"
-//   setChartView: (view: "weekly" | "monthly") => void
-//   weekOffset: number
-//   setWeekOffset: (callback: (prev: number) => number) => void
-//   selectedMonth: number
-//   setSelectedMonth: (callback: (prev: number) => number) => void
-//   selectedYear: number
-//   setSelectedYear: (callback: (prev: number) => number) => void
-//   showViewSelector: boolean
-//   setShowViewSelector: (show: boolean) => void
-//   weeklyActivity: ActivityDay[]
-//   monthlyActivity: ActivityDay[]
-//   userStats: UserStats
-//   getCurrentMonthYear: () => string
-// }
-
-// const EnhancedActivityChart: React.FC<EnhancedActivityChartProps> = ({
-//   isDarkMode,
-//   colors,
-//   chartView,
-//   setChartView,
-//   weekOffset,
-//   setWeekOffset,
-//   selectedMonth,
-//   setSelectedMonth,
-//   selectedYear,
-//   setSelectedYear,
-//   showViewSelector,
-//   setShowViewSelector,
-//   weeklyActivity,
-//   monthlyActivity,
-//   userStats,
-//   getCurrentMonthYear,
-// }) => {
-//   // Animation values for bars
-//   const barAnimations = useRef<Animated.Value[]>([]).current
-//   const opacityAnimation = useRef(new Animated.Value(0)).current
-//   const scaleAnimation = useRef(new Animated.Value(0.9)).current
-
-//   // State for calendar visibility
-//   const [showCalendar, setShowCalendar] = useState(false)
-
-//   // Initialize animations
-//   useEffect(() => {
-//     if (!weeklyActivity || weeklyActivity.length === 0) return
-
-//     // Initialize animation values if needed
-//     if (barAnimations.length === 0) {
-//       for (let i = 0; i < weeklyActivity.length; i++) {
-//         barAnimations.push(new Animated.Value(0))
-//       }
-//     }
-
-//     const maxCalories = Math.max(...weeklyActivity.map((day) => day.calories || 0), 100)
-
-//     // Create animation sequence
-//     const animations = weeklyActivity.map((day, index) => {
-//       const targetHeight = day.calories > 0 ? (day.calories / maxCalories) * 150 : 5
-
-//       return Animated.timing(barAnimations[index], {
-//         toValue: targetHeight,
-//         duration: 800,
-//         delay: index * 50,
-//         useNativeDriver: false,
-//       })
-//     })
-
-//     // Animate the entire chart in
-//     Animated.parallel([
-//       Animated.timing(opacityAnimation, {
-//         toValue: 1,
-//         duration: 500,
-//         useNativeDriver: true,
-//       }),
-//       Animated.spring(scaleAnimation, {
-//         toValue: 1,
-//         friction: 8,
-//         tension: 40,
-//         useNativeDriver: true,
-//       }),
-//       Animated.parallel(animations),
-//     ]).start()
-//   }, [weeklyActivity, chartView])
-
-//   // Generate path for the area chart
-//   const generateAreaPath = (data: ActivityDay[]) => {
-//     if (!data || data.length === 0) return ""
-
-//     const maxCalories = Math.max(...data.map((day) => day.calories || 0), 100)
-//     const chartWidth = width - 80
-//     const chartHeight = 150
-//     const pointWidth = chartWidth / (data.length - 1)
-
-//     let path = `M 0 ${chartHeight - (data[0].calories / maxCalories) * chartHeight} `
-
-//     data.forEach((day, index) => {
-//       if (index > 0) {
-//         const x = index * pointWidth
-//         const y = chartHeight - (day.calories / maxCalories) * chartHeight
-//         path += `L ${x} ${y} `
-//       }
-//     })
-
-//     // Complete the path to create a closed shape for filling
-//     path += `L ${chartWidth} ${chartHeight} L 0 ${chartHeight} Z`
-
-//     return path
-//   }
-
-//   // Generate path for the line chart
-//   const generateLinePath = (data: ActivityDay[]) => {
-//     if (!data || data.length === 0) return ""
-
-//     const maxCalories = Math.max(...data.map((day) => day.calories || 0), 100)
-//     const chartWidth = width - 80
-//     const chartHeight = 150
-//     const pointWidth = chartWidth / (data.length - 1)
-
-//     let path = `M 0 ${chartHeight - (data[0].calories / maxCalories) * chartHeight} `
-
-//     data.forEach((day, index) => {
-//       if (index > 0) {
-//         const x = index * pointWidth
-//         const y = chartHeight - (day.calories / maxCalories) * chartHeight
-//         path += `L ${x} ${y} `
-//       }
-//     })
-
-//     return path
-//   }
-
-//   // Generate data points for the line chart
-//   const generateDataPoints = (data: ActivityDay[]) => {
-//     if (!data || data.length === 0) return []
-
-//     const maxCalories = Math.max(...data.map((day) => day.calories || 0), 100)
-//     const chartWidth = width - 80
-//     const chartHeight = 150
-//     const pointWidth = chartWidth / (data.length - 1)
-
-//     return data.map((day, index) => {
-//       const x = index * pointWidth
-//       const y = chartHeight - (day.calories / maxCalories) * chartHeight
-//       return { x, y, value: day.calories, workouts: day.workouts }
-//     })
-//   }
-
-//   // Calculate streak progress percentage
-//   const streakProgress = Math.min((userStats.streakDays / 30) * 100, 100)
-
-//   // Render weekly chart with modern design
-//   const renderWeeklyChart = () => {
-//     const dataPoints = generateDataPoints(weeklyActivity)
-//     const maxCalories = Math.max(...weeklyActivity.map((day) => day.calories || 0), 100)
-
-//     return (
-//       <Animated.View
-//         style={[
-//           styles.chartWrapper,
-//           {
-//             opacity: opacityAnimation,
-//             transform: [{ scale: scaleAnimation }],
-//           },
-//         ]}
-//       >
-//         <View style={styles.chartLabels}>
-//           <Text style={[styles.chartLabel, { color: colors.secondaryText }]}>Calories</Text>
-//           <Text style={[styles.chartLabel, { color: colors.secondaryText }]}>Workouts</Text>
-//         </View>
-
-//         <View style={styles.weeklyChartContainer}>
-//           {/* SVG Area Chart */}
-//           <View style={styles.svgContainer}>
-//             <Svg height="150" width={width - 80}>
-//               <Defs>
-//                 <SvgGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-//                   <Stop offset="0" stopColor={isDarkMode ? "rgba(255, 149, 0, 0.6)" : "rgba(99, 102, 241, 0.6)"} />
-//                   <Stop offset="1" stopColor={isDarkMode ? "rgba(255, 149, 0, 0.1)" : "rgba(99, 102, 241, 0.1)"} />
-//                 </SvgGradient>
-//                 <SvgGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
-//                   <Stop offset="0" stopColor={isDarkMode ? "#FF9500" : "#6366F1"} />
-//                   <Stop offset="1" stopColor={isDarkMode ? "#FF9500" : "#818CF8"} />
-//                 </SvgGradient>
-//               </Defs>
-
-//               {/* Grid lines */}
-//               {[0, 1, 2, 3].map((i) => (
-//                 <Rect
-//                   key={`grid-${i}`}
-//                   x="0"
-//                   y={i * 50}
-//                   width={width - 80}
-//                   height="1"
-//                   fill={isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)"}
-//                 />
-//               ))}
-
-//               {/* Area fill */}
-//               <Path d={generateAreaPath(weeklyActivity)} fill="url(#areaGradient)" />
-
-//               {/* Line stroke */}
-//               <Path d={generateLinePath(weeklyActivity)} stroke="url(#lineGradient)" strokeWidth="3" fill="none" />
-
-//               {/* Data points */}
-//               {dataPoints.map((point, index) => (
-//                 <React.Fragment key={index}>
-//                   <Circle
-//                     cx={point.x}
-//                     cy={point.y}
-//                     r="6"
-//                     fill={isDarkMode ? "#1F1F1F" : "#FFFFFF"}
-//                     stroke={isDarkMode ? "#FF9500" : "#6366F1"}
-//                     strokeWidth="3"
-//                   />
-//                   {point.workouts > 0 && (
-//                     <Circle cx={point.x} cy={point.y} r="3" fill={isDarkMode ? "#FF9500" : "#6366F1"} />
-//                   )}
-//                 </React.Fragment>
-//               ))}
-//             </Svg>
-//           </View>
-
-//           {/* Day labels */}
-//           <View style={styles.dayLabelsContainer}>
-//             {weeklyActivity.map((day, index) => (
-//               <View key={index} style={styles.dayLabelWrapper}>
-//                 <View
-//                   style={[
-//                     styles.dayLabelContainer,
-//                     {
-//                       backgroundColor:
-//                         day.workouts > 0
-//                           ? isDarkMode
-//                             ? "rgba(255, 149, 0, 0.2)"
-//                             : "rgba(99, 102, 241, 0.1)"
-//                           : "transparent",
-//                       borderColor: isDarkMode ? "#333" : "#e5e7eb",
-//                     },
-//                   ]}
-//                 >
-//                   <Text
-//                     style={[
-//                       styles.dayText,
-//                       {
-//                         color: day.workouts > 0 ? (isDarkMode ? "#FF9500" : "#6366F1") : colors.secondaryText,
-//                       },
-//                     ]}
-//                   >
-//                     {fullDayNames[index].substring(0, 3)}
-//                   </Text>
-//                 </View>
-//                 {day.workouts > 0 && (
-//                   <View style={[styles.workoutBadge, { backgroundColor: isDarkMode ? "#FF9500" : "#6366F1" }]}>
-//                     <Text style={styles.workoutBadgeText}>{day.workouts}</Text>
-//                   </View>
-//                 )}
-//               </View>
-//             ))}
-//           </View>
-//         </View>
-//       </Animated.View>
-//     )
-//   }
-
-//   // Render monthly chart with modern design
-//   const renderMonthlyChart = () => {
-//     return (
-//       <Animated.View
-//         style={[
-//           styles.chartWrapper,
-//           {
-//             opacity: opacityAnimation,
-//             transform: [{ scale: scaleAnimation }],
-//           },
-//         ]}
-//       >
-//         <View style={styles.chartLabels}>
-//           <Text style={[styles.chartLabel, { color: colors.secondaryText }]}>Calories</Text>
-//           <Text style={[styles.chartLabel, { color: colors.secondaryText }]}>Workouts</Text>
-//         </View>
-
-//         <ScrollView
-//           horizontal
-//           showsHorizontalScrollIndicator={false}
-//           contentContainerStyle={styles.monthlyChartScrollContent}
-//         >
-//           <View style={styles.monthlyChartContainer}>
-//             {/* Calendar grid background */}
-//             <View style={styles.calendarGrid}>
-//               {Array.from({ length: 5 }).map((_, rowIndex) => (
-//                 <View key={`row-${rowIndex}`} style={styles.calendarRow}>
-//                   {Array.from({ length: 7 }).map((_, colIndex) => (
-//                     <View
-//                       key={`cell-${rowIndex}-${colIndex}`}
-//                       style={[
-//                         styles.calendarCell,
-//                         {
-//                           backgroundColor: isDarkMode ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 0, 0, 0.02)",
-//                         },
-//                       ]}
-//                     />
-//                   ))}
-//                 </View>
-//               ))}
-//             </View>
-
-//             {/* Activity hexagons */}
-//             <View style={styles.activityHexagons}>
-//               {monthlyActivity.map((dayData, index) => {
-//                 const date = new Date(dayData.day)
-//                 const isToday = date.toDateString() === new Date().toDateString()
-//                 const maxCal = Math.max(...monthlyActivity.map((d) => d.calories)) || 1
-//                 const intensity = dayData.calories > 0 ? dayData.calories / maxCal : 0
-//                 const size = 24 + intensity * 12
-
-//                 // Calculate position based on date
-//                 const dayOfMonth = date.getDate()
-//                 const dayOfWeek = date.getDay()
-//                 const weekOfMonth = Math.floor((dayOfMonth - 1) / 7)
-
-//                 return (
-//                   <View
-//                     key={dayData.day}
-//                     style={[
-//                       styles.hexagonWrapper,
-//                       {
-//                         left: dayOfWeek * 40 + 10,
-//                         top: weekOfMonth * 40 + 10,
-//                       } as ViewStyle,
-//                     ]}
-//                   >
-//                     <View
-//                       style={[
-//                         styles.hexagon,
-//                         {
-//                           width: size,
-//                           height: size,
-//                           backgroundColor:
-//                             dayData.workouts > 0
-//                               ? isDarkMode
-//                                 ? `rgba(255, 149, 0, ${0.3 + intensity * 0.7})`
-//                                 : `rgba(99, 102, 241, ${0.3 + intensity * 0.7})`
-//                               : isDarkMode
-//                                 ? "rgba(255, 255, 255, 0.05)"
-//                                 : "rgba(0, 0, 0, 0.05)",
-//                           borderColor: isToday ? (isDarkMode ? "#FF9500" : "#6366F1") : "transparent",
-//                         } as ViewStyle,
-//                       ]}
-//                     >
-//                       <Text
-//                         style={[
-//                           styles.hexagonText,
-//                           {
-//                             color: dayData.workouts > 0 ? (isDarkMode ? "#FFFFFF" : "#FFFFFF") : colors.secondaryText,
-//                             fontSize: 10 + (dayData.workouts > 0 ? 2 : 0),
-//                           },
-//                         ]}
-//                       >
-//                         {dayOfMonth}
-//                       </Text>
-//                       {dayData.workouts > 0 && (
-//                         <View style={styles.workoutDot}>
-//                           <Text style={styles.workoutDotText}>{dayData.workouts}</Text>
-//                         </View>
-//                       )}
-//                     </View>
-//                   </View>
-//                 )
-//               })}
-//             </View>
-//           </View>
-//         </ScrollView>
-
-//         {/* Month legend */}
-//         <View style={styles.monthLegend}>
-//           <View style={styles.legendItem}>
-//             <View
-//               style={[
-//                 styles.legendColor,
-//                 {
-//                   backgroundColor: isDarkMode ? "rgba(255, 149, 0, 0.3)" : "rgba(99, 102, 241, 0.3)",
-//                 },
-//               ]}
-//             />
-//             <Text style={[styles.legendText, { color: colors.secondaryText }]}>Low</Text>
-//           </View>
-//           <View style={styles.legendItem}>
-//             <View
-//               style={[
-//                 styles.legendColor,
-//                 {
-//                   backgroundColor: isDarkMode ? "rgba(255, 149, 0, 0.6)" : "rgba(99, 102, 241, 0.6)",
-//                 },
-//               ]}
-//             />
-//             <Text style={[styles.legendText, { color: colors.secondaryText }]}>Medium</Text>
-//           </View>
-//           <View style={styles.legendItem}>
-//             <View
-//               style={[
-//                 styles.legendColor,
-//                 {
-//                   backgroundColor: isDarkMode ? "rgba(255, 149, 0, 0.9)" : "rgba(99, 102, 241, 0.9)",
-//                 },
-//               ]}
-//             />
-//             <Text style={[styles.legendText, { color: colors.secondaryText }]}>High</Text>
-//           </View>
-//         </View>
-//       </Animated.View>
-//     )
-//   }
-
-//   return (
-//     <View>
-//       {/* Chart Header with View Selector */}
-//       <View style={styles.chartHeader}>
-//         <View style={styles.chartTitleContainer}>
-//           <Text style={[styles.dashboardTitle, { color: colors.text }]}>Activity</Text>
-
-//           {/* View Selector Dropdown */}
-//           <TouchableOpacity
-//             style={[styles.viewSelector, { borderColor: isDarkMode ? "#FF9500" : "#6366F1" }]}
-//             onPress={() => setShowViewSelector(!showViewSelector)}
-//           >
-//             <Text style={{ color: isDarkMode ? "#FF9500" : "#6366F1" }}>
-//               {chartView === "weekly" ? "Weekly" : "Monthly"}
-//             </Text>
-//             <ChevronDown size={16} color={isDarkMode ? "#FF9500" : "#6366F1"} />
-
-//             {/* Dropdown Menu */}
-//             {showViewSelector && (
-//               <View
-//                 style={[
-//                   styles.viewDropdown,
-//                   {
-//                     backgroundColor: isDarkMode ? "#1F2937" : "#fff",
-//                     borderColor: isDarkMode ? "#374151" : "#E5E7EB",
-//                   },
-//                 ]}
-//               >
-//                 <TouchableOpacity
-//                   style={[
-//                     styles.dropdownItem,
-//                     chartView === "weekly" && {
-//                       backgroundColor: isDarkMode ? "rgba(255, 149, 0, 0.1)" : "rgba(99, 102, 241, 0.1)",
-//                     },
-//                   ]}
-//                   onPress={() => {
-//                     setChartView("weekly")
-//                     setShowViewSelector(false)
-//                   }}
-//                 >
-//                   <Text style={{ color: isDarkMode ? "#FF9500" : "#6366F1" }}>Weekly</Text>
-//                 </TouchableOpacity>
-//                 <TouchableOpacity
-//                   style={[
-//                     styles.dropdownItem,
-//                     chartView === "monthly" && {
-//                       backgroundColor: isDarkMode ? "rgba(255, 149, 0, 0.1)" : "rgba(99, 102, 241, 0.1)",
-//                     },
-//                   ]}
-//                   onPress={() => {
-//                     setChartView("monthly")
-//                     setShowViewSelector(false)
-//                   }}
-//                 >
-//                   <Text style={{ color: isDarkMode ? "#FF9500" : "#6366F1" }}>Monthly</Text>
-//                 </TouchableOpacity>
-//               </View>
-//             )}
-//           </TouchableOpacity>
-//         </View>
-
-//         {/* Date Navigation */}
-//         <View style={styles.dateNavigation}>
-//           {/* ← Previous */}
-//           <TouchableOpacity
-//             style={styles.dateNavigationButton}
-//             onPress={() => {
-//               if (chartView === "weekly") {
-//                 setWeekOffset((w) => w - 1)
-//               } else {
-//                 // back one month
-//                 if (selectedMonth > 0) {
-//                   setSelectedMonth((m) => m - 1)
-//                 } else {
-//                   setSelectedYear((y) => y - 1)
-//                   setSelectedMonth(() => 11)
-//                 }
-//               }
-//             }}
-//           >
-//             <ChevronLeft size={20} color={isDarkMode ? "#FF9500" : "#6366F1"} />
-//           </TouchableOpacity>
-
-//           {/* center label + calendar toggle */}
-//           <TouchableOpacity
-//             style={styles.currentPeriod}
-//             onPress={() => chartView === "monthly" && setShowCalendar(true)}
-//           >
-//             <Text style={[styles.currentPeriodText, { color: colors.text }]}>{getCurrentMonthYear()}</Text>
-//             {chartView === "monthly" && <Calendar size={16} color={isDarkMode ? "#FF9500" : "#6366F1"} />}
-//           </TouchableOpacity>
-
-//           {/* → Next */}
-//           <TouchableOpacity
-//             style={styles.dateNavigationButton}
-//             onPress={() => {
-//               if (chartView === "weekly") {
-//                 setWeekOffset((w) => w + 1)
-//               } else {
-//                 // forward one month
-//                 if (selectedMonth < 11) {
-//                   setSelectedMonth((m) => m + 1)
-//                 } else {
-//                   setSelectedYear((y) => y + 1)
-//                   setSelectedMonth(() => 0)
-//                 }
-//               }
-//             }}
-//           >
-//             <ChevronRight size={20} color={isDarkMode ? "#FF9500" : "#6366F1"} />
-//           </TouchableOpacity>
-//         </View>
-//       </View>
-
-//       {/* Chart Visualization */}
-//       <View style={styles.chartContainer}>{chartView === "weekly" ? renderWeeklyChart() : renderMonthlyChart()}</View>
-
-//       {/* Stats Cards */}
-//       <View style={styles.statsCardsContainer}>
-//         {/* Streak Card */}
-//         <View
-//           style={[
-//             styles.statCard,
-//             {
-//               backgroundColor: isDarkMode ? "rgba(255, 149, 0, 0.1)" : "rgba(99, 102, 241, 0.05)",
-//               borderColor: isDarkMode ? "rgba(255, 149, 0, 0.2)" : "rgba(99, 102, 241, 0.2)",
-//             },
-//           ]}
-//         >
-//           <View style={styles.statCardHeader}>
-//             <Ionicons name="flame" size={20} color={isDarkMode ? "#FF9500" : "#6366F1"} />
-//             <Text style={[styles.statCardTitle, { color: colors.secondaryText }]}>Streak</Text>
-//           </View>
-//           <Text style={[styles.statCardValue, { color: colors.text }]}>{userStats.streakDays}</Text>
-//           <Text style={[styles.statCardLabel, { color: colors.secondaryText }]}>days</Text>
-//           <View style={styles.progressBarContainer}>
-//             <View
-//               style={[
-//                 styles.progressBar,
-//                 { backgroundColor: isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)" },
-//               ]}
-//             >
-//               <View
-//                 style={[
-//                   styles.progressFill,
-//                   {
-//                     width: `${streakProgress}%`,
-//                     backgroundColor: isDarkMode ? "#FF9500" : "#6366F1",
-//                   },
-//                 ]}
-//               />
-//             </View>
-//           </View>
-//         </View>
-
-//         {/* Workouts Card */}
-//         <View
-//           style={[
-//             styles.statCard,
-//             {
-//               backgroundColor: isDarkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.02)",
-//               borderColor: isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)",
-//             },
-//           ]}
-//         >
-//           <View style={styles.statCardHeader}>
-//             <Ionicons name="barbell" size={20} color={isDarkMode ? "#FF9500" : "#6366F1"} />
-//             <Text style={[styles.statCardTitle, { color: colors.secondaryText }]}>Workouts</Text>
-//           </View>
-//           <Text style={[styles.statCardValue, { color: colors.text }]}>
-//             {chartView === "weekly" ? userStats.weeklyWorkouts : userStats.monthlyWorkouts}
-//           </Text>
-//           <Text style={[styles.statCardLabel, { color: colors.secondaryText }]}>
-//             {chartView === "weekly" ? "this week" : "this month"}
-//           </Text>
-//         </View>
-
-//         {/* Calories Card */}
-//         <View
-//           style={[
-//             styles.statCard,
-//             {
-//               backgroundColor: isDarkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.02)",
-//               borderColor: isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)",
-//             },
-//           ]}
-//         >
-//           <View style={styles.statCardHeader}>
-//             <Ionicons name="flame-outline" size={20} color={isDarkMode ? "#FF9500" : "#6366F1"} />
-//             <Text style={[styles.statCardTitle, { color: colors.secondaryText }]}>Calories</Text>
-//           </View>
-//           <Text style={[styles.statCardValue, { color: colors.text }]}>
-//             {chartView === "weekly" ? userStats.weeklyCalories : userStats.totalCalories}
-//           </Text>
-//           <Text style={[styles.statCardLabel, { color: colors.secondaryText }]}>burned</Text>
-//         </View>
-
-//         {/* Minutes Card */}
-//         <View
-//           style={[
-//             styles.statCard,
-//             {
-//               backgroundColor: isDarkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.02)",
-//               borderColor: isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)",
-//             },
-//           ]}
-//         >
-//           <View style={styles.statCardHeader}>
-//             <Ionicons name="time" size={20} color={isDarkMode ? "#FF9500" : "#6366F1"} />
-//             <Text style={[styles.statCardTitle, { color: colors.secondaryText }]}>Time</Text>
-//           </View>
-//           <Text style={[styles.statCardValue, { color: colors.text }]}>{userStats.totalMinutes}</Text>
-//           <Text style={[styles.statCardLabel, { color: colors.secondaryText }]}>minutes</Text>
-//         </View>
-//       </View>
-//     </View>
-//   )
-// }
-
-// const styles = StyleSheet.create({
-//   chartHeader: {
-//     marginBottom: 20,
-//   },
-//   chartTitleContainer: {
-//     flexDirection: "row",
-//     justifyContent: "space-between",
-//     alignItems: "center",
-//     marginBottom: 16,
-//   },
-//   dashboardTitle: {
-//     fontSize: 20,
-//     fontWeight: "700",
-//   },
-//   viewSelector: {
-//     flexDirection: "row",
-//     alignItems: "center",
-//     paddingHorizontal: 12,
-//     paddingVertical: 6,
-//     borderRadius: 16,
-//     borderWidth: 1,
-//     position: "relative",
-//   },
-//   viewDropdown: {
-//     position: "absolute",
-//     top: 40,
-//     right: 0,
-//     width: 120,
-//     borderRadius: 12,
-//     borderWidth: 1,
-//     overflow: "hidden",
-//     zIndex: 10,
-//     elevation: 5,
-//     shadowColor: "#000",
-//     shadowOffset: { width: 0, height: 2 },
-//     shadowOpacity: 0.1,
-//     shadowRadius: 8,
-//   },
-//   dropdownItem: {
-//     paddingHorizontal: 16,
-//     paddingVertical: 12,
-//     alignItems: "center",
-//   },
-//   dateNavigation: {
-//     flexDirection: "row",
-//     justifyContent: "space-between",
-//     alignItems: "center",
-//   },
-//   dateNavigationButton: {
-//     width: 40,
-//     height: 40,
-//     borderRadius: 20,
-//     justifyContent: "center",
-//     alignItems: "center",
-//   },
-//   currentPeriod: {
-//     flexDirection: "row",
-//     alignItems: "center",
-//     gap: 8,
-//     paddingVertical: 8,
-//     paddingHorizontal: 12,
-//     borderRadius: 16,
-//   },
-//   currentPeriodText: {
-//     fontSize: 16,
-//     fontWeight: "600",
-//   },
-//   chartContainer: {
-//     marginBottom: 20,
-//   },
-//   chartWrapper: {
-//     borderRadius: 16,
-//     overflow: "hidden",
-//   },
-//   chartLabels: {
-//     flexDirection: "row",
-//     justifyContent: "space-between",
-//     paddingHorizontal: 10,
-//     marginBottom: 8,
-//   },
-//   chartLabel: {
-//     fontSize: 12,
-//     fontWeight: "500",
-//   },
-//   weeklyChartContainer: {
-//     height: 200,
-//     position: "relative",
-//   },
-//   svgContainer: {
-//     height: 150,
-//     marginBottom: 10,
-//   },
-//   dayLabelsContainer: {
-//     flexDirection: "row",
-//     justifyContent: "space-between",
-//     paddingHorizontal: 10,
-//   },
-//   dayLabelWrapper: {
-//     alignItems: "center",
-//     position: "relative",
-//   },
-//   dayLabelContainer: {
-//     width: 36,
-//     height: 36,
-//     borderRadius: 18,
-//     justifyContent: "center",
-//     alignItems: "center",
-//     borderWidth: 1,
-//   },
-//   dayText: {
-//     fontSize: 12,
-//     fontWeight: "600",
-//   },
-//   workoutBadge: {
-//     position: "absolute",
-//     top: -8,
-//     right: -8,
-//     width: 18,
-//     height: 18,
-//     borderRadius: 9,
-//     justifyContent: "center",
-//     alignItems: "center",
-//   },
-//   workoutBadgeText: {
-//     color: "#fff",
-//     fontSize: 10,
-//     fontWeight: "700",
-//   },
-//   monthlyChartScrollContent: {
-//     paddingBottom: 10,
-//   },
-//   monthlyChartContainer: {
-//     height: 220,
-//     width: 300,
-//     position: "relative",
-//   },
-//   calendarGrid: {
-//     position: "absolute",
-//     top: 0,
-//     left: 0,
-//     right: 0,
-//     bottom: 0,
-//   },
-//   calendarRow: {
-//     flexDirection: "row",
-//     height: 40,
-//   },
-//   calendarCell: {
-//     width: 40,
-//     height: 40,
-//     borderRadius: 4,
-//     margin: 1,
-//   },
-//   activityHexagons: {
-//     position: "absolute",
-//     top: 0,
-//     left: 0,
-//     right: 0,
-//     bottom: 0,
-//   },
-//   hexagonWrapper: {
-//     position: "absolute",
-//     alignItems: "center",
-//     justifyContent: "center",
-//   },
-//   hexagon: {
-//     borderRadius: 8,
-//     alignItems: "center",
-//     justifyContent: "center",
-//     borderWidth: 2,
-//   },
-//   hexagonText: {
-//     fontWeight: "600",
-//   },
-//   workoutDot: {
-//     position: "absolute",
-//     top: -5,
-//     right: -5,
-//     width: 14,
-//     height: 14,
-//     borderRadius: 7,
-//     backgroundColor: "#fff",
-//     justifyContent: "center",
-//     alignItems: "center",
-//   },
-//   workoutDotText: {
-//     fontSize: 8,
-//     fontWeight: "700",
-//     color: "#000",
-//   },
-//   monthLegend: {
-//     flexDirection: "row",
-//     justifyContent: "center",
-//     marginTop: 10,
-//     gap: 16,
-//   },
-//   legendItem: {
-//     flexDirection: "row",
-//     alignItems: "center",
-//     gap: 4,
-//   },
-//   legendColor: {
-//     width: 12,
-//     height: 12,
-//     borderRadius: 6,
-//   },
-//   legendText: {
-//     fontSize: 12,
-//   },
-//   statsCardsContainer: {
-//     flexDirection: "row",
-//     flexWrap: "wrap",
-//     gap: 10,
-//     marginTop: 10,
-//   },
-//   statCard: {
-//     width: (width - 60) / 2,
-//     padding: 12,
-//     borderRadius: 16,
-//     borderWidth: 1,
-//   },
-//   statCardHeader: {
-//     flexDirection: "row",
-//     alignItems: "center",
-//     gap: 6,
-//     marginBottom: 8,
-//   },
-//   statCardTitle: {
-//     fontSize: 12,
-//     fontWeight: "500",
-//   },
-//   statCardValue: {
-//     fontSize: 24,
-//     fontWeight: "700",
-//   },
-//   statCardLabel: {
-//     fontSize: 12,
-//     marginTop: 2,
-//   },
-//   progressBarContainer: {
-//     marginTop: 8,
-//   },
-//   progressBar: {
-//     height: 4,
-//     borderRadius: 2,
-//     overflow: "hidden",
-//   },
-//   progressFill: {
-//     height: "100%",
-//     borderRadius: 2,
-//   },
-// })
-
-// export default EnhancedActivityChart
-
-
-// "use client"
-
-// import React, { useEffect, useRef, useState } from "react"
-// import {
-//   View,
-//   Text,
-//   StyleSheet,
-//   TouchableOpacity,
-//   ScrollView,
-//   Dimensions,
-//   Animated,
-//   type ViewStyle,
-// } from "react-native"
-// import { Ionicons } from "@expo/vector-icons"
-// import { Calendar, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react-native"
-// import Svg, { Path, Circle, Defs, LinearGradient as SvgGradient, Stop, Rect } from "react-native-svg"
-
-// const { width } = Dimensions.get("window")
-
-// // Full day names for reference
-// const fullDayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
-
-// // Month names
-// const monthNames = [
-//   "January",
-//   "February",
-//   "March",
-//   "April",
-//   "May",
-//   "June",
-//   "July",
-//   "August",
-//   "September",
-//   "October",
-//   "November",
-//   "December",
-// ]
-
-// type ActivityDay = {
-//   day: string
-//   workouts: number
-//   calories: number
-// }
-
-// type UserStats = {
-//   streakDays: number
-//   monthlyWorkouts: number
-//   totalCalories: number
-//   totalMinutes: number
-//   weeklyCalories: number
-//   weeklyWorkouts: number
-//   totalWorkouts: number
-// }
-
-// interface EnhancedActivityChartProps {
-//   isDarkMode: boolean
-//   colors: any
-//   chartView: "weekly" | "monthly"
-//   setChartView: (view: "weekly" | "monthly") => void
-//   weekOffset: number
-//   setWeekOffset: (callback: (prev: number) => number) => void
-//   selectedMonth: number
-//   setSelectedMonth: (callback: (prev: number) => number) => void
-//   selectedYear: number
-//   setSelectedYear: (callback: (prev: number) => number) => void
-//   showViewSelector: boolean
-//   setShowViewSelector: (show: boolean) => void
-//   weeklyActivity: ActivityDay[]
-//   monthlyActivity: ActivityDay[]
-//   userStats: UserStats
-//   getCurrentMonthYear: () => string
-// }
-
-// const EnhancedActivityChart: React.FC<EnhancedActivityChartProps> = ({
-//   isDarkMode,
-//   colors,
-//   chartView,
-//   setChartView,
-//   weekOffset,
-//   setWeekOffset,
-//   selectedMonth,
-//   setSelectedMonth,
-//   selectedYear,
-//   setSelectedYear,
-//   showViewSelector,
-//   setShowViewSelector,
-//   weeklyActivity,
-//   monthlyActivity,
-//   userStats,
-//   getCurrentMonthYear,
-// }) => {
-//   // Animation values for bars
-//   const barAnimations = useRef<Animated.Value[]>([]).current
-//   const opacityAnimation = useRef(new Animated.Value(0)).current
-//   const scaleAnimation = useRef(new Animated.Value(0.9)).current
-
-//   // State for calendar visibility
-//   const [showCalendar, setShowCalendar] = useState(false)
-
-//   // Initialize animations
-//   useEffect(() => {
-//     if (!weeklyActivity || weeklyActivity.length === 0) return
-
-//     // Initialize animation values if needed
-//     if (barAnimations.length === 0) {
-//       for (let i = 0; i < weeklyActivity.length; i++) {
-//         barAnimations.push(new Animated.Value(0))
-//       }
-//     }
-
-//     const maxCalories = Math.max(...weeklyActivity.map((day) => day.calories || 0), 100)
-
-//     // Create animation sequence
-//     const animations = weeklyActivity.map((day, index) => {
-//       const targetHeight = day.calories > 0 ? (day.calories / maxCalories) * 150 : 5
-
-//       return Animated.timing(barAnimations[index], {
-//         toValue: targetHeight,
-//         duration: 800,
-//         delay: index * 50,
-//         useNativeDriver: false,
-//       })
-//     })
-
-//     // Animate the entire chart in
-//     Animated.parallel([
-//       Animated.timing(opacityAnimation, {
-//         toValue: 1,
-//         duration: 500,
-//         useNativeDriver: true,
-//       }),
-//       Animated.spring(scaleAnimation, {
-//         toValue: 1,
-//         friction: 8,
-//         tension: 40,
-//         useNativeDriver: true,
-//       }),
-//       Animated.parallel(animations),
-//     ]).start()
-//   }, [weeklyActivity, chartView])
-
-//   // Generate path for the area chart
-//   const generateAreaPath = (data: ActivityDay[]) => {
-//     if (!data || data.length === 0) return ""
-
-//     const maxCalories = Math.max(...data.map((day) => day.calories || 0), 100)
-//     const chartWidth = width - 80
-//     const chartHeight = 150
-//     const pointWidth = chartWidth / (data.length - 1)
-
-//     let path = `M 0 ${chartHeight - (data[0].calories / maxCalories) * chartHeight} `
-
-//     data.forEach((day, index) => {
-//       if (index > 0) {
-//         const x = index * pointWidth
-//         const y = chartHeight - (day.calories / maxCalories) * chartHeight
-//         path += `L ${x} ${y} `
-//       }
-//     })
-
-//     // Complete the path to create a closed shape for filling
-//     path += `L ${chartWidth} ${chartHeight} L 0 ${chartHeight} Z`
-
-//     return path
-//   }
-
-//   // Generate path for the line chart
-//   const generateLinePath = (data: ActivityDay[]) => {
-//     if (!data || data.length === 0) return ""
-
-//     const maxCalories = Math.max(...data.map((day) => day.calories || 0), 100)
-//     const chartWidth = width - 80
-//     const chartHeight = 150
-//     const pointWidth = chartWidth / (data.length - 1)
-
-//     let path = `M 0 ${chartHeight - (data[0].calories / maxCalories) * chartHeight} `
-
-//     data.forEach((day, index) => {
-//       if (index > 0) {
-//         const x = index * pointWidth
-//         const y = chartHeight - (day.calories / maxCalories) * chartHeight
-//         path += `L ${x} ${y} `
-//       }
-//     })
-
-//     return path
-//   }
-
-//   // Generate data points for the line chart
-//   const generateDataPoints = (data: ActivityDay[]) => {
-//     if (!data || data.length === 0) return []
-
-//     const maxCalories = Math.max(...data.map((day) => day.calories || 0), 100)
-//     const chartWidth = width - 80
-//     const chartHeight = 150
-//     const pointWidth = chartWidth / (data.length - 1)
-
-//     return data.map((day, index) => {
-//       const x = index * pointWidth
-//       const y = chartHeight - (day.calories / maxCalories) * chartHeight
-//       return { x, y, value: day.calories, workouts: day.workouts }
-//     })
-//   }
-
-//   // Calculate streak progress percentage
-//   const streakProgress = Math.min((userStats.streakDays / 30) * 100, 100)
-
-//   // Render weekly chart with modern design
-//   const renderWeeklyChart = () => {
-//     const dataPoints = generateDataPoints(weeklyActivity)
-//     const maxCalories = Math.max(...weeklyActivity.map((day) => day.calories || 0), 100)
-
-//     return (
-//       <Animated.View
-//         style={[
-//           styles.chartWrapper,
-//           {
-//             opacity: opacityAnimation,
-//             transform: [{ scale: scaleAnimation }],
-//           },
-//         ]}
-//       >
-//         <View style={styles.chartLabels}>
-//           <Text style={[styles.chartLabel, { color: colors.secondaryText }]}>Calories</Text>
-//           <Text style={[styles.chartLabel, { color: colors.secondaryText }]}>Workouts</Text>
-//         </View>
-
-//         <View style={styles.weeklyChartContainer}>
-//           {/* SVG Area Chart */}
-//           <View style={styles.svgContainer}>
-//             <Svg height="150" width={width - 80}>
-//               <Defs>
-//                 <SvgGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-//                   <Stop offset="0" stopColor={isDarkMode ? "rgba(255, 149, 0, 0.6)" : "rgba(99, 102, 241, 0.6)"} />
-//                   <Stop offset="1" stopColor={isDarkMode ? "rgba(255, 149, 0, 0.1)" : "rgba(99, 102, 241, 0.1)"} />
-//                 </SvgGradient>
-//                 <SvgGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
-//                   <Stop offset="0" stopColor={isDarkMode ? "#FF9500" : "#6366F1"} />
-//                   <Stop offset="1" stopColor={isDarkMode ? "#FF9500" : "#818CF8"} />
-//                 </SvgGradient>
-//               </Defs>
-
-//               {/* Grid lines */}
-//               {[0, 1, 2, 3].map((i) => (
-//                 <Rect
-//                   key={`grid-${i}`}
-//                   x="0"
-//                   y={i * 50}
-//                   width={width - 80}
-//                   height="1"
-//                   fill={isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)"}
-//                 />
-//               ))}
-
-//               {/* Area fill */}
-//               <Path d={generateAreaPath(weeklyActivity)} fill="url(#areaGradient)" />
-
-//               {/* Line stroke */}
-//               <Path d={generateLinePath(weeklyActivity)} stroke="url(#lineGradient)" strokeWidth="3" fill="none" />
-
-//               {/* Data points */}
-//               {dataPoints.map((point, index) => (
-//                 <React.Fragment key={index}>
-//                   <Circle
-//                     cx={point.x}
-//                     cy={point.y}
-//                     r="6"
-//                     fill={isDarkMode ? "#1F1F1F" : "#FFFFFF"}
-//                     stroke={isDarkMode ? "#FF9500" : "#6366F1"}
-//                     strokeWidth="3"
-//                   />
-//                   {point.workouts > 0 && (
-//                     <Circle cx={point.x} cy={point.y} r="3" fill={isDarkMode ? "#FF9500" : "#6366F1"} />
-//                   )}
-//                 </React.Fragment>
-//               ))}
-//             </Svg>
-//           </View>
-
-//           {/* Day labels */}
-//           <View style={styles.dayLabelsContainer}>
-//             {weeklyActivity.map((day, index) => (
-//               <View key={index} style={styles.dayLabelWrapper}>
-//                 <View
-//                   style={[
-//                     styles.dayLabelContainer,
-//                     {
-//                       backgroundColor:
-//                         day.workouts > 0
-//                           ? isDarkMode
-//                             ? "rgba(255, 149, 0, 0.2)"
-//                             : "rgba(99, 102, 241, 0.1)"
-//                           : "transparent",
-//                       borderColor: isDarkMode ? "#333" : "#e5e7eb",
-//                     },
-//                   ]}
-//                 >
-//                   <Text
-//                     style={[
-//                       styles.dayText,
-//                       {
-//                         color: day.workouts > 0 ? (isDarkMode ? "#FF9500" : "#6366F1") : colors.secondaryText,
-//                       },
-//                     ]}
-//                   >
-//                     {fullDayNames[index].substring(0, 3)}
-//                   </Text>
-//                 </View>
-//                 {day.workouts > 0 && (
-//                   <View style={[styles.workoutBadge, { backgroundColor: isDarkMode ? "#FF9500" : "#6366F1" }]}>
-//                     <Text style={styles.workoutBadgeText}>{day.workouts}</Text>
-//                   </View>
-//                 )}
-//               </View>
-//             ))}
-//           </View>
-//         </View>
-//       </Animated.View>
-//     )
-//   }
-
-//   // Render monthly chart with modern design
-//   const renderMonthlyChart = () => {
-//     return (
-//       <Animated.View
-//         style={[
-//           styles.chartWrapper,
-//           {
-//             opacity: opacityAnimation,
-//             transform: [{ scale: scaleAnimation }],
-//           },
-//         ]}
-//       >
-//         <View style={styles.chartLabels}>
-//           <Text style={[styles.chartLabel, { color: colors.secondaryText }]}>Calories</Text>
-//           <Text style={[styles.chartLabel, { color: colors.secondaryText }]}>Workouts</Text>
-//         </View>
-
-//         <ScrollView
-//           horizontal
-//           showsHorizontalScrollIndicator={false}
-//           contentContainerStyle={styles.monthlyChartScrollContent}
-//         >
-//           <View style={styles.monthlyChartContainer}>
-//             {/* Calendar grid background */}
-//             <View style={styles.calendarGrid}>
-//               {Array.from({ length: 5 }).map((_, rowIndex) => (
-//                 <View key={`row-${rowIndex}`} style={styles.calendarRow}>
-//                   {Array.from({ length: 7 }).map((_, colIndex) => (
-//                     <View
-//                       key={`cell-${rowIndex}-${colIndex}`}
-//                       style={[
-//                         styles.calendarCell,
-//                         {
-//                           backgroundColor: isDarkMode ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 0, 0, 0.02)",
-//                         },
-//                       ]}
-//                     />
-//                   ))}
-//                 </View>
-//               ))}
-//             </View>
-
-//             {/* Activity hexagons */}
-//             <View style={styles.activityHexagons}>
-//               {monthlyActivity.map((dayData, index) => {
-//                 const date = new Date(dayData.day)
-//                 const isToday = date.toDateString() === new Date().toDateString()
-//                 const maxCal = Math.max(...monthlyActivity.map((d) => d.calories)) || 1
-//                 const intensity = dayData.calories > 0 ? dayData.calories / maxCal : 0
-//                 const size = 24 + intensity * 12
-
-//                 // Calculate position based on date
-//                 const dayOfMonth = date.getDate()
-//                 const dayOfWeek = date.getDay()
-//                 const weekOfMonth = Math.floor((dayOfMonth - 1) / 7)
-
-//                 return (
-//                   <View
-//                     key={dayData.day}
-//                     style={[
-//                       styles.hexagonWrapper,
-//                       {
-//                         left: dayOfWeek * 40 + 10,
-//                         top: weekOfMonth * 40 + 10,
-//                       } as ViewStyle,
-//                     ]}
-//                   >
-//                     <View
-//                       style={[
-//                         styles.hexagon,
-//                         {
-//                           width: size,
-//                           height: size,
-//                           backgroundColor:
-//                             dayData.workouts > 0
-//                               ? isDarkMode
-//                                 ? `rgba(255, 149, 0, ${0.3 + intensity * 0.7})`
-//                                 : `rgba(99, 102, 241, ${0.3 + intensity * 0.7})`
-//                               : isDarkMode
-//                                 ? "rgba(255, 255, 255, 0.05)"
-//                                 : "rgba(0, 0, 0, 0.05)",
-//                           borderColor: isToday ? (isDarkMode ? "#FF9500" : "#6366F1") : "transparent",
-//                         } as ViewStyle,
-//                       ]}
-//                     >
-//                       <Text
-//                         style={[
-//                           styles.hexagonText,
-//                           {
-//                             color: dayData.workouts > 0 ? (isDarkMode ? "#FFFFFF" : "#FFFFFF") : colors.secondaryText,
-//                             fontSize: 10 + (dayData.workouts > 0 ? 2 : 0),
-//                           },
-//                         ]}
-//                       >
-//                         {dayOfMonth}
-//                       </Text>
-//                       {dayData.workouts > 0 && (
-//                         <View style={styles.workoutDot}>
-//                           <Text style={styles.workoutDotText}>{dayData.workouts}</Text>
-//                         </View>
-//                       )}
-//                     </View>
-//                   </View>
-//                 )
-//               })}
-//             </View>
-//           </View>
-//         </ScrollView>
-
-//         {/* Month legend */}
-//         <View style={styles.monthLegend}>
-//           <View style={styles.legendItem}>
-//             <View
-//               style={[
-//                 styles.legendColor,
-//                 {
-//                   backgroundColor: isDarkMode ? "rgba(255, 149, 0, 0.3)" : "rgba(99, 102, 241, 0.3)",
-//                 },
-//               ]}
-//             />
-//             <Text style={[styles.legendText, { color: colors.secondaryText }]}>Low</Text>
-//           </View>
-//           <View style={styles.legendItem}>
-//             <View
-//               style={[
-//                 styles.legendColor,
-//                 {
-//                   backgroundColor: isDarkMode ? "rgba(255, 149, 0, 0.6)" : "rgba(99, 102, 241, 0.6)",
-//                 },
-//               ]}
-//             />
-//             <Text style={[styles.legendText, { color: colors.secondaryText }]}>Medium</Text>
-//           </View>
-//           <View style={styles.legendItem}>
-//             <View
-//               style={[
-//                 styles.legendColor,
-//                 {
-//                   backgroundColor: isDarkMode ? "rgba(255, 149, 0, 0.9)" : "rgba(99, 102, 241, 0.9)",
-//                 },
-//               ]}
-//             />
-//             <Text style={[styles.legendText, { color: colors.secondaryText }]}>High</Text>
-//           </View>
-//         </View>
-//       </Animated.View>
-//     )
-//   }
-
-//   return (
-//     <View>
-//       {/* Chart Header with View Selector */}
-//       <View style={styles.chartHeader}>
-//         <View style={styles.chartTitleContainer}>
-//           <Text style={[styles.dashboardTitle, { color: colors.text }]}>Activity</Text>
-
-//           {/* View Selector Dropdown */}
-//           <TouchableOpacity
-//             style={[styles.viewSelector, { borderColor: isDarkMode ? "#FF9500" : "#6366F1" }]}
-//             onPress={() => setShowViewSelector(!showViewSelector)}
-//           >
-//             <Text style={{ color: isDarkMode ? "#FF9500" : "#6366F1" }}>
-//               {chartView === "weekly" ? "Weekly" : "Monthly"}
-//             </Text>
-//             <ChevronDown size={16} color={isDarkMode ? "#FF9500" : "#6366F1"} />
-
-//             {/* Dropdown Menu */}
-//             {showViewSelector && (
-//               <View
-//                 style={[
-//                   styles.viewDropdown,
-//                   {
-//                     backgroundColor: isDarkMode ? "#1F2937" : "#fff",
-//                     borderColor: isDarkMode ? "#374151" : "#E5E7EB",
-//                   },
-//                 ]}
-//               >
-//                 <TouchableOpacity
-//                   style={[
-//                     styles.dropdownItem,
-//                     chartView === "weekly" && {
-//                       backgroundColor: isDarkMode ? "rgba(255, 149, 0, 0.1)" : "rgba(99, 102, 241, 0.1)",
-//                     },
-//                   ]}
-//                   onPress={() => {
-//                     setChartView("weekly")
-//                     setShowViewSelector(false)
-//                   }}
-//                 >
-//                   <Text style={{ color: isDarkMode ? "#FF9500" : "#6366F1" }}>Weekly</Text>
-//                 </TouchableOpacity>
-//                 <TouchableOpacity
-//                   style={[
-//                     styles.dropdownItem,
-//                     chartView === "monthly" && {
-//                       backgroundColor: isDarkMode ? "rgba(255, 149, 0, 0.1)" : "rgba(99, 102, 241, 0.1)",
-//                     },
-//                   ]}
-//                   onPress={() => {
-//                     setChartView("monthly")
-//                     setShowViewSelector(false)
-//                   }}
-//                 >
-//                   <Text style={{ color: isDarkMode ? "#FF9500" : "#6366F1" }}>Monthly</Text>
-//                 </TouchableOpacity>
-//               </View>
-//             )}
-//           </TouchableOpacity>
-//         </View>
-
-//         {/* Date Navigation */}
-//         <View style={styles.dateNavigation}>
-//           {/* ← Previous */}
-//           <TouchableOpacity
-//             style={styles.dateNavigationButton}
-//             onPress={() => {
-//               if (chartView === "weekly") {
-//                 setWeekOffset((w) => w - 1)
-//               } else {
-//                 // back one month
-//                 if (selectedMonth > 0) {
-//                   setSelectedMonth((m) => m - 1)
-//                 } else {
-//                   setSelectedYear((y) => y - 1)
-//                   setSelectedMonth(() => 11)
-//                 }
-//               }
-//             }}
-//           >
-//             <ChevronLeft size={20} color={isDarkMode ? "#FF9500" : "#6366F1"} />
-//           </TouchableOpacity>
-
-//           {/* center label + calendar toggle */}
-//           <TouchableOpacity
-//             style={styles.currentPeriod}
-//             onPress={() => chartView === "monthly" && setShowCalendar(true)}
-//           >
-//             <Text style={[styles.currentPeriodText, { color: colors.text }]}>{getCurrentMonthYear()}</Text>
-//             {chartView === "monthly" && <Calendar size={16} color={isDarkMode ? "#FF9500" : "#6366F1"} />}
-//           </TouchableOpacity>
-
-//           {/* → Next */}
-//           <TouchableOpacity
-//             style={styles.dateNavigationButton}
-//             onPress={() => {
-//               if (chartView === "weekly") {
-//                 setWeekOffset((w) => w + 1)
-//               } else {
-//                 // forward one month
-//                 if (selectedMonth < 11) {
-//                   setSelectedMonth((m) => m + 1)
-//                 } else {
-//                   setSelectedYear((y) => y + 1)
-//                   setSelectedMonth(() => 0)
-//                 }
-//               }
-//             }}
-//           >
-//             <ChevronRight size={20} color={isDarkMode ? "#FF9500" : "#6366F1"} />
-//           </TouchableOpacity>
-//         </View>
-//       </View>
-
-//       {/* Chart Visualization */}
-//       <View style={styles.chartContainer}>{chartView === "weekly" ? renderWeeklyChart() : renderMonthlyChart()}</View>
-
-//       {/* Stats Cards */}
-//       <View style={styles.statsCardsContainer}>
-//         {/* Streak Card */}
-//         <View
-//           style={[
-//             styles.statCard,
-//             {
-//               backgroundColor: isDarkMode ? "rgba(255, 149, 0, 0.1)" : "rgba(99, 102, 241, 0.05)",
-//               borderColor: isDarkMode ? "rgba(255, 149, 0, 0.2)" : "rgba(99, 102, 241, 0.2)",
-//             },
-//           ]}
-//         >
-//           <View style={styles.statCardHeader}>
-//             <Ionicons name="flame" size={20} color={isDarkMode ? "#FF9500" : "#6366F1"} />
-//             <Text style={[styles.statCardTitle, { color: colors.secondaryText }]}>Streak</Text>
-//           </View>
-//           <Text style={[styles.statCardValue, { color: colors.text }]}>{userStats.streakDays}</Text>
-//           <Text style={[styles.statCardLabel, { color: colors.secondaryText }]}>days</Text>
-//           <View style={styles.progressBarContainer}>
-//             <View
-//               style={[
-//                 styles.progressBar,
-//                 { backgroundColor: isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)" },
-//               ]}
-//             >
-//               <View
-//                 style={[
-//                   styles.progressFill,
-//                   {
-//                     width: `${streakProgress}%`,
-//                     backgroundColor: isDarkMode ? "#FF9500" : "#6366F1",
-//                   },
-//                 ]}
-//               />
-//             </View>
-//           </View>
-//         </View>
-
-//         {/* Workouts Card */}
-//         <View
-//           style={[
-//             styles.statCard,
-//             {
-//               backgroundColor: isDarkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.02)",
-//               borderColor: isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)",
-//             },
-//           ]}
-//         >
-//           <View style={styles.statCardHeader}>
-//             <Ionicons name="barbell" size={20} color={isDarkMode ? "#FF9500" : "#6366F1"} />
-//             <Text style={[styles.statCardTitle, { color: colors.secondaryText }]}>Workouts</Text>
-//           </View>
-//           <Text style={[styles.statCardValue, { color: colors.text }]}>
-//             {chartView === "weekly" ? userStats.weeklyWorkouts : userStats.monthlyWorkouts}
-//           </Text>
-//           <Text style={[styles.statCardLabel, { color: colors.secondaryText }]}>
-//             {chartView === "weekly" ? "this week" : "this month"}
-//           </Text>
-//         </View>
-
-//         {/* Calories Card */}
-//         <View
-//           style={[
-//             styles.statCard,
-//             {
-//               backgroundColor: isDarkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.02)",
-//               borderColor: isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)",
-//             },
-//           ]}
-//         >
-//           <View style={styles.statCardHeader}>
-//             <Ionicons name="flame-outline" size={20} color={isDarkMode ? "#FF9500" : "#6366F1"} />
-//             <Text style={[styles.statCardTitle, { color: colors.secondaryText }]}>Calories</Text>
-//           </View>
-//           <Text style={[styles.statCardValue, { color: colors.text }]}>
-//             {chartView === "weekly" ? userStats.weeklyCalories : userStats.totalCalories}
-//           </Text>
-//           <Text style={[styles.statCardLabel, { color: colors.secondaryText }]}>burned</Text>
-//         </View>
-
-//         {/* Minutes Card */}
-//         <View
-//           style={[
-//             styles.statCard,
-//             {
-//               backgroundColor: isDarkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.02)",
-//               borderColor: isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)",
-//             },
-//           ]}
-//         >
-//           <View style={styles.statCardHeader}>
-//             <Ionicons name="time" size={20} color={isDarkMode ? "#FF9500" : "#6366F1"} />
-//             <Text style={[styles.statCardTitle, { color: colors.secondaryText }]}>Time</Text>
-//           </View>
-//           <Text style={[styles.statCardValue, { color: colors.text }]}>{userStats.totalMinutes}</Text>
-//           <Text style={[styles.statCardLabel, { color: colors.secondaryText }]}>minutes</Text>
-//         </View>
-//       </View>
-//     </View>
-//   )
-// }
-
-// const styles = StyleSheet.create({
-//   chartHeader: {
-//     marginBottom: 20,
-//   },
-//   chartTitleContainer: {
-//     flexDirection: "row",
-//     justifyContent: "space-between",
-//     alignItems: "center",
-//     marginBottom: 16,
-//   },
-//   dashboardTitle: {
-//     fontSize: 20,
-//     fontWeight: "700",
-//   },
-//   viewSelector: {
-//     flexDirection: "row",
-//     alignItems: "center",
-//     paddingHorizontal: 12,
-//     paddingVertical: 6,
-//     borderRadius: 16,
-//     borderWidth: 1,
-//     position: "relative",
-//   },
-//   viewDropdown: {
-//     position: "absolute",
-//     top: 40,
-//     right: 0,
-//     width: 120,
-//     borderRadius: 12,
-//     borderWidth: 1,
-//     overflow: "hidden",
-//     zIndex: 10,
-//     elevation: 5,
-//     shadowColor: "#000",
-//     shadowOffset: { width: 0, height: 2 },
-//     shadowOpacity: 0.1,
-//     shadowRadius: 8,
-//   },
-//   dropdownItem: {
-//     paddingHorizontal: 16,
-//     paddingVertical: 12,
-//     alignItems: "center",
-//   },
-//   dateNavigation: {
-//     flexDirection: "row",
-//     justifyContent: "space-between",
-//     alignItems: "center",
-//   },
-//   dateNavigationButton: {
-//     width: 40,
-//     height: 40,
-//     borderRadius: 20,
-//     justifyContent: "center",
-//     alignItems: "center",
-//   },
-//   currentPeriod: {
-//     flexDirection: "row",
-//     alignItems: "center",
-//     gap: 8,
-//     paddingVertical: 8,
-//     paddingHorizontal: 12,
-//     borderRadius: 16,
-//   },
-//   currentPeriodText: {
-//     fontSize: 16,
-//     fontWeight: "600",
-//   },
-//   chartContainer: {
-//     marginBottom: 20,
-//   },
-//   chartWrapper: {
-//     borderRadius: 16,
-//     overflow: "hidden",
-//   },
-//   chartLabels: {
-//     flexDirection: "row",
-//     justifyContent: "space-between",
-//     paddingHorizontal: 10,
-//     marginBottom: 8,
-//   },
-//   chartLabel: {
-//     fontSize: 12,
-//     fontWeight: "500",
-//   },
-//   weeklyChartContainer: {
-//     height: 200,
-//     position: "relative",
-//   },
-//   svgContainer: {
-//     height: 150,
-//     marginBottom: 10,
-//   },
-//   dayLabelsContainer: {
-//     flexDirection: "row",
-//     justifyContent: "space-between",
-//     paddingHorizontal: 10,
-//   },
-//   dayLabelWrapper: {
-//     alignItems: "center",
-//     position: "relative",
-//   },
-//   dayLabelContainer: {
-//     width: 36,
-//     height: 36,
-//     borderRadius: 18,
-//     justifyContent: "center",
-//     alignItems: "center",
-//     borderWidth: 1,
-//   },
-//   dayText: {
-//     fontSize: 12,
-//     fontWeight: "600",
-//   },
-//   workoutBadge: {
-//     position: "absolute",
-//     top: -8,
-//     right: -8,
-//     width: 18,
-//     height: 18,
-//     borderRadius: 9,
-//     justifyContent: "center",
-//     alignItems: "center",
-//   },
-//   workoutBadgeText: {
-//     color: "#fff",
-//     fontSize: 10,
-//     fontWeight: "700",
-//   },
-//   monthlyChartScrollContent: {
-//     paddingBottom: 10,
-//   },
-//   monthlyChartContainer: {
-//     height: 220,
-//     width: 300,
-//     position: "relative",
-//   },
-//   calendarGrid: {
-//     position: "absolute",
-//     top: 0,
-//     left: 0,
-//     right: 0,
-//     bottom: 0,
-//   },
-//   calendarRow: {
-//     flexDirection: "row",
-//     height: 40,
-//   },
-//   calendarCell: {
-//     width: 40,
-//     height: 40,
-//     borderRadius: 4,
-//     margin: 1,
-//   },
-//   activityHexagons: {
-//     position: "absolute",
-//     top: 0,
-//     left: 0,
-//     right: 0,
-//     bottom: 0,
-//   },
-//   hexagonWrapper: {
-//     position: "absolute",
-//     alignItems: "center",
-//     justifyContent: "center",
-//   },
-//   hexagon: {
-//     borderRadius: 8,
-//     alignItems: "center",
-//     justifyContent: "center",
-//     borderWidth: 2,
-//   },
-//   hexagonText: {
-//     fontWeight: "600",
-//   },
-//   workoutDot: {
-//     position: "absolute",
-//     top: -5,
-//     right: -5,
-//     width: 14,
-//     height: 14,
-//     borderRadius: 7,
-//     backgroundColor: "#fff",
-//     justifyContent: "center",
-//     alignItems: "center",
-//   },
-//   workoutDotText: {
-//     fontSize: 8,
-//     fontWeight: "700",
-//     color: "#000",
-//   },
-//   monthLegend: {
-//     flexDirection: "row",
-//     justifyContent: "center",
-//     marginTop: 10,
-//     gap: 16,
-//   },
-//   legendItem: {
-//     flexDirection: "row",
-//     alignItems: "center",
-//     gap: 4,
-//   },
-//   legendColor: {
-//     width: 12,
-//     height: 12,
-//     borderRadius: 6,
-//   },
-//   legendText: {
-//     fontSize: 12,
-//   },
-//   statsCardsContainer: {
-//     flexDirection: "row",
-//     flexWrap: "wrap",
-//     gap: 10,
-//     marginTop: 10,
-//   },
-//   statCard: {
-//     width: (width - 60) / 2,
-//     padding: 12,
-//     borderRadius: 16,
-//     borderWidth: 1,
-//   },
-//   statCardHeader: {
-//     flexDirection: "row",
-//     alignItems: "center",
-//     gap: 6,
-//     marginBottom: 8,
-//   },
-//   statCardTitle: {
-//     fontSize: 12,
-//     fontWeight: "500",
-//   },
-//   statCardValue: {
-//     fontSize: 24,
-//     fontWeight: "700",
-//   },
-//   statCardLabel: {
-//     fontSize: 12,
-//     marginTop: 2,
-//   },
-//   progressBarContainer: {
-//     marginTop: 8,
-//   },
-//   progressBar: {
-//     height: 4,
-//     borderRadius: 2,
-//     overflow: "hidden",
-//   },
-//   progressFill: {
-//     height: "100%",
-//     borderRadius: 2,
-//   },
-// })
-
-// export default EnhancedActivityChart

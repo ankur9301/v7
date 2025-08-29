@@ -1,4 +1,3 @@
-
 {
   "expo": {
     "name": "v7",
@@ -39,7 +38,6 @@
     },
     "plugins": [
       "expo-router",
-   
       [
         "expo-splash-screen",
         {
@@ -63,7 +61,8 @@
           "speechRecognitionPermission": "Allow $(PRODUCT_NAME) to recognize speech"
         }
       ],
-      "expo-speech-recognition"
+      "expo-speech-recognition",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
